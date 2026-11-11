@@ -748,3 +748,57 @@ branch and that `test:plugins` is replayed after a red vitest run.
   `packages/web/test/besoin-pages-ensemble-browser.test.ts` the CRLF properties popover
   test also waits for the mounted editor and reopens the gear until the popover shows, so
   neither flakes during the full `npm test`. A test-only fix: nothing changes for users.
+
+## v0.97.6
+
+- **Test proof is now the chain's attestation, no longer a suite run on GitHub Actions** —
+  the repository declares its suite in `.sdlc.yaml` (`tests:`, `scripts/suite-attestee.sh`,
+  JUnit report, 100 min ceiling) and a head is proved by `attester --publier`, which posts
+  the `tests-complets` status. The `ci.yml` workflow is removed; `docker-publish.yml` now
+  checks that status before building the image of a `v*` tag and fails closed without it.
+  `CLAUDE.md`, `docs/parcours.md` and `ARCHITECTURE.md` (AD-preuve-1) describe the new proof.
+  Nothing changes for users.
+
+## v0.97.7
+
+- **The refused-save page-editor test waits for the save that carries the empty callout** —
+  in `packages/web/test/besoin-pages-ensemble-browser.test.ts`, the test that checks the
+  diagnostic of a refused save now arms its wait for the PUT carrying the empty `:::callout`
+  before typing, instead of accepting any earlier autosave that answers "Saved", so it no
+  longer times out during the full `npm test`. A test-only fix: nothing changes for users.
+
+## v0.97.8
+
+- **Five load-sensitive tests now hold their timeout on a busy machine** — the chat rail
+  archive test (P-2), the E-10 MCP servers and E-19 problems band tests, the "page that will
+  not load" test and the R-6 exports table test each get an explicit, wider timeout instead of
+  the 5 s vitest default, and the rail test waits for the entry count itself instead of a fixed
+  800 ms pause. No assertion is removed. A test-only fix: nothing changes for users.
+
+## v0.97.9
+
+- **The "server not answering" banner test waits for its signals with wide failure budgets** —
+  in `packages/web/test/besoin-hors-ligne-browser.test.ts`, the B-19 test where every `/api/`
+  call and the `/api/health` probe fail now allows 30 s each for the banner to show, for two
+  probes to be counted and for the banner to leave on its own, and re-provokes a failed call
+  while the banner is absent, instead of 8 to 10 s windows that broke on a busy machine. The
+  three proofs are kept. A test-only fix: nothing changes for users.
+
+## v0.97.10
+
+- **The chat rail tabs and list-icon tests now wait for states instead of fixed pauses** — the
+  P-2 test that opens conversations as tabs on a desk, closes one without archiving it and
+  reorders by drag waits for the tab count, the drag result and the closed tab (`expect.poll`)
+  instead of `waitForTimeout(500)`, and the list-icon test does the same for its two former
+  fixed delays, so neither turns red under the load of the full suite. No assertion is
+  removed. A test-only fix: nothing changes for users.
+
+## v0.97.11
+
+- **The pages "refused save" test now waits for each state before moving on** — the
+  `sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur` test presses Enter
+  on the "/" menu only once no save is in flight, waits for the callout block to enter the
+  editor (reopening the menu up to three times if an autosave closed it), then waits for the
+  PUT that carries the `:::callout`, so it no longer turns red under the load of the full
+  suite. Five distinct timeouts name what never happened. No assertion is removed. A
+  test-only fix: nothing changes for users.

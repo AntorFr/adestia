@@ -14,7 +14,7 @@
 //            export report holds only exports named in ARCHITECTURE.md
 //                                     -> runtime keys of the indexes, the script
 //   R-7      no comment pointing to the absent design document
-//   R-8      the lint config promises what its rules do; the lint runs in CI
+//   R-8      the lint config promises what its rules do; the lint is part of the attested suite
 //   R-13/15  the Copilot program is a real file; zod is declared
 // Expected values are literals taken from the criterion.
 import { spawnSync } from 'node:child_process'
@@ -169,7 +169,7 @@ describe('R-7 · no comment points to an absent document', () => {
   })
 })
 
-describe('R-8 · the lint says what it does, and runs in CI', () => {
+describe('R-8 · the lint says what it does, and is part of the attested suite', () => {
   // eslint loads the whole type-aware program: under a full `npm test` it can be slow.
   // vitest's own limit is 60 s; spawnSync gives up first (50 s) so the failure names the delay.
   const LINT_TIMEOUT_MS = 50_000
@@ -201,8 +201,8 @@ describe('R-8 · the lint says what it does, and runs in CI', () => {
       expect(line).toMatch(/\b(no|not|cannot|nothing|never)\b/i)
     }
   }, TEST_TIMEOUT_MS)
-  it('the CI workflow runs npm run lint', () => {
-    expect(text('.github/workflows/ci.yml')).toMatch(/^\s*run: npm run lint\s*$/m)
+  it('the attested suite runs npm run lint', () => {
+    expect(text('scripts/suite-attestee.sh')).toMatch(/^step lint npm run lint\s*$/m)
   })
 })
 

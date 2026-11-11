@@ -1,7 +1,7 @@
 # Adestia
 
 **A self-hosted web interface that pairs a chat with an AI agent and visual Apps —
-built on top of coding-agent CLIs (Claude Code, GitHub Copilot CLI), so a monthly
+built on top of coding-agent CLIs (Claude Code, GitHub Copilot CLI, Codex CLI), so a monthly
 subscription powers everything. No per-token API billing.**
 
 One instance = one agent, one workspace, one subscription. Content lives as
@@ -42,7 +42,7 @@ cd /path/to/scratch
 node /path/to/adestia/packages/server/bin/adestia.js -c /path/to/adestia.config.yaml
 ```
 
-This serves `http://127.0.0.1:8730` and answers 200 on `/`. It leaves `data/` and `workspace/` in that directory: delete them when done. `extensions.pluginsDir` and `skinsDir` (`./plugins`, `./skins`) resolve from the current directory, so from an empty scratch directory the log says `0 of 0 plugin(s) active`: link or copy the clone's `plugins/` and `skins/` there (or set the two paths in the config) to load them. Without
+This serves `http://127.0.0.1:8730` and answers 200 on `/`. It leaves `data/` and `workspace/` in that directory: delete them when done. `extensions.pluginsDir` and `skinsDir` (`./plugins`, `./skins`) resolve from the current directory, so from an empty scratch directory the log says `0 of 0 plugin(s) active`: link or copy the clone's `plugins/` and `skins/` there (`ln -s /path/to/adestia/plugins /path/to/adestia/skins .`, or set the two paths in the config) to load them. Without
 `CLAUDE_CODE_OAUTH_TOKEN` it still starts: the app is there, but a real agent
 turn fails (use the scripted engine below to look at it without one).
 
@@ -223,7 +223,7 @@ escaped `\:::` in the content tests, and looks like a serialiser bug
 npm ci
 npm test          # no account or network needed; takes 7 minutes or more (the browser suites dominate), so do not cut it short; the browser suites time out at 5 s when the machine is busy: a red `Test timed out` is a load symptom, so rerun that file alone (`npx vitest run <file>`) and run `npm run test:plugins` by itself after a red vitest, since `npm test` chains it behind vitest and skips it on a failure; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
 npm run typecheck
-npm run lint      # also run by CI
+npm run lint      # part of the attested suite (`attester --publier`, see CLAUDE.md)
 npm run build
 ```
 

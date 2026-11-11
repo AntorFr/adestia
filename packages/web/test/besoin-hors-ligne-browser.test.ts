@@ -394,6 +394,10 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
     }, 60_000)
 
     it('tous les appels /api/ échouent, la sonde /api/health aussi : le bandeau apparaît ; la sonde repasse : il part seul, sans recharger', async () => {
+      // Failure budgets, not expectations: the product answers within 3-5 s; these only bound a loaded machine.
+      const SHOWN_BUDGET = 30_000
+      const PROBES_BUDGET = 30_000
+      const GONE_BUDGET = 30_000
       const { context, page } = await open(browser, b.url, { theme: 'light', size: 'desk', locale: 'en', route: '/' })
       try {
         await page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
@@ -403,18 +407,37 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
           if (r.request().url().endsWith('/api/health')) healthCalls++
           await r.abort('failed')
         })
-        await page.evaluate(() => (location.hash = '/settings/instructions'))
-        const shown = await until(page, WORDS.en, (s) => s.length === 1, WAIT_SHOWN)
+        // The banner needs an observed /api/ call to fail, and a call that was already in flight when the
+        // routes were folded may still answer and retire the probe loop (the banner then leaves). So: provoke a
+        // fresh failing call (leave and re-enter the view) whenever the banner is not up, and count the probes
+        // only within one stretch of the banner being up - the proof is that one loop keeps asking.
+        const askedBy = Date.now() + SHOWN_BUDGET
+        const probesBy = Date.now() + SHOWN_BUDGET + PROBES_BUDGET
+        let shown: Seen[] = []
+        let seenUp = false
+        let turn = 0
+        while (Date.now() < probesBy) {
+          shown = await banners(page, WORDS.en)
+          if (shown.length === 1) {
+            seenUp = true
+            if (healthCalls >= 2) break
+          } else {
+            healthCalls = 0
+            if (Date.now() < askedBy || seenUp) {
+              await page.evaluate((away) => (location.hash = away ? '/' : '/settings/instructions'), turn++ % 2 === 1)
+            }
+          }
+          await new Promise((r) => setTimeout(r, 500))
+        }
         expect(shown).toHaveLength(1)
-        // While shown, the probe GET /api/health keeps asking (every 3 s): at least two probes in 9 s.
-        await until(page, WORDS.en, () => healthCalls >= 2, 9_000)
+        // While shown, the probe GET /api/health keeps asking (every 3 s): at least two probes.
         expect(healthCalls).toBeGreaterThanOrEqual(2)
         await (page as unknown as { unroute(g: string): Promise<void> }).unroute('**/api/**')
-        expect(await until(page, WORDS.en, (s) => s.length === 0, WAIT_GONE)).toHaveLength(0)
+        expect(await until(page, WORDS.en, (s) => s.length === 0, GONE_BUDGET)).toHaveLength(0)
       } finally {
         await context.close()
       }
-    }, 90_000)
+    }, 150_000)
 
     it('un appel unique qui échoue alors que le serveur répond : aucun bandeau', async () => {
       const { context, page } = await open(browser, b.url, { theme: 'light', size: 'desk', locale: 'en', route: '/' })

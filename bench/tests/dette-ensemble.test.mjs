@@ -158,10 +158,10 @@ test('fake engine: every option beyond scripts is set by some seed', () => {
 })
 
 // ---- CI and DESIGN.md ---------------------------------------------------------------
-test('CI plays doc-besoin.test.mjs', () => {
-  // red if the workflow step that runs the documentation guard is removed
-  const ci = tracked('.github/workflows/*.yml').map(read).join('\n')
-  assert.match(ci, /^\s*(-\s+)?run:.*node\s+--test\b.*bench\/tests\/doc-besoin\.test\.mjs/m)
+test('the attested suite plays doc-besoin.test.mjs', () => {
+  // red if the step of scripts/suite-attestee.sh that runs the documentation guard is removed
+  const suite = read('scripts/suite-attestee.sh')
+  assert.match(suite, /^step guards\s+node\s+--test\b.*bench\/tests\/doc-besoin\.test\.mjs/m)
 })
 
 test('DESIGN.md: each rule is guarded in one place only', () => {
