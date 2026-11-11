@@ -146,7 +146,12 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               const menu = document.querySelector('.milkdown-slash-menu') as HTMLElement | null
               return !!menu && menu.dataset.show === 'true' && /callout/.test(menu.innerText) && !/Heading/.test(menu.innerText)
             }, null, { timeout: 30_000 })
+            // the save answer is awaited by name, armed BEFORE the keystroke that triggers it (as `indexAnswered` is)
+            const saveAnswered = page
+              .waitForResponse((r: any) => r.request().method() === 'PUT' && r.url().includes(`/api/pages/refus-${i}`), { timeout: 45_000 })
+              .catch(() => null)
             await page.keyboard.press('Enter') // an empty :::callout, which the vocabulary refuses at save
+            expect(await saveAnswered, "the save never left: no PUT answered (l'enregistrement n'est jamais parti)").not.toBeNull()
             // the proof the save was answered: the status carries the refusal
             const flat = () => page.evaluate(() => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' '))
             const want = NEEDS_CONTENT[locale].saved
@@ -154,7 +159,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 60_000 })
               .catch(async (error: unknown) => {
                 await shot(page, `refus-ECHEC-${skin}-${locale}-${theme}`)
-                throw new Error(`${String(error)}\nstatus read: ${(await flat()).slice(-400)}`)
+                throw new Error(`the answer came without the status text (la réponse est venue sans le texte du statut): ${String(error)}\nstatus read: ${(await flat()).slice(-400)}`)
               })
             const other = locale === 'fr' ? NEEDS_CONTENT.en.saved : NEEDS_CONTENT.fr.saved
             expect(await flat(), `${theme}`).not.toContain(other)
