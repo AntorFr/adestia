@@ -1212,6 +1212,23 @@ ships "Project status".
 
 *Reversed if* (AD-34 to AD-36): AD-34 and AD-35 not expected; AD-36 only if Monsieur's choice on the mockup `etat-projet` (blocks A, B, C, B-29) needs a seed shape the frontmatter cannot carry — settled in the design of tranche 4.
 
+### AD-structure-1 — How a block moves into, out of and between containers
+Tranche 3 extends `moveBlock(from, toParent, toIndex)` (AD-34) with container parents; no second path. `from` and
+`toParent` are paths in the page tree (page → section → column). The depth rule of AD-32 is checked inside `moveBlock`, which
+rejects with `{ok:false, reason}` where `reason` is one of `depth` (a section into a section, a section or columns into a
+column), `bounds` (tranche 1) or `none-next`; the UI shows the translated reason in the live region and next to the drop line.
+Keyboard: `Alt+←` moves the block out, to just after its container in the container's parent (from a column: after the `columns`
+block); `Alt+→` moves it into the container that immediately follows it (the first column of a `columns`, the start of a
+section); when nothing follows, or the next container would break the depth rule, it refuses with its reason. Moving a
+container moves its content. A column emptied stays (a `columns` always keeps 2 or 3 `col`); an empty `col` is drawn with
+its "Drop here" lane in editing and nothing in reading. The gallery inserts **Section** and **Columns** (2 columns by
+default, a setting 2/3) at the tranche-1 insertion point; when the focus is a container the block goes at its end.
+The fold toggle is a React state of the reader, keyed by the section's position, initialised from `closed=fold`; it is never
+written, and is available when the page is read-only. Below 820 px the columns stack in source order.
+*Rejected*: a second keyboard path; persisting the fold per user (a stored datum the epic does not have); letting an
+emptied `col` disappear (it would change a `columns` from 3 to 2 silently).
+*Reversed if*: the fork cannot nest directives (AD-32), in which case the tranche stops after its second task and goes to Monsieur.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
