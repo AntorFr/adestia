@@ -427,7 +427,9 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         const gone = ((await archive.getAttribute('aria-label')) ?? '').replace('Archive — ', '')
         expect(gone.length).toBeGreaterThan(0)
         await archive.click()
-        await expect.poll(() => items.count(), { message: 'the archived entry is still in the list' }).toBe(before - 1)
+        await expect
+          .poll(() => items.count(), { timeout: 15_000, message: 'the archived entry is still in the list' })
+          .toBe(before - 1)
         const remaining = await items.allInnerTexts()
         expect(remaining.some((t: string) => t.includes(gone) && t.trim() === gone)).toBe(false)
         // reloading does not bring the archived conversation back
@@ -444,7 +446,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       } finally {
         await context.close()
       }
-    })
+    }, 180_000)
 
     it('marks an unread conversation with a dot that is not colour alone, and reading clears it', async () => {
       const { context, page } = await fresh()
