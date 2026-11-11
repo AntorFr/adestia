@@ -35,7 +35,7 @@ export async function build({ workspace: w, base }, { projectManagement }) {
   await p('un-seul.md', page({ title: 'Un seul bloc' }, callout(1)))
   await p('zero.md', page({ title: 'Aucun bloc' }, ''))
   // Gallery: two blocks, focus on the first one.
-  for (const name of ['galerie-apres', 'galerie-fin', 'galerie-annule', 'galerie-recherche', 'galerie-lecture', 'galerie-enregistre'])
+  for (const name of ['galerie-apres', 'galerie-fin', 'galerie-annule', 'galerie-recherche', 'galerie-lecture', 'galerie-enregistre', 'galerie-tous'])
     await p(`${name}.md`, page({ title: `Galerie ${name}` }, [1, 2].map(callout).join('\n\n')))
   // Read-only: a block the vocabulary does not know.
   await p('lecture-seule.md', page({ title: 'Lecture seule' }, `${callout(1)}\n\n:::zorglub\nQuelque chose.\n:::`))

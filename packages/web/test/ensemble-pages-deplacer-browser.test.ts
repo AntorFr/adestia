@@ -385,6 +385,23 @@ describe.skipIf(!playwright)('adestia-pages-deplacer, from the need', () => {
       await context.close()
     }, 90_000)
 
+    // P-17 step 4: EVERY card of the gallery lands in a page the server accepts, not only Figures and Table.
+    // Breaks if a block holding flow (callout, list, image gallery…) is inserted empty and the save is refused.
+    it('chaque_carte_de_la_galerie_donne_une_page_enregistree', async () => {
+      const { context, page } = await visit(browser, instance.url, 'en', 'desk', 'galerie-tous')
+      await edit(page, 2)
+      await block(page, 1).getByText('Texte du bloc 1.').click()
+      const all = names(await (async () => { const g = await openGallery(page); const c = await catalogue(page); await page.keyboard.press('Escape'); await page.getByRole('dialog', { name: 'Add block' }).waitFor({ state: 'detached', timeout: 10_000 }); void g; return c })())
+      expect(all.length).toBeGreaterThan(3)
+      for (const [i, name] of all.entries()) {
+        const gallery = await openGallery(page)
+        await card(gallery, name).click()
+        await expect.poll(async () => (await fences(instance.url, 'galerie-tous')).length, { timeout: 20_000, message: `${name} saved` }).toBe(2 + i + 1)
+        expect(await page.getByText(/Not saved/).count(), `refusal after ${name}`).toBe(0)
+      }
+      await context.close()
+    }, 240_000)
+
     // B-24: no focus -> at the end of the page.
     it('sans_focus_le_bloc_se_pose_en_fin_de_page', async () => {
       const { context, page } = await visit(browser, instance.url, 'en', 'desk', 'galerie-fin')
