@@ -110,8 +110,8 @@ Form of the `exigences` skill; each need names the journeys it serves.
   from the repository; `app.ts` mounts routes and holds no business logic; the test stub
   driver is shared. The list of targets is `ARCHITECTURE.md` › Refactoring targets, and each
   target is closed or written down as kept, with its reason. *(P-15)*
-- **B-12** — Typecheck, lint and the whole test suite are green on every tranche and in CI;
-  lint runs in CI. *(P-15)*
+- **B-12** — Typecheck, lint and the whole test suite are green on every tranche, proved
+  by `attester --publier` on the pushed head; lint is part of that suite. *(P-15)*
 
 ### What `adestia-ajouts` adds
 Six functions, kept by Monsieur on 2026-10-25 from the recommendations of `adestia-correctifs`
@@ -353,7 +353,7 @@ Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 A developer, a person or a night agent without docker, changes Adestia's code, checks it and looks at it. The tools below are built; the independent documentation review checks their instructions against the code.
 
 1. **Today.** Install and check the install: `npm ci` (never `npm install`), then `ls node_modules/micromark-extension-directive` (`CLAUDE.md`).
-2. **Today.** Build, typecheck, lint and test: `npm run build`, `npm run typecheck`, `npm run lint` (`eslint packages plugins`), and `npm test` (vitest, then `npm run test:plugins` with `node --test`). CI (`.github/workflows/ci.yml`) runs typecheck, lint, tests and a docker build (B-12). The server tests share one support module (`packages/server/test/support/`: fake driver, git repository, temp dirs; R-9), wait on signals the test owns rather than on turns or fixed delays (R-10), and `npm test` runs the catalogue screens suite when Playwright is there, building the shell it needs, and says `no playwright` when it is not (R-14).
+2. **Today.** Build, typecheck, lint and test: `npm run build`, `npm run typecheck`, `npm run lint` (`eslint packages plugins`), and `npm test` (vitest, then `npm run test:plugins` with `node --test`). No workflow plays them: `attester --publier` plays `scripts/suite-attestee.sh` (typecheck, lint, tests, build, boot of the built server) on a clean checkout of the pushed commit and sets the `tests-complets` status, which a `v*` tag build checks before publishing the image (B-12). The server tests share one support module (`packages/server/test/support/`: fake driver, git repository, temp dirs; R-9), wait on signals the test owns rather than on turns or fixed delays (R-10), and `npm test` runs the catalogue screens suite when Playwright is there, building the shell it needs, and says `no playwright` when it is not (R-14).
 3. **Today.** Run from source on the real engine: build, then `node packages/server/bin/adestia.js`, with `CLAUDE_CODE_OAUTH_TOKEN` in the environment for claude-code. For the shell's hot reload, `npm run dev --workspace @antorfr/adestia-web` (Vite, which proxies `/api`, `/plugins` and `/manifest.webmanifest` to `127.0.0.1:8730`).
 4. **Today (B-2).** Launch locally (`node bench/launch.mjs --engine fake|claude`, ARCHITECTURE.md › AD-2 detail) with one documented command and no docker, either on the fake engine (AD-2) or on real Claude with only `CLAUDE_CODE_OAUTH_TOKEN`. The fake engine is a bench tool (`bench/fake-engine.mjs`), not a product mode. The Copilot and Codex engines keep their fakes in the tests.
 5. **Today, docker only.** Look at a change: `bench/run.sh bench/scenarios/<change>.mjs` builds the image, fakes the engine (unless `BENCH_REAL_ENGINE=1`), drives headless Chromium in a container and drops screenshots in `bench/shots/`; `bench/live-codex.sh` runs a real codex engine.

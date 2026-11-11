@@ -223,7 +223,7 @@ escaped `\:::` in the content tests, and looks like a serialiser bug
 npm ci
 npm test          # no account or network needed; takes 7 minutes or more (the browser suites dominate), so do not cut it short; the browser suites time out at 5 s when the machine is busy: a red `Test timed out` is a load symptom, so rerun that file alone (`npx vitest run <file>`) and run `npm run test:plugins` by itself after a red vitest, since `npm test` chains it behind vitest and skips it on a failure; the catalogue screens suite builds the shell on first run and skips (npm test stays green) when Playwright is not found through require/NODE_PATH, then `npm root -g`
 npm run typecheck
-npm run lint      # also run by CI
+npm run lint      # part of the attested suite (`attester --publier`, see CLAUDE.md)
 npm run build
 ```
 
