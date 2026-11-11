@@ -133,6 +133,11 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             const { context, page } = await visit(browser, instance.url, locale, theme, 'desk', `/page/refus-${i}`)
             await indexLoaded(page)
             await page.getByRole('button', { name: w.edit, exact: true }).click()
+            // armed BEFORE the typing that triggers the save: the answer to the PUT that carries the empty callout is the first signal
+            // (an earlier autosave, mid-typing, answers 'Saved' and is not the refusal)
+            const saveAnswered = page
+              .waitForResponse((r: any) => r.request().method() === 'PUT' && /:::callout/.test(r.request().postData() ?? '') && new RegExp(`/api/pages/refus-${i}(\\.md)?(\\?.*)?$`).test(r.url()), { timeout: 60_000 })
+              .catch(() => null)
             // the editor is mounted and holds the page text: the signal that a click lands on the real paragraph
             await page.waitForFunction(() => [...document.querySelectorAll('.ProseMirror')].some((e) => (e.textContent ?? '').includes('Corps.')), null, { timeout: 45_000 })
             // saves the page makes while it is being typed into (the autosave of the intermediate text): counted from
@@ -156,15 +161,11 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               const menu = document.querySelector('.milkdown-slash-menu') as HTMLElement | null
               return !!menu && menu.dataset.show === 'true' && /callout/.test(menu.innerText) && !/Heading/.test(menu.innerText)
             }, null, { timeout: 30_000 })
-            // the save answer is awaited by name, armed BEFORE the keystroke that triggers it (as `indexAnswered` is); it must be the REFUSAL (422), not an autosave of the text typed so far
             // no save in flight: the signal that the editor is at rest and Enter lands on the menu alone
             for (const start = Date.now(); inFlight > 0; ) {
               if (Date.now() - start > 30_000) throw new Error(`an autosave never answered before the block was picked (saves seen: [${puts.join(',')}])`)
               await page.waitForTimeout(50)
             }
-            const saveAnswered = page
-              .waitForResponse((r: any) => r.request().method() === 'PUT' && r.url().includes(`/api/pages/refus-${i}`) && r.status() === 422, { timeout: 45_000 })
-              .catch(() => null)
             await page.keyboard.press('Enter') // an empty :::callout, which the vocabulary refuses at save
             // the proof the keystroke landed on the menu: the block is in the editor. Without it an Enter that fell
             // through as a newline would leave no refusal to wait for, and the wait below would blame the save
@@ -176,12 +177,12 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
                 await shot(page, `refus-ECHEC-bloc-${skin}-${locale}-${theme}`)
                 throw new Error(`the callout never entered the editor: Enter did not pick the block, so no refusal could leave (saves seen: [${puts.join(',')}])`)
               })
-            expect(await saveAnswered, `the save never left: no PUT answered 422 — an earlier autosave answering 200 does not count (l'enregistrement n'est jamais parti); PUT statuses seen: [${puts.join(',')}]`).not.toBeNull()
-            // the proof the save was answered: the status carries the refusal
+            expect(await saveAnswered, `the save never left: no PUT carrying the empty callout was answered (l'enregistrement n'est jamais parti); PUT statuses seen: [${puts.join(',')}]`).not.toBeNull()
+            // first signal above: the save left and the server answered it; second signal: the status carries the refusal
             const flat = () => page.evaluate(() => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' '))
             const want = NEEDS_CONTENT[locale].saved
             await page
-              .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 60_000 })
+              .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 15_000 })
               .catch(async (error: unknown) => {
                 await shot(page, `refus-ECHEC-${skin}-${locale}-${theme}`)
                 throw new Error(`the answer came without the status text (la réponse est venue sans le texte du statut): ${String(error)}\nstatus read: ${(await flat()).slice(-400)}`)
