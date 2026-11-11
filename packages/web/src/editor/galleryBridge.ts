@@ -22,6 +22,12 @@ const surfaces = new WeakMap<HTMLElement, Insert>()
 
 /** Registered by `mountMilkdown`; returns the undo of the registration. */
 export function registerSurface(host: HTMLElement, editor: Editor): () => void {
+  // ProseMirror starts with a selection at the top of the document that nobody
+  // placed; only a pointer or key event inside the surface makes it the user's.
+  let placed = false
+  const place = () => { placed = true }
+  const events = ['pointerdown', 'mousedown', 'touchstart', 'keydown'] as const
+  for (const name of events) host.addEventListener(name, place, true)
   surfaces.set(host, (name) => editor.action((ctx) => {
     const view = ctx.get(editorViewCtx)
     const spec = editorBlocks().find((one) => one.name === name)
@@ -29,7 +35,9 @@ export function registerSurface(host: HTMLElement, editor: Editor): () => void {
     const node = spec && type ? type.createAndFill({ attributes: seed(spec) }) : null
     if (!node) return false
     const { doc, selection } = view.state
-    const point = insertionPoint(doc, { from: selection.from, to: selection.to, depth: selection.$from.depth })
+    const point = placed
+      ? insertionPoint(doc, { from: selection.from, to: selection.to, depth: selection.$from.depth })
+      : { parent: doc, index: movableSlots(doc).length }
     const slots = movableSlots(doc)
     const before = slots[point.index]
     const last = slots[slots.length - 1]
@@ -37,10 +45,14 @@ export function registerSurface(host: HTMLElement, editor: Editor): () => void {
     const tr = view.state.tr.insert(at, node)
     tr.setSelection(NodeSelection.create(tr.doc, at))
     view.dispatch(tr.scrollIntoView())
+    placed = true
     view.focus()
     return true
   }))
-  return () => void surfaces.delete(host)
+  return () => {
+    for (const name of events) host.removeEventListener(name, place, true)
+    surfaces.delete(host)
+  }
 }
 
 /** Inserts a block of the gallery on the surface mounted in `host`; false when it could not. */
