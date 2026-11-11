@@ -427,8 +427,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         const gone = ((await archive.getAttribute('aria-label')) ?? '').replace('Archive — ', '')
         expect(gone.length).toBeGreaterThan(0)
         await archive.click()
-        await page.waitForTimeout(800)
-        expect(await items.count()).toBe(before - 1)
+        await expect.poll(() => items.count(), { message: 'the archived entry is still in the list' }).toBe(before - 1)
         const remaining = await items.allInnerTexts()
         expect(remaining.some((t: string) => t.includes(gone) && t.trim() === gone)).toBe(false)
         // reloading does not bring the archived conversation back
@@ -440,8 +439,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         await say(page, 'fini')
         await page.locator('.adestia-chat').getByText('Rien ne manque pour samedi.').waitFor({ timeout: 15_000 })
         await page.getByRole('button', { name: 'New conversation', exact: true }).click()
-        await page.waitForTimeout(400)
-        expect(await page.locator('.adestia-bubble').count()).toBe(0)
+        await expect.poll(() => page.locator('.adestia-bubble').count(), { message: 'the new draft still shows the old thread' }).toBe(0)
         expect(await page.locator('.adestia-chat textarea').inputValue()).toBe('')
       } finally {
         await context.close()
