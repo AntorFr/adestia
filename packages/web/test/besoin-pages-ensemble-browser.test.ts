@@ -146,12 +146,12 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               const menu = document.querySelector('.milkdown-slash-menu') as HTMLElement | null
               return !!menu && menu.dataset.show === 'true' && /callout/.test(menu.innerText) && !/Heading/.test(menu.innerText)
             }, null, { timeout: 30_000 })
-            // the save answer is awaited by name, armed BEFORE the keystroke that triggers it (as `indexAnswered` is)
+            // the save answer is awaited by name, armed BEFORE the keystroke that triggers it (as `indexAnswered` is); it must be the REFUSAL (422), not an autosave of the text typed so far
             const saveAnswered = page
-              .waitForResponse((r: any) => r.request().method() === 'PUT' && r.url().includes(`/api/pages/refus-${i}`), { timeout: 45_000 })
+              .waitForResponse((r: any) => r.request().method() === 'PUT' && r.url().includes(`/api/pages/refus-${i}`) && r.status() === 422, { timeout: 45_000 })
               .catch(() => null)
             await page.keyboard.press('Enter') // an empty :::callout, which the vocabulary refuses at save
-            expect(await saveAnswered, "the save never left: no PUT answered (l'enregistrement n'est jamais parti)").not.toBeNull()
+            expect(await saveAnswered, "the save never left: no PUT answered 422 — an earlier autosave answering 200 does not count (l'enregistrement n'est jamais parti)").not.toBeNull()
             // the proof the save was answered: the status carries the refusal
             const flat = () => page.evaluate(() => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' '))
             const want = NEEDS_CONTENT[locale].saved
