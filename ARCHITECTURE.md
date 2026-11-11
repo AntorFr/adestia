@@ -1,6 +1,6 @@
 # Adestia — architecture
 
-> Product documentation. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
+> Product documentation. On a feature branch of `adestia-pages` (AD-32 to AD-36) it adds that tranche on top of `epic/adestia-pages`; only what a tranche built is built (tranche 1: AD-34 and AD-36 for the page root, and the gallery; sections and columns, AD-32, come with tranche 3). "Gallery" means the block gallery sheet (E-34) and the `gallery` key of a plugin manifest, never the `:::gallery` image block. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
 > `main`, exactly what is built. On a feature branch of `adestia-correctifs` (e.g. the chat tranche, AD-23) it adds that tranche on top of `epic/adestia-correctifs`; nothing is in `main` until the epic merges. An epic is a group of features delivered together; a tranche is one of them. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
 > (journeys, `docs/parcours.md`), `E-n` (screens, `docs/ecrans.md`), `AD-n` (decisions,
 > this file), `R-n` (refactoring targets, this file).
@@ -1198,7 +1198,7 @@ lines back gives the same rows (round-trip tested). A line the form cannot read 
 block needs a datum the line form cannot hold.
 
 ### AD-34 — One move operation under pointer, keyboard, buttons and touch
-Moving is one operation on the document tree — `moveBlock(from, toParent, toIndex)` — checked against AD-32's depth rule.
+Moving is one operation on the document tree — `moveBlock(doc, from, toParent, toIndex)` — checked against AD-32's depth rule.
 Pointer drag (`blockview.tsx startDrag`), keyboard, the buttons and touch all call it; the gallery inserts through
 the same position model. The drop line and the live region are drawn from its result. *Rejected*: a second path
 for the keyboard (two behaviours to keep equal); Crepe's own handle (limited to prose, DESIGN.md).
