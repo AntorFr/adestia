@@ -163,7 +163,15 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             }, null, { timeout: ms })
             let picked = false
             for (let attempt = 0; attempt < 3 && !picked; attempt++) {
-              if (attempt > 0) await page.keyboard.press('Shift+Home') // the line holds what is left of the last try: typed over
+              if (attempt > 0) {
+                // a rebase by an autosave answer may have dropped the empty line and the focus with it: land again at the end of
+                // the document, and open a new empty line only if the caret is not already on one
+                await page.locator('.ProseMirror').last().getByText('Corps.').click()
+                await page.keyboard.press('Control+End')
+                const line = await page.evaluate(() => (window.getSelection()?.anchorNode?.textContent ?? '').trim())
+                if (line.startsWith('/')) await page.keyboard.press('Shift+Home') // what is left of the last try: typed over
+                else if (line !== '') await page.keyboard.press('Enter') // no empty line left: a new one
+              }
               await page.keyboard.type('/')
               const last = attempt === 2
               // a menu that never opens (the '/' lost to a rebase under load) is a failed attempt, not a verdict: only the last one blames it
