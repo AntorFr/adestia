@@ -802,3 +802,11 @@ branch and that `test:plugins` is replayed after a red vitest run.
   PUT that carries the `:::callout`, so it no longer turns red under the load of the full
   suite. Five distinct timeouts name what never happened. No assertion is removed. A
   test-only fix: nothing changes for users.
+
+## v0.98.0-adestia-pages.1
+
+- **The red vitest step of `epic/adestia-pages` is traced to three flaky tests** — the
+  `vitest` step that was red at 28e089c9 is attributed to three tests that fail only under
+  the load of the full suite, each already owned by its own correction. The finding is
+  recorded in `.agent/status.md`, along with the name of the epic's working branch. No code
+  and no test changed: nothing changes for users.
