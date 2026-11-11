@@ -384,7 +384,8 @@ The user has a page with six blocks in the wrong order, on a laptop, and later o
 1. The user opens the page in editing (E-4). Each block bar shows **Move up**, **Move down** and the grip (B-23).
 2. With the keyboard, the user focuses a block bar and presses the move shortcut; the block moves one place, a live region says where (B-23).
 3. On the phone, the user presses the block's move control, or long-presses the grip and drags (B-23).
-4. The user wants a block they do not know the name of: **Add block** (or `/` then "Browse") opens the gallery (E-34); they scan the pictures, choose "Figures", and it lands at the chosen place with its form open (B-24).
+4. The user wants a block they do not know the name of: **Add block** (or `/` then "Browse") opens the gallery (E-34); they scan the pictures, choose "Figures", and it lands at the insertion point with its default values (B-24). Its form opens only from tranche 2 (E-35, B-27); before it, nothing opens.
+5. *Failure.* The page was written elsewhere while the sheet was open: the banner "The page changed." with **Reload** shows, nothing is inserted. A first block pressed on **Move up** does nothing and says "Already first". On a read-only page none of these controls exist.
 
 Needs: B-23, B-24
 
