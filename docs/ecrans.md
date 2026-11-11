@@ -526,7 +526,7 @@ Texts are in `en` and `fr` like the rest of the shell.
 
 | State | E-4, moving | E-34, gallery |
 |---|---|---|
-| Normal | the block moves one place; the live region says "Moved to position 3 of 7"; a toast shows the same words | cards as described above; the card under focus is marked, Enter or a click on a card inserts at the insertion point and closes the sheet (no separate confirm button); **x** and `Escape` close it without inserting; the search field reads "Search a block…"; each card shows its name and one line, e.g. "Free text, headings, a quote." for Content |
+| Normal | the block moves one place; the live region says "Moved to position 3 of 7" (a note shown for a few seconds, no toast) | cards as described above; the card under focus is marked, Enter or a click on a card inserts at the insertion point and closes the sheet (no separate confirm button); **x** and `Escape` close it without inserting; the search field reads "Search a block…"; each card shows its name and one line, e.g. "Pages of one kind, listed where you put it." for Content |
 | Empty | a page of one block: the move controls are disabled (a disabled button, not hidden); a page of zero blocks has nothing to move, and **Add block** opens the gallery, which inserts at the end of the page | search with no match: `search` icon, "No block called "gantt"", "Try "timeline", or clear the search to browse everything." No "nothing to list" case: the core blocks always exist |
 | First / last block | **Move up** disabled on the first, **Move down** on the last; `Alt+↑/↓` does nothing and the live region says "Already first" / "Already last" | — |
 | Loading | none: the move is local | none: the list is local; a card's picture is drawn with it |
@@ -536,10 +536,11 @@ Texts are in `en` and `fr` like the rest of the shell.
 | Read-only | no move controls, no grip, no shortcut: the page has no **Edit** (E-4, read-only) | **Add block** is absent and so is "Browse" in the `/` menu (E-4 not in editing) |
 | Extreme content | a long block title is truncated on the bar, never pushed off | names and lines are truncated to one line each (`text-overflow`), the full name in the card's accessible name; dozens of cards scroll in the sheet; the search ignores case and accents |
 | Phone | move controls on each bar stay reachable (44 px); a long press (400 ms) on the grip lifts the block (shadow, haptic where available), a drag then moves it, moving away before 400 ms or releasing without moving cancels | bottom sheet, 80 % of the height, the search field on top, closing with the soft keyboard open first closes the keyboard |
-| Drop refused | none at page level (tranche 3 adds its text; the mockup shows that text, marked tranche 3, and the Layout group is absent from it because tranche 1 lists no layout block) | — |
+| Drop refused | none at page level (tranche 3 adds its text; the mockup shows that text, marked tranche 3; the Layout group of the gallery holds the existing `row` ("Columns") and `gallery` cards) | — |
 
-Card names as written: Content, Callout, Figures, List, Table, Timeline, Sub-projects (the
-`subproject` block), and so on from the block's own name; the picture is the block's `image`.
+Card names as written, core: Content, Callout, Figures, List, Table, Columns (the existing `:::row`, not the tranche 3
+`columns` container), Image gallery; with `project-management` enabled: Timeline, Sub-projects (the `subproject` block); a
+plugin block with no record shows its identifier. The picture is the block's `image`.
 
 ## The plugins' screens, as built
 

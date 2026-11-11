@@ -117,7 +117,9 @@ Outside `packages/`:
   `reader/` holds the recursive walk, directive dispatch and block renderers by kind.
   `useAutosave.ts` owns the document baseline and save cadence, `useEditorSurface.ts`
   the mounted writing surface, `usePageDrop.ts` the reading drop target; `SaveStatus.tsx`
-  draws the save result.
+  draws the save result. `moveBlock.ts` judges a move and `moveui.ts` draws its live region and drop line (AD-deplacer-1);
+  `BlockGallery.tsx` is the gallery sheet, `gallery.ts` merges `galleryTable.ts` (core cards) with the enabled plugins'
+  `gallery` records, `galleryBridge.ts` links the editor to the sheet and `insertionPoint.ts` says where a block lands (AD-deplacer-2).
 - `plugins/` — `contract.ts` (the plugin front-end contract, `PluginApi`), `loader.ts`,
   `words.ts` (plugin word tables), `Boundary.tsx`, `PageEditor.tsx`.
 - `sw/` — the service worker (`sw.ts`, `policy.ts`, `register.ts`).
@@ -1212,7 +1214,7 @@ ships "Project status".
 
 ### AD-deplacer-1 — `moveBlock` is a pure function of the page tree, and every entry point reads its result
 `packages/web/src/editor/moveBlock.ts` exports `moveBlock(doc, from, toParent, toIndex)` returning `{ok: true, from, to, total}`
-or `{ok: false, reason}` (`depth` is the only reason tranche 3 adds; at page level a move is refused only when `from` or `to` is out of range).
+or `{ok: false, reason}` (`depth` is the only reason tranche 3 adds; at page level a move is refused only when `from` or `to` is out of range (`range`), or when `toParent` is not the page root (`parent`, tranche 1 only)).
 `blockview.tsx startDrag`, the **Move up / Move down** buttons, `Alt+↑/↓` and the touch long-press all call it and nothing else; the
 drop line, the live region ("Moved to position 3 of 7", localised) and the refusal line are drawn from the result. Tranche 1 only ever
 passes the page root as `toParent`. Touch: a 400 ms press on the grip starts the same drag as the pointer; the buttons stay the
