@@ -76,7 +76,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
         beforeAll(async () => {
           instance = await launch('besoin-pages-ensemble', skin, locale)
           browser = await newBrowser()
-        }, 60_000)
+        }, 180_000) // the instance boots and the browser starts: under a loaded pod 60 s was shorter than that
         afterAll(async () => {
           await browser?.close()
           await instance?.stop()
