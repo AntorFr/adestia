@@ -540,7 +540,7 @@ Texts are in `en` and `fr` like the rest of the shell.
 
 Card names as written, core: Content, Callout, Figures, List, Table, Columns (the existing `:::row`, not the tranche 3
 `columns` container), Image gallery; with `project-management` enabled: Timeline, Sub-projects (the `subproject` block); a
-plugin block with no record shows its identifier. The picture is the block's `image`.
+plugin block with no record shows its identifier as name, the plugin's id as group and no line. The picture is the block's `image`.
 
 ## The plugins' screens, as built
 
