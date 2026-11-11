@@ -1266,3 +1266,27 @@ portion; **kept: reason** names what B-1 deliberately leaves.
     the charter's form (the one exception of `B-1`): E-2 by `adestia-qualite-pages`, E-14 by
     `adestia-qualite-charte`.
     **closed**: E-2 uses the ready-gated spinner row and E-14 its configuration loading row; neither shows an empty state while waiting.
+
+## E-3 button, E-31 and E-36 — detail of `adestia-pages-etat-projet`
+
+Mock-ups: `docs/maquettes/nouveau-modele.html` (E-36, its states) and `etat-projet-page.html` (the created page); the candidates sheet `etat-projet.html` stays as the record of Monsieur's choice (A, B, C; D out of scope).
+
+**E-3 — New from template.** A button in the header of E-3, drawn only when the open folder is in the index's `writableFolders` **and** at least one template is shipped by the core or an enabled plugin; otherwise nothing is drawn (no disabled button). It opens E-36. It is the only change to E-3.
+
+**E-36 — the sheet** (shared sheet, as E-6/E-35). Content, top to bottom: the templates as cards (picture, name, one line; one card is selected, the first by default; arrow keys move, a click selects), a **Title** field (focused on open), **Cancel** and **Create**. States:
+
+| State | What is drawn | Notes |
+|---|---|---|
+| Ready | one card selected, empty title | **Create** is inert with an empty slug and says why under the field |
+| Name taken | « A page named "<slug>" already exists here. Choose another title. » under the field; field in the error colour | judged on the logical path across the union of stores (index) and, if the index was stale, on the `409` of the write; nothing written, focus back on the field |
+| Writing | **Create** inert with the shared busy mark | one write at a time |
+| Write refused | the shared error line in the sheet, title kept | any other failure of the `PUT` |
+| Done | the sheet closes and E-4 opens the new page | the page is read-write: the user lands where B-27's forms are |
+| No template | the button of E-3 is not drawn | the sheet is never reachable empty |
+
+Keyboard: `Esc` closes (focus returns to the button), `Enter` in the field creates. Phone: the shared bottom sheet; the cards stack in one column. Texts are `en` and `fr` (« Nouveau depuis un modèle », « Titre », « Créer »). Rights: as E-4 and donnees.md say; a viewer never sees the button.
+
+**E-31 — redrawn.** Existing blocks: `timeline` gains `view=bars|list` (bars: today's drawing, kept; list: the dated entries as rows with the same state words), its settings show the two as pictures; `subproject` keeps `rows|cards` and is redrawn on the shared card, pill and spacing of the charter. Both keep every rule of E-31: amber means only the owner's *Amber*; a late phase or milestone is a dashed outline in `--text-muted` with the word « late » / « en retard » as its name; same entries from the same walk. New blocks, from `etat-projet-page.html`: **progress** (three tiles or one bar; empty: « No page below this page yet. »), **milestones** (done / next / late / planned; empty: a sentence naming **Edit data**), **risks** (table or cards; level as a word pill: *High* danger, *Medium* neutral, *Low* plain; never amber). The three appear in the gallery (E-34) under the group **Project** with their picture and line; `milestones` and `risks` open their E-35 form after an insertion; `progress` opens E-6. All states of the table of states (empty, one row, many rows, an unreadable line named under the block, loading while the index loads, light and dark, desk and phone) are drawn by the bench.
+
+**Components.** The cards, pills, meters, table, sheet and field are the charter's existing ones; whatever the design-system verdict (`gardien-design-system`, recorded below by the conception) says is new is specified there, not here.
+

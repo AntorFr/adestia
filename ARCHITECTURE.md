@@ -1212,6 +1212,32 @@ ships "Project status".
 
 *Reversed if* (AD-34 to AD-36): AD-34 and AD-35 not expected; AD-36 only if Monsieur's choice on the mockup `etat-projet` (blocks A, B, C, B-29) needs a seed shape the frontmatter cannot carry — settled in the design of tranche 4.
 
+### AD-etat-projet-1 — The project blocks belong to `project-management`
+`progress`, `milestones` and `risks` (B-29's A, B, C) are blocks of the `project-management` plugin, not of the core: they are
+declared in its manifest (`vocabulary` for the grammar, `gallery` for name, line, image, group `Project`, `fields` and `view`),
+drawn in `web/blocks.js` and read through the pure `web/model.js`, like `timeline` and `subproject`. They share one walk with
+them (`under`, the same pages as `:::list{source=children}`), so a progress figure, a planning and a list of sub-projects
+never disagree about what is "below"; the page that carries the block is never counted among its own sub-pages. The core
+learns nothing about projects. *Rejected*: core blocks (a plugin that is off would leave bare `:::` names in pages); a percent
+written by hand (a second truth that drifts from the sub-pages). *Reversed if*: a second plugin needs the same blocks.
+
+### AD-etat-projet-2 — Milestones and risks are list lines; progress has no data
+`milestones` and `risks` keep AD-33's posture: a line per row, a form over the lines, **Raw** for what the form cannot read.
+`milestones`: `- Label: 2026-11-20` or `- Label: 2026-11-20 — done` (the date reads as the `timeline`'s written milestone,
+so one block can later be pasted into the other). `risks`: `- Label: High — Marc`, level `High|Medium|Low` (read whatever the case,
+written capitalised), owner optional after ` — `. Both are drawn in the order written; nothing sorts the author's list.
+`progress` has no body: it is read from the sub-pages (`finished` of each), so it has attributes (`depth`, `view`) and no
+**Edit data**. *Rejected*: a status column per milestone (derived from date and `done`: next = the first undone, late = undone and past);
+sorting risks by level (a second order the author cannot change). *Reversed if*: Monsieur wants a risk score or a date on a risk.
+
+### AD-etat-projet-3 — Creating a page from a template is a page write, nothing more
+E-36 builds the page text in the shell from the seed (AD-36) and saves it with the existing `PUT /api/pages/*`, **without a
+revision** and with `?store=` naming the store E-3's rule picked: a file that already exists then answers `409`, which is
+"name already taken" when the shell's own check (the index) was stale; nothing is overwritten and no route is added. The server
+adds one field to the index it already serves (`writableFolders`, `docs/donnees.md`). The seed's `template:` key is dropped, its
+other frontmatter and its body are kept, `title` is the user's. *Rejected*: a create route (a second write path with its own
+validation); numbering a taken name (the user named it).
+
 ## Decisions of adestia-preuve-tests
 
 The proof that a commit is green is its attestation (rule R15 of the SDLC chain): the commit

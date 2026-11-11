@@ -411,7 +411,7 @@ Needs: B-23, B-28, B-31
 The owner follows a project and wants a status page without writing markdown.
 
 1. In the folder where the project lives (the E-3 listing, not a block container), the user presses **New from template** (E-3), chooses "Project status", names the page and creates it (E-36) (B-30).
-2. The page opens with a summary section, a two-column band (progress and milestones, risks), and the timeline; each block has placeholder content the user edits through forms (B-27, B-29). The band holds the three project blocks Monsieur chose (11/11): progress derived from the sub-pages (A), milestones (B), risks (C); the design of tranche 4 writes the fields each reads.
+2. The page opens with a summary section, a two-column band (progress and milestones, risks), and the timeline; the derived blocks (progress, timeline) fill from the folder at once, the two written ones (milestones, risks) start empty with a sentence that names **Edit data**, and the user fills them through forms (B-27, B-29). If the title is already a page of that folder, E-36 says so under the field and writes nothing; where the folder cannot be written, or no template is shipped, the button is not there. The band holds the three project blocks Monsieur chose (11/11): progress derived from the sub-pages (A), milestones (B), risks (C); the fields each reads are in `docs/donnees.md` ("Project blocks"): A has none (it reads the sub-pages), B and C are lines the forms write.
 3. The user changes a block's variant, moves a risk block to another column, adds a block from the gallery (B-23, B-24, B-28).
 4. A reader opens the page (E-4, E-31): it is legible on a desk and on a phone, light and dark (B-30).
 
