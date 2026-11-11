@@ -55,7 +55,7 @@ node bench/sweep.mjs                   # every screen, light and dark, desk and 
 node bench/scenarios/chargements.mjs   # takes several minutes (16 capture combinations); loading and Retry on E-3, E-4, E-8, E-9, E-11, E-13 (needs the build; images in $BENCH_OUT); the plugins' E-25 and E-28 are covered by plugins/*/test/chargement.test.js and, in a browser, by bench/tests/plugins-chargements-besoin.test.mjs, not by this scenario; to see them by hand, start the launcher from the clone's root (the atelier and parcours plugins come from `./plugins`) and open #/atelier or a parcours page
 node bench/scenarios/page-suivie.mjs   # the open page follows the agent, B-17 (needs the build; BENCH_SKINS, BENCH_LOCALES narrow it)
 node bench/scenarios/hors-ligne.mjs     # stops and restarts a real bench instance: the offline banner E-32 on E-2, E-4 and E-14 (needs the build; images in $BENCH_OUT)
-BENCH_URL=<printed-url> node bench/scenarios/pages-matrix.mjs bench/scenarios/galerie.mjs   # the block gallery, E-34: Add block, search, empty search, insertion (needs the build and a launcher on `--seed pages`; images in $BENCH_OUT). Moving a block (B-23) has no scenario: its proof is `packages/web/test/move-block.test.ts`
+BENCH_URL=<printed-url> node bench/scenarios/pages-matrix.mjs bench/scenarios/galerie.mjs   # the block gallery, E-34: Add block, search, empty search, insertion (needs the build and a launcher on `node bench/launch.mjs --engine fake --seed pages --skin alfred --locale en`, the skin and locale `pages-matrix.mjs` plays with `BENCH_URL`; images in $BENCH_OUT). Moving a block (B-23) has no scenario: its proof is `packages/web/test/move-block.test.ts`
 node bench/scenarios/chat-ajouts.mjs   # the chat's loading, Retry and context-lost line, E-16 (needs the build; seed `chat-ajouts`; about 20 s per skin × language, `BENCH_SKINS` and `BENCH_LOCALES` narrow it, it always plays desk and phone; images in $BENCH_OUT, `bench/shots-chat-ajouts/`)
 ```
 
@@ -93,7 +93,9 @@ Adestia's own interface.
 - **Pages both hands write**: markdown files with a closed vocabulary of typed
   blocks, edited in a Notion-like editor or by the agent with its own file
   tools. One grammar renders, edits and validates them, so a save cannot change
-  what a page means. A save is refused if the agent wrote underneath you. The page you have open follows the
+  what a page means. In editing, a block moves with the **Move up** / **Move down** buttons, `Alt+↑/↓`
+  or a long press on its grip then a drag, and **Add block** (or **Browse** in the `/` menu) opens a gallery
+  of the core blocks and those of the enabled plugins. A save is refused if the agent wrote underneath you. The page you have open follows the
   agent: in reading it refreshes by itself; while you edit, a banner "The page changed." offers
   **Reload** and never touches what you typed (nothing moves if `workspace.watch.enabled` is false).
   Home shows a loading row
