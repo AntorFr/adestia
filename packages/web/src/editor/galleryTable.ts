@@ -8,7 +8,8 @@
  * dead end. Images are small files under `public/blocks/`.
  */
 
-export type Locale = 'en' | 'fr'
+import type { Locale } from '../app/i18n.js'
+export type { Locale }
 
 export interface Localised {
   readonly en: string
