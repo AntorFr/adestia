@@ -1212,6 +1212,15 @@ ships "Project status".
 
 *Reversed if* (AD-34 to AD-36): AD-34 and AD-35 not expected; AD-36 only if Monsieur's choice on the mockup `etat-projet` (blocks A, B, C, B-29) needs a seed shape the frontmatter cannot carry — settled in the design of tranche 4.
 
+### AD-forms-1 — A `fields` entry is a list of typed columns plus a line codec
+*(tranche `adestia-pages-blocs-formulaires`, refines AD-33.)* The `fields` of a block's `gallery` entry (core table or plugin manifest) is `{ "columns": [{ "key", "kind": "text|number|date|link", "label", "required"? }], "line": "label-value-caption | label-range | label-value | table" }`. `line` names one of four codecs written once in the shell (`editor/blockform/`), one per line format that exists today; it is not a free template, so no plugin can invent a line format the reader does not parse. `label` is a string or an `{en, fr}` pair, as in the template declarations. A plugin that declares a `fields` without a known `line` has it ignored (no **Edit data**), never an error. *Rejected*: a per-block form component (a plugin block gets no form); a format string (a second grammar). *Reversed if*: a block needs a column kind the four cannot say.
+
+### AD-forms-2 — The form edits rows; lines it cannot read ride along
+A codec reads the block's lines into `rows` and `kept` (a line it cannot read, with its index). Writing returns the lines with each kept line at its index and the rows around it, so a round trip of an unedited block is byte-identical and a hand-written line is never dropped. **Raw** edits the same lines directly. The round trip (`lines → rows → lines`) is tested per codec against fixtures written by hand in the format of before the epic.
+
+### AD-forms-3 — Apply is one document change
+**Apply** and each variant or width choice in E-6 go through the same `setBlock` change `BlockSettings` uses today: one transaction, one undo step, written by the editor's normal save. The form holds its state in the sheet until Apply; E-6 writes at once. No server route is added.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
