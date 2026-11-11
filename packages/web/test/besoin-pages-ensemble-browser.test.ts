@@ -133,9 +133,10 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             const { context, page } = await visit(browser, instance.url, locale, theme, 'desk', `/page/refus-${i}`)
             await indexLoaded(page)
             await page.getByRole('button', { name: w.edit, exact: true }).click()
-            // armed BEFORE the typing that triggers the save: the save request's answer is the first signal
+            // armed BEFORE the typing that triggers the save: the answer to the PUT that carries the empty callout is the first signal
+            // (an earlier autosave, mid-typing, answers 'Saved' and is not the refusal)
             const saveAnswered = page
-              .waitForResponse((r: any) => r.request().method() === 'PUT' && new RegExp(`/api/pages/refus-${i}(\\.md)?(\\?.*)?$`).test(r.url()), { timeout: 60_000 })
+              .waitForResponse((r: any) => r.request().method() === 'PUT' && /:::callout/.test(r.request().postData() ?? '') && new RegExp(`/api/pages/refus-${i}(\\.md)?(\\?.*)?$`).test(r.url()), { timeout: 60_000 })
               .catch(() => null)
             // the editor is mounted and holds the page text: the signal that a click lands on the real paragraph
             await page.waitForFunction(() => [...document.querySelectorAll('.ProseMirror')].some((e) => (e.textContent ?? '').includes('Corps.')), null, { timeout: 45_000 })
