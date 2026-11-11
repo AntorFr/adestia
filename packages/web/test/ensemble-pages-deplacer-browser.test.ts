@@ -72,6 +72,17 @@ async function bar(page: any, n: number, phone = false) {
   if (!phone) await b.hover()
   return b
 }
+/** A touch screen has no hover: the user touches the block, and its bar answers (retried, a touch that lands on a remounting editor is lost). */
+async function touchBar(page: any, n: number) {
+  const b = await bar(page, n, true)
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const shownNow = await control(b, 'Move up').evaluate((e: HTMLElement) => getComputedStyle(e.parentElement!).pointerEvents !== 'none')
+    if (shownNow) return b
+    await b.getByText(`Texte du bloc ${n}.`).tap()
+    await page.waitForTimeout(500)
+  }
+  return b
+}
 const control = (b: any, name: string) => b.getByRole('button', { name, exact: true }).first()
 
 /** The titles of the callouts, in the order the editor shows them. */
@@ -153,9 +164,8 @@ describe.skipIf(!playwright)('adestia-pages-deplacer, from the need', () => {
     it('telephone_move_up_deplace_le_quatrieme_bloc_au_deuxieme_rang', async () => {
       const { context, page } = await visit(browser, instance.url, 'en', 'phone', 'six-telephone')
       await edit(page, 6)
-      await (await bar(page, 4, true)).getByText('Texte du bloc 4.').tap() // a touch screen has no hover: the user touches the block first
       for (const dir of ['Moved to position 3 of 6', 'Moved to position 2 of 6']) {
-        const b = await bar(page, 4, true)
+        const b = await touchBar(page, 4)
         await control(b, 'Move up').tap()
         await page.getByText(dir, { exact: true }).waitFor({ timeout: 10_000 })
       }
@@ -170,8 +180,7 @@ describe.skipIf(!playwright)('adestia-pages-deplacer, from the need', () => {
     it('telephone_les_controles_de_deplacement_font_44_px', async () => {
       const { context, page } = await visit(browser, instance.url, 'en', 'phone', 'six-bords')
       await edit(page, 6)
-      const b = await bar(page, 3, true)
-      await b.getByText('Texte du bloc 3.').tap()
+      const b = await touchBar(page, 3)
       for (const name of ['Move up', 'Move down']) {
         const box = await control(b, name).boundingBox()
         expect(box, name).not.toBeNull()
@@ -237,8 +246,7 @@ describe.skipIf(!playwright)('adestia-pages-deplacer, from the need', () => {
       const cdp = await context.newCDPSession(page)
       const touch = (type: string, x: number, y: number) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] })
       const gripOf = async (n: number) => {
-        const b = await bar(page, n, true)
-        await b.getByText(`Texte du bloc ${n}.`).tap()
+        const b = await touchBar(page, n)
         const box = await control(b, 'Move block').boundingBox()
         return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
       }
