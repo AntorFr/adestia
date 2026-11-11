@@ -505,7 +505,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
               }
               return titles()
             },
-            { message: "l'ordre n'a pas suivi le glisser", timeout: 15_000, intervals: [250, 500, 1000] },
+            { message: "l'ordre n'a pas suivi le glisser", timeout: 15_000 },
           )
           .toEqual(['outil', 'fini'])
         expect(await stored()).toBe(2)
