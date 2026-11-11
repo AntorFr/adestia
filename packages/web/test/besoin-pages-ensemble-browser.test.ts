@@ -157,18 +157,28 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             // checks and the keystroke, rebases the editor and closes the menu. The signal is the block itself: until it
             // is in the editor, the line is cleared and the menu opened again (3 attempts), then the wait blames the pick.
             const callout = page.locator('.ProseMirror [data-block="callout"]').first()
-            const menuFiltered = () => page.waitForFunction(() => {
+            const menuFiltered = (ms: number) => page.waitForFunction(() => {
               const menu = document.querySelector('.milkdown-slash-menu') as HTMLElement | null
               return !!menu && menu.dataset.show === 'true' && /callout/.test(menu.innerText) && !/Heading/.test(menu.innerText)
-            }, null, { timeout: 30_000 })
+            }, null, { timeout: ms })
             let picked = false
             for (let attempt = 0; attempt < 3 && !picked; attempt++) {
               if (attempt > 0) await page.keyboard.press('Shift+Home') // the line holds what is left of the last try: typed over
               await page.keyboard.type('/')
-              await page.locator('.milkdown-slash-menu').first().waitFor({ state: 'visible', timeout: 45_000 })
+              const last = attempt === 2
+              // a menu that never opens (the '/' lost to a rebase under load) is a failed attempt, not a verdict: only the last one blames it
+              const opened = await page.locator('.milkdown-slash-menu').first().waitFor({ state: 'visible', timeout: last ? 45_000 : 10_000 }).then(() => true, () => false)
+              if (!opened) {
+                if (last) throw new Error(`the slash menu never opened after 3 attempts (saves seen: [${puts.join(',')}])`)
+                continue
+              }
               await page.keyboard.type('callout')
               // the menu has filtered itself down to the block: the proof Enter will pick it
-              await menuFiltered()
+              const filtered = await menuFiltered(last ? 30_000 : 10_000).then(() => true, () => false)
+              if (!filtered) {
+                if (last) throw new Error(`the slash menu never filtered down to the callout after 3 attempts (saves seen: [${puts.join(',')}])`)
+                continue
+              }
               // no save in flight: the signal that the editor is at rest and Enter lands on the menu alone
               for (const start = Date.now(); inFlight > 0; ) {
                 if (Date.now() - start > 30_000) throw new Error(`an autosave never answered before the block was picked (saves seen: [${puts.join(',')}])`)
