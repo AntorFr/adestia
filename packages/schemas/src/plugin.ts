@@ -83,6 +83,32 @@ export interface PluginBlockSpec {
   readonly attributes?: Readonly<Record<string, PluginBlockAttribute>>
 }
 
+/** A sentence in English, or in each language the author wrote it in. */
+export type PluginGalleryText = string | { readonly en: string; readonly fr?: string }
+
+/**
+ * How one block shows in the gallery (E-34) — declared data, like the rest.
+ *
+ * Keyed by block name in `PluginManifest.gallery`; `blocks` stays the path of
+ * the rendering module and `vocabulary` the grammar, so nothing is renamed.
+ * `fields` and `view` are accepted and carried but not read yet: the block
+ * form and the variants extend this contract later.
+ */
+export interface PluginGalleryEntry {
+  /** What the card is called. */
+  readonly name: PluginGalleryText
+  /** One line saying what the block is for. */
+  readonly line: PluginGalleryText
+  /** A small picture, relative to the plugin folder, served as its other static files. */
+  readonly image: string
+  /** `Text`, `Data`, `Layout`, `Project`, or the plugin's own name. */
+  readonly group: string
+  /** The block's form — not read yet. */
+  readonly fields?: unknown
+  /** The block's variants — not read yet. */
+  readonly view?: unknown
+}
+
 /**
  * One frontmatter field a plugin's own code reads, for a type it claims.
  *
@@ -172,6 +198,14 @@ export interface PluginManifest {
    * `packages/content/src/vocabulary.ts` holds the walk; DESIGN.md the rule.
    */
   readonly vocabulary?: Readonly<Record<string, PluginBlockSpec>>
+
+  /**
+   * How this plugin's blocks show in the block gallery, by block name.
+   *
+   * Only while the plugin is ACTIVE, like `vocabulary`. A block with no record
+   * still appears, under its identifier.
+   */
+  readonly gallery?: Readonly<Record<string, PluginGalleryEntry>>
 
   /**
    * Frontmatter `type:` values this plugin's own code dispatches on — e.g. a
