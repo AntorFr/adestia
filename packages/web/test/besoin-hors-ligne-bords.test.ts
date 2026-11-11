@@ -48,18 +48,44 @@ describe.skipIf(!playwright)('B-19 · bords du bandeau « le serveur ne répond 
   it.each([502, 503, 504])('un %i sur un appel /api/ alors que la sonde échoue : le bandeau apparaît ; la sonde repasse : il part seul', async (status) => {
     const { context, page } = await ready()
     try {
-      await page.route('**/api/health', async (r) => asRoute(r).abort('failed'))
-      let answered = false
-      await page.route('**/api/instructions', async (r) => {
-        answered = true
-        await asRoute(r).fulfill({ status, contentType: 'text/plain', body: 'gateway' })
+      // The link is down for the whole page but the one call under test: no other /api/ call may
+      // answer in between (an answer clears the banner and retires the probe loop).
+      let failedProbes = 0
+      let sawProbeFail!: () => void
+      const probeFailed = new Promise<void>((resolve) => { sawProbeFail = resolve })
+      let sawGateway!: () => void
+      const gatewayAnswered = new Promise<void>((resolve) => { sawGateway = resolve })
+      await page.route('**/api/**', async (r) => {
+        const url = asRoute(r).request().url()
+        if (url.endsWith('/api/health')) {
+          await asRoute(r).abort('failed')
+          failedProbes += 1
+          sawProbeFail()
+        } else if (url.endsWith('/api/instructions')) {
+          await asRoute(r).fulfill({ status, contentType: 'text/plain', body: 'gateway' })
+          sawGateway()
+        } else {
+          await asRoute(r).abort('failed')
+        }
       })
       await page.evaluate(() => (location.hash = '/settings/instructions'))
-      expect(await until(page, (n) => n === 1, 10_000)).toBe(1)
-      expect(answered).toBe(true)
-      await unroute(page, '**/api/health')
-      await unroute(page, '**/api/instructions')
-      expect(await until(page, (n) => n === 0, 8_000)).toBe(0)
+      // Signals, not seconds: the simulated request went out, and the probe it started failed.
+      await gatewayAnswered
+      await probeFailed
+      expect(failedProbes).toBeGreaterThan(0)
+      await page.waitForFunction(
+        (w: string) => [...document.querySelectorAll('[role="status"]')].filter((e) => (e.textContent ?? '').includes(w)).length === 1,
+        WORDS,
+        { timeout: 60_000 },
+      )
+      expect(await shown(page)).toBe(1)
+      await unroute(page, '**/api/**')
+      await page.waitForFunction(
+        (w: string) => [...document.querySelectorAll('[role="status"]')].filter((e) => (e.textContent ?? '').includes(w)).length === 0,
+        WORDS,
+        { timeout: 60_000 },
+      )
+      expect(await shown(page)).toBe(0)
     } finally {
       await context.close()
     }
