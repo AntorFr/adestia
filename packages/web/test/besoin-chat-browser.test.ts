@@ -491,17 +491,28 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         await say(page, 'outil')
         await page.locator('.adestia-trace__toggle').first().waitFor({ timeout: 15_000 })
         const titles = () => page.locator('.adestia-tab__title').allInnerTexts()
-        expect(await titles()).toEqual(['fini', 'outil'])
-        await page.locator('.adestia-tab').nth(1).dragTo(page.locator('.adestia-tab').nth(0))
-        await page.waitForTimeout(500)
-        expect(await titles()).toEqual(['outil', 'fini'])
-        const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('adestia.tabs') ?? '{}').open.length)
-        expect(stored).toBe(2)
+        const stored = () =>
+          page.evaluate(() => JSON.parse(localStorage.getItem('adestia.tabs') ?? '{}').open?.length ?? 0)
+        await expect.poll(titles, { message: 'les deux onglets ne sont pas ouverts', timeout: 15_000 }).toEqual(['fini', 'outil'])
+        await expect.poll(stored, { message: 'adestia.tabs ne garde pas les deux onglets', timeout: 15_000 }).toBe(2)
+        // the native drag is replayed only while the order has not followed it
+        await expect
+          .poll(
+            async () => {
+              const now = await titles()
+              if (now.join() === 'fini,outil') {
+                await page.locator('.adestia-tab').nth(1).dragTo(page.locator('.adestia-tab').nth(0))
+              }
+              return titles()
+            },
+            { message: "l'ordre n'a pas suivi le glisser", timeout: 15_000, intervals: [250, 500, 1000] },
+          )
+          .toEqual(['outil', 'fini'])
+        expect(await stored()).toBe(2)
         const close = page.getByRole('button', { name: /^Close tab/ }).first()
         expect(await close.locator('use').getAttribute('href')).toBe('#adestia-i-x')
         await close.click()
-        await page.waitForTimeout(500)
-        expect(await titles()).toEqual(['fini'])
+        await expect.poll(titles, { message: "l'onglet n'est pas fermé", timeout: 15_000 }).toEqual(['fini'])
         // closed, not archived: the conversation is still in the list
         await page.getByRole('button', { name: 'Conversations', exact: true }).click()
         await page.locator('.adestia-conversations__item', { hasText: 'outil' }).first().waitFor()
