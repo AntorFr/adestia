@@ -135,6 +135,16 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             await page.getByRole('button', { name: w.edit, exact: true }).click()
             // the editor is mounted and holds the page text: the signal that a click lands on the real paragraph
             await page.waitForFunction(() => [...document.querySelectorAll('.ProseMirror')].some((e) => (e.textContent ?? '').includes('Corps.')), null, { timeout: 45_000 })
+            // saves the page makes while it is being typed into (the autosave of the intermediate text): counted from
+            // before the first keystroke, so Enter is not pressed while one is in flight — its answer would rebase the
+            // editor under the block just picked and the refusal would never leave
+            const puts: string[] = []
+            let inFlight = 0
+            const isSave = (r: any) => r.method() === 'PUT' && r.url().includes(`/api/pages/refus-${i}`)
+            page.on('request', (r: any) => { if (isSave(r)) inFlight++ })
+            page.on('requestfinished', (r: any) => { if (isSave(r)) inFlight-- })
+            page.on('requestfailed', (r: any) => { if (isSave(r)) inFlight-- })
+            page.on('response', (r: any) => { if (isSave(r.request())) puts.push(String(r.status())) })
             await page.locator('.ProseMirror').last().getByText('Corps.').click()
             await page.keyboard.press('End')
             await page.keyboard.press('Enter')
@@ -147,10 +157,11 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               return !!menu && menu.dataset.show === 'true' && /callout/.test(menu.innerText) && !/Heading/.test(menu.innerText)
             }, null, { timeout: 30_000 })
             // the save answer is awaited by name, armed BEFORE the keystroke that triggers it (as `indexAnswered` is); it must be the REFUSAL (422), not an autosave of the text typed so far
-            const puts: string[] = []
-            page.on('response', (r: any) => {
-              if (r.request().method() === 'PUT' && r.url().includes(`/api/pages/refus-${i}`)) puts.push(String(r.status()))
-            })
+            // no save in flight: the signal that the editor is at rest and Enter lands on the menu alone
+            for (const start = Date.now(); inFlight > 0; ) {
+              if (Date.now() - start > 30_000) throw new Error(`an autosave never answered before the block was picked (saves seen: [${puts.join(',')}])`)
+              await page.waitForTimeout(50)
+            }
             const saveAnswered = page
               .waitForResponse((r: any) => r.request().method() === 'PUT' && r.url().includes(`/api/pages/refus-${i}`) && r.status() === 422, { timeout: 45_000 })
               .catch(() => null)
