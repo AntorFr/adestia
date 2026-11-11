@@ -18,6 +18,22 @@
   déployée le 15/10 sans détail par instance déployée. Cela ne prouve pas leur version actuelle.
 - Histoire et décisions des chantiers clos : [CHANGELOG.md](../CHANGELOG.md).
 
+## Étape vitest rouge de `epic/adestia-pages` à 28e089c9 (`rouge-adestia-pages-2`)
+
+Source : `resultats.xml` du pod `sdlc-adestia-pages-deplacer-mouvement-review-1` (écrit à 17:36:53, fin de la mesure à 17:36:55) et
+liste des instables de la mesure `28e089c9`. L'étape `vitest` y est en échec (« step vitest failed ») ; le rapport ne contient
+qu'un seul test en échec, les deux autres viennent de la mesure. Tous sont pris ailleurs, aucun code ni test n'est changé ici :
+
+| Test | Classe | Sort |
+|---|---|---|
+| `besoin-hors-ligne-bords.test.ts` > B-19 … un 502 sur un appel /api/ alors que la sonde échoue : le bandeau apparaît ; la sonde repasse : il part seul | instable sous charge (`expected +0 to be 1`) | `rouge-adestia-pages-1-bandeau-502` |
+| `besoin-pages-ensemble-browser.test.ts` > … alfred / fr > `sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur` | instable sous charge | `rouge-adestia-pages-1-refus-sauvegarde` |
+| même fichier > … dobby / fr > même test | instable sous charge | `rouge-adestia-pages-1-refus-sauvegarde` |
+
+Aucune cause hors tests (config vitest, mémoire, délai) n'apparaît dans le rapport. La mesure de `810fa3cc` (tête actuelle de l'epic) ne
+montre aucun rouge ni instable. Les dix rejeux de `npx vitest run` n'ont pas été joués : les rapports ne sont pas perdus et un
+passage dure ~25 min. L'étape se juge au rejeu de la suite de l'epic une fois `rouge-adestia-pages-1` livrée.
+
 ## Défauts connus
 
 La liste de référence est dans [ARCHITECTURE.md](../ARCHITECTURE.md), section
