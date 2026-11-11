@@ -309,7 +309,36 @@ h2.adestia-editor__title { padding-bottom: 3px; }
 }
 .adestia-edblock__name { margin-right: var(--space-1); overflow-wrap: anywhere; }
 .adestia-edblock__bar .adestia-btn { font-size: var(--text-xs); }
-.adestia-edblock__bar .adestia-edblock__grip { cursor: grab; }
+.adestia-edblock__bar .adestia-edblock__grip {
+  cursor: grab;
+  /* A 400 ms press then a drag: the finger must neither scroll nor select text. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.adestia-edblock__bar .adestia-btn:disabled { opacity: 0.4; cursor: default; }
+.adestia-edblock__down svg { transform: rotate(180deg); } /* the charte list has one arrow */
+.adestia-edblock__up[hidden], .adestia-edblock__down[hidden] { display: none; }
+
+/* The live region: where the block went, or why it did not. */
+.adestia-movenote {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-4);
+  transform: translateX(-50%);
+  z-index: 1001;
+  max-width: calc(100vw - var(--space-4));
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
+  font-size: var(--text-xs);
+  pointer-events: none;
+}
+.adestia-movenote[hidden] { display: none; }
 .adestia-edblock__bar .adestia-edblock__remove:hover:not(:disabled) { color: var(--danger-text); }
 
 /* Dragging a block: the block itself fades, a line says where it will land. */
