@@ -133,6 +133,11 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             const { context, page } = await visit(browser, instance.url, locale, theme, 'desk', `/page/refus-${i}`)
             await indexLoaded(page)
             await page.getByRole('button', { name: w.edit, exact: true }).click()
+            // armed BEFORE the typing that triggers the save: the answer to the PUT that carries the empty callout is the first signal
+            // (an earlier autosave, mid-typing, answers 'Saved' and is not the refusal)
+            const saveAnswered = page
+              .waitForResponse((r: any) => r.request().method() === 'PUT' && /:::callout/.test(r.request().postData() ?? '') && new RegExp(`/api/pages/refus-${i}(\\.md)?(\\?.*)?$`).test(r.url()), { timeout: 60_000 })
+              .catch(() => null)
             // the editor is mounted and holds the page text: the signal that a click lands on the real paragraph
             await page.waitForFunction(() => [...document.querySelectorAll('.ProseMirror')].some((e) => (e.textContent ?? '').includes('Corps.')), null, { timeout: 45_000 })
             await page.locator('.ProseMirror').last().getByText('Corps.').click()
@@ -147,14 +152,16 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               return !!menu && menu.dataset.show === 'true' && /callout/.test(menu.innerText) && !/Heading/.test(menu.innerText)
             }, null, { timeout: 30_000 })
             await page.keyboard.press('Enter') // an empty :::callout, which the vocabulary refuses at save
-            // the proof the save was answered: the status carries the refusal
+            // first signal: the save left and the server answered it
+            expect(await saveAnswered, 'the save never left: no PUT answered').not.toBeNull()
+            // second signal: the status carries the refusal
             const flat = () => page.evaluate(() => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' '))
             const want = NEEDS_CONTENT[locale].saved
             await page
-              .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 60_000 })
+              .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 15_000 })
               .catch(async (error: unknown) => {
                 await shot(page, `refus-ECHEC-${skin}-${locale}-${theme}`)
-                throw new Error(`${String(error)}\nstatus read: ${(await flat()).slice(-400)}`)
+                throw new Error(`the answer came without the status text: ${String(error)}\nstatus read: ${(await flat()).slice(-400)}`)
               })
             const other = locale === 'fr' ? NEEDS_CONTENT.en.saved : NEEDS_CONTENT.fr.saved
             expect(await flat(), `${theme}`).not.toContain(other)

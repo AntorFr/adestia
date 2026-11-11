@@ -758,3 +758,11 @@ branch and that `test:plugins` is replayed after a red vitest run.
   checks that status before building the image of a `v*` tag and fails closed without it.
   `CLAUDE.md`, `docs/parcours.md` and `ARCHITECTURE.md` (AD-preuve-1) describe the new proof.
   Nothing changes for users.
+
+## v0.97.7
+
+- **The refused-save page-editor test waits for the save that carries the empty callout** —
+  in `packages/web/test/besoin-pages-ensemble-browser.test.ts`, the test that checks the
+  diagnostic of a refused save now arms its wait for the PUT carrying the empty `:::callout`
+  before typing, instead of accepting any earlier autosave that answers "Saved", so it no
+  longer times out during the full `npm test`. A test-only fix: nothing changes for users.
