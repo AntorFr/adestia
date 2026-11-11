@@ -777,6 +777,15 @@ branch and that `test:plugins` is replayed after a red vitest run.
 
 ## v0.97.9
 
+- **The "server not answering" banner test waits for its signals with wide failure budgets** —
+  in `packages/web/test/besoin-hors-ligne-browser.test.ts`, the B-19 test where every `/api/`
+  call and the `/api/health` probe fail now allows 30 s each for the banner to show, for two
+  probes to be counted and for the banner to leave on its own, and re-provokes a failed call
+  while the banner is absent, instead of 8 to 10 s windows that broke on a busy machine. The
+  three proofs are kept. A test-only fix: nothing changes for users.
+
+## v0.97.10
+
 - **The chat rail tabs and list-icon tests now wait for states instead of fixed pauses** — the
   P-2 test that opens conversations as tabs on a desk, closes one without archiving it and
   reorders by drag waits for the tab count, the drag result and the closed tab (`expect.poll`)
