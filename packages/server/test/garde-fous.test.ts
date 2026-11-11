@@ -7,8 +7,8 @@ const root = fileURLToPath(new URL('../../../', import.meta.url))
 const read = (p: string) => readFileSync(root + p, 'utf8')
 
 describe('garde-fous du serveur', () => {
-  it('le lint tourne en CI', () => {
-    expect(read('.github/workflows/ci.yml')).toMatch(/run:\s*npm run lint/)
+  it('le lint tourne dans la suite attestée', () => {
+    expect(read('scripts/suite-attestee.sh')).toMatch(/^step lint npm run lint\s*$/m)
   })
 
   it('eslint.config.js ne promet plus de règle typée', () => {

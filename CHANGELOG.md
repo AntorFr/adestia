@@ -748,3 +748,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   `packages/web/test/besoin-pages-ensemble-browser.test.ts` the CRLF properties popover
   test also waits for the mounted editor and reopens the gear until the popover shows, so
   neither flakes during the full `npm test`. A test-only fix: nothing changes for users.
+
+## v0.97.6
+
+- **Test proof is now the chain's attestation, no longer a suite run on GitHub Actions** —
+  the repository declares its suite in `.sdlc.yaml` (`tests:`, `scripts/suite-attestee.sh`,
+  JUnit report, 100 min ceiling) and a head is proved by `attester --publier`, which posts
+  the `tests-complets` status. The `ci.yml` workflow is removed; `docker-publish.yml` now
+  checks that status before building the image of a `v*` tag and fails closed without it.
+  `CLAUDE.md`, `docs/parcours.md` and `ARCHITECTURE.md` (AD-preuve-1) describe the new proof.
+  Nothing changes for users.
