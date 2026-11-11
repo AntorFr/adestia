@@ -766,3 +766,11 @@ branch and that `test:plugins` is replayed after a red vitest run.
   diagnostic of a refused save now arms its wait for the PUT carrying the empty `:::callout`
   before typing, instead of accepting any earlier autosave that answers "Saved", so it no
   longer times out during the full `npm test`. A test-only fix: nothing changes for users.
+
+## v0.97.8
+
+- **Five load-sensitive tests now hold their timeout on a busy machine** — the chat rail
+  archive test (P-2), the E-10 MCP servers and E-19 problems band tests, the "page that will
+  not load" test and the R-6 exports table test each get an explicit, wider timeout instead of
+  the 5 s vitest default, and the rail test waits for the entry count itself instead of a fixed
+  800 ms pause. No assertion is removed. A test-only fix: nothing changes for users.
