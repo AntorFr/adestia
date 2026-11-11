@@ -783,3 +783,12 @@ branch and that `test:plugins` is replayed after a red vitest run.
   probes to be counted and for the banner to leave on its own, and re-provokes a failed call
   while the banner is absent, instead of 8 to 10 s windows that broke on a busy machine. The
   three proofs are kept. A test-only fix: nothing changes for users.
+
+## v0.97.10
+
+- **The chat rail tabs and list-icon tests now wait for states instead of fixed pauses** — the
+  P-2 test that opens conversations as tabs on a desk, closes one without archiving it and
+  reorders by drag waits for the tab count, the drag result and the closed tab (`expect.poll`)
+  instead of `waitForTimeout(500)`, and the list-icon test does the same for its two former
+  fixed delays, so neither turns red under the load of the full suite. No assertion is
+  removed. A test-only fix: nothing changes for users.
