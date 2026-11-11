@@ -8,14 +8,20 @@
  * selection the view still holds while the sheet has the focus.
  */
 
-import { editorViewCtx } from '@milkdown/kit/core'
+import { editorViewCtx, parserCtx } from '@milkdown/kit/core'
 import type { Editor } from '@milkdown/kit/core'
+import { shapesOf } from '@antorfr/adestia-content'
 import { NodeSelection } from '@milkdown/kit/prose/state'
 
 import { insertionPoint } from './insertionPoint.js'
 import { movableSlots } from './moveBlock.js'
 import { seed } from './slash.js'
 import { editorBlocks, pmId } from './vocabulary.js'
+
+const DEFAULT_BODY: Record<string, string> = {
+  figures: '- Label: 0',
+  table: '| A | B |\n| --- | --- |\n| 1 | 2 |',
+}
 
 type Insert = (name: string) => boolean
 const surfaces = new WeakMap<HTMLElement, Insert>()
@@ -32,7 +38,17 @@ export function registerSurface(host: HTMLElement, editor: Editor): () => void {
     const view = ctx.get(editorViewCtx)
     const spec = editorBlocks().find((one) => one.name === name)
     const type = view.state.schema.nodes[pmId(name)]
-    const node = spec && type ? type.createAndFill({ attributes: seed(spec) }) : null
+    const attrs = { attributes: seed(spec ?? { name, attributes: {} } as never) }
+    // A block that holds flow must not be saved empty (the page would be refused),
+    // so it lands with the body its default values give it.
+    const body = spec && shapesOf(name).has('flow') ? (DEFAULT_BODY[name] ?? 'Text') : null
+    let node = null
+    if (spec && type && body) {
+      try {
+        node = type.createAndFill(attrs, ctx.get(parserCtx)(body).content)
+      } catch { node = null }
+    }
+    if (spec && type && !node) node = type.createAndFill(attrs)
     if (!node) return false
     const { doc, selection } = view.state
     const point = placed

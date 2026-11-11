@@ -597,7 +597,7 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
 .adestia-blockcard:hover, .adestia-blockcard--active { border-color: var(--accent); }
 .adestia-blockcard:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .adestia-blockcard__image { width: 100%; height: 64px; object-fit: contain; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
-.adestia-blockcard__name, .adestia-blockcard__line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adestia-blockcard__name, .adestia-blockcard__line { overflow-wrap: anywhere; }
 .adestia-blockcard__name { font-weight: 600; font-size: var(--text-sm); }
 .adestia-blockcard__line { font-size: var(--text-xs); color: var(--text-muted); }
 .adestia-blockgallery__empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); padding: var(--space-5) var(--space-3); text-align: center; }
