@@ -143,6 +143,8 @@ columns are the same except where the instance's configuration decides what exis
 | E-2 | open tiles, arrange, ask | same | writes the brief, the pages behind tiles | — |
 | E-3 | browse, search, facet | same | creates/moves pages (cards appear live) | — |
 | E-4, E-5, E-6 | read, edit, save | same | edits the same files; a concurrent edit gives the conflict state; an agent write refreshes the reading page and raises the banner in editing (`adestia-ajouts`, B-17) | — |
+| E-34, E-35 | use, wherever the page can be written (hidden otherwise, as the edit button) | same | an agent write raises the same banner (B-17) | — |
+| E-36 | use where the folder can be written; the button is not shown otherwise | same | creates the file the agent would otherwise create | — |
 | E-7 | add a member, open | same | writes members | — |
 | E-8 | follow the folder link (Home for a root page; this link is never hidden) | same; a 401/403 shows the screen with the lock, the page itself is refused | a mistyped address it gave lands here; so does a page the agent deleted or moved while open (`adestia-ajouts`) | — |
 | E-9 | open tiles | same | — | its delegations are counted |
