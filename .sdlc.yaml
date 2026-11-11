@@ -4,3 +4,11 @@
 deploiement:
   images: [ghcr.io/antorfr/adestia]
   applis: [alfred, dobby, nestor]
+
+# tests: the suite this repository has attested (`attester --publier`, rule R15).
+# GitHub Actions plays no suite; the forge only checks the `tests-complets` status.
+tests:
+  commande: scripts/suite-attestee.sh
+  rapport: resultats.xml
+  format: junit
+  delai: 100m
