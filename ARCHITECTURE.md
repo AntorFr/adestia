@@ -211,7 +211,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). CI (`.github/workflows/ci.yml`) runs typecheck, lint, tests, the build, a start of the built server and a docker image build.
+  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). No workflow plays the suite: `scripts/suite-attestee.sh` (typecheck, lint, tests, the build and a start of the built server), declared by `tests:` in `.sdlc.yaml`, is played by `attester --publier`, which sets the `tests-complets` status (AD-preuve-1).
 
 ## Decisions of adestia-qualite
 
@@ -374,7 +374,7 @@ regression test `bench/tests/doc-besoin.test.mjs` checks relative Markdown link 
 (excluding package tests, nested spike documents and skills) and collects `var(--x` uses in CSS
 under `packages/web/src` and `plugins/*/web`, subtracts definitions in CSS, skins and
 scripts, and reports any remainder. Run it with
-`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5 (B-5: the last CHANGELOG title is the latest git tag or the next version of the same series, `status.md` cites that title, and no existing tag lacks its entry — only tags merged into HEAD (`git tag --list 'v*' --merged HEAD`) count, so the tags of an epic not yet merged do not turn `main` red; the rule is the pure `checkVersions` of `bench/tests/lib/doc-version.mjs`, pinned by `doc-version.test.mjs`, and the CI checkout fetches tags). Skin declarations
+`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5 (B-5: the last CHANGELOG title is the latest git tag or the next version of the same series, `status.md` cites that title, and no existing tag lacks its entry — only tags merged into HEAD (`git tag --list 'v*' --merged HEAD`) count, so the tags of an epic not yet merged do not turn `main` red; the rule is the pure `checkVersions` of `bench/tests/lib/doc-version.mjs`, pinned by `doc-version.test.mjs`, and `scripts/suite-attestee.sh` fetches tags when the clean checkout has none). Skin declarations
 and JS/TSX inline parameters count as definitions outside those stylesheets;
 this does not mean the CSS-only difference is empty.
 
@@ -650,11 +650,11 @@ written first, red until the removal, then green). Inventory taken on `epic/ades
   fails when an option is destructured that no seed in `bench/seed/` and no scenario passes. (The bench is
   `.mjs`, outside the typecheck: the criterion's "typecheck fails" is held by this test instead, same
   strength, which also covers the case of an option read by nothing.)
-- **`doc-besoin.test.mjs` in CI.** `.github/workflows` gains a step `node --test bench/tests/doc-besoin.test.mjs
+- **`doc-besoin.test.mjs` in the suite.** (Originally a `ci.yml` step, now played by `scripts/suite-attestee.sh`, AD-preuve-2.) The suite plays `node --test bench/tests/doc-besoin.test.mjs
   bench/tests/bench-once.test.mjs` (neither needs a browser). The two tests that guard `DESIGN.md` twice
   (`design-doc.test.ts` and `doc-besoin.test.mjs`) keep the `doc-besoin` pair, which also checks headings;
   `design-doc.test.ts` goes if nothing else is in it. A vitest test (`packages/server/test/ci-workflow.test.ts`, run by `npm test`, so not by the step it guards) reads
-  the workflow file and fails if the step is absent.
+  the workflow file and fails if the step is absent. (Since AD-preuve-2 the step is a line of `scripts/suite-attestee.sh`, which that test reads.)
 - **Typed lint.** `eslint.config.js` adds `no-floating-promises`, `no-misused-promises` and `await-thenable`
   for `packages/**` and `plugins/**` through the project service, and its header comment ("No rule uses type
   information") is rewritten. The threshold, per rule: if it reports 15 findings or fewer, they are fixed
@@ -1221,6 +1221,72 @@ A codec reads the block's lines into `rows` and `kept` (a line it cannot read, w
 ### AD-forms-3 — Apply is one document change
 **Apply** and each variant or width choice in E-6 go through the same `setBlock` change `BlockSettings` uses today: one transaction, one undo step, written by the editor's normal save. The form holds its state in the sheet until Apply; E-6 writes at once. No server route is added.
 
+## Decisions of adestia-preuve-tests
+
+The proof that a commit is green is its attestation (rule R15 of the SDLC chain): the commit
+status `tests-complets`, set by `attester --publier` after playing the whole suite this
+repository declares. GitHub Actions plays no suite. This section records how Adestia declares
+it; behaviour of the product does not change.
+
+### AD-preuve-1 — The suite is one script, declared in `.sdlc.yaml`
+
+`.sdlc.yaml` gains `tests:` (`commande: scripts/suite-attestee.sh`, `rapport: resultats.xml`,
+`format: junit`, `delai: 100m`, raised from a first guess of 45m once the first attested runs measured the
+full suite). The script is what `ci.yml` used to play, from a clean checkout with its own
+`HOME` and no secret: `npm ci`, typecheck, lint, the server and web builds (before the tests: the browser suites
+drive the built server and shell, whereas `ci.yml` built last), `npm test` (vitest, then the
+plugins' `node --test`), `node --test bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs`,
+and a boot of the built server answered by `/api/health`. It writes
+ONE JUnit report: every vitest and `node --test` case under its own name, and the install,
+typecheck, lint, build and boot steps as cases of their own (the pattern WebPoule's
+`scripts/suite-attestee.sh` already uses), so a skipped or red step is named. Playwright is
+part of the pod image: the catalogue screens suite must run, not skip, because `attester` turns
+a skipped test red. A red already in the suite is named in the report, not fixed here.
+*Rejected:* a `tests:attestes` npm script (the boot step needs a background process and a
+merged report, which is a script, not a one-liner); keeping `ci.yml` as a second definition of
+the suite (two truths of green, which the contract forbids).
+
+### AD-preuve-2 — `ci.yml` is removed, and the guards that read it follow the script
+
+Removed, not reduced to `workflow_dispatch`: a manual workflow would be a second copy of the
+suite. Its `image` job (a `docker build` on every PR) goes too; the image is built, and its
+Dockerfile proven, on the tag (AD-preuve-3). Four tests read `ci.yml` to prove the gate is
+there; they keep what they guard and point at `scripts/suite-attestee.sh`:
+`packages/server/test/ci-workflow.test.ts` (documentation and bench-once guards are played;
+the version guard reads tags; whether `attester`'s clean extraction carries them is not
+assumed: the first `attester` run settles it, and if they are absent the script fetches them
+(`git fetch --tags`) before the suite — the guard is not touched),
+`garde-fous.test.ts` and `qualite-serveur-besoin.test.ts` (lint is played),
+`bench/tests/dette-ensemble.test.mjs` (the documentation guard is played). This changes what
+four assertions read, not what they guard: a regex that matched `run: npm run lint` or a
+`node --test` line of the workflow matches the script's command line instead, and the one on
+the checkout's `fetch-depth: 0` goes with the checkout (the script's tag fetch above takes its
+place, with no new assertion); any other edit to a test is out.
+*Rejected:* leaving them and keeping a stub `ci.yml` only to satisfy them.
+
+### AD-preuve-3 — The image is built on a `v*` tag only, after the attestation is checked
+
+`docker-publish.yml` loses `push: branches: [main]` and `pull_request`, and the
+`type=ref,event=branch` tag (`:main`). It keeps `tags: ['v*']` and `workflow_dispatch`. A first
+job `attestation` (`permissions: statuses: read`, checkout with `fetch-depth: 2`) runs the
+contract's loop: `tests-complets` `success` on the tagged commit or on a parent of the same
+tree, else it fails naming `attester --publier`; `build` needs it. Nothing pulls an image from
+`main`: the chain deploys by tag, and `k8s-home-lab` pins `0.95.0` for alfred, dobby, nestor and
+skippy (checked on its `main`); `docker-compose.yml` names `:latest` only in a comment. The
+`sha-` tag stays (a tag build is by definition on a commit). `ecart:` is not declared: Adestia
+refuses nothing on a stable tag today.
+
+### AD-preuve-4 — `main` requires `tests-complets`; `CLAUDE.md` says the rule
+
+The repository is public, so a ruleset on `main` requires the check `tests-complets`. Setting a
+repository ruleset is an act on the forge, done once the first attestation of `main`'s head
+exists (otherwise the ruleset blocks its own proof): once the declaring task is in `main`, the
+ruleset task plays `attester --publier` on `origin/main`'s head, and only then sets the rule;
+its report names that commit and the ruleset id, and if the token cannot, it is a `Constat` for Monsieur, not a workaround. `CLAUDE.md`
+(Code and commands) states that no workflow plays the suite, that green is `attester --publier`
+on a pushed head that contains `origin/main`, and replaces its mentions of CI; `docs/parcours.md`
+P-15 step 2 and the Tests line of *Cross-cutting* follow.
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
@@ -1346,7 +1412,7 @@ rules. The server outcomes above are filled.
   (`caughtErrors: 'none'`, so an ignored caught error is allowed). Two type-aware rules
   have since been turned on, `no-misused-promises` and `await-thenable`; `no-floating-promises`
   stays off because it fires on deliberate fire-and-forget calls (644 sites), and is named
-  under Known defects. `npm run lint` joins the CI job beside `typecheck` and `test`.
+  under Known defects. `npm run lint` joins the attested suite (`scripts/suite-attestee.sh`) beside `typecheck` and `test`.
 - **R-13, a real file.** The Copilot shell-tool CLI becomes a real `.mjs` file beside the driver;
   the driver writes the same bytes it writes today, found whether it runs from `src/` (tests) or
   from `dist/` (the image). The program is linted with the rest.
