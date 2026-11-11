@@ -792,3 +792,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   instead of `waitForTimeout(500)`, and the list-icon test does the same for its two former
   fixed delays, so neither turns red under the load of the full suite. No assertion is
   removed. A test-only fix: nothing changes for users.
+
+## v0.97.11
+
+- **The pages "refused save" test now waits for each state before moving on** — the
+  `sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur` test presses Enter
+  on the "/" menu only once no save is in flight, waits for the callout block to enter the
+  editor (reopening the menu up to three times if an autosave closed it), then waits for the
+  PUT that carries the `:::callout`, so it no longer turns red under the load of the full
+  suite. Five distinct timeouts name what never happened. No assertion is removed. A
+  test-only fix: nothing changes for users.
