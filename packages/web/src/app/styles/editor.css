@@ -321,6 +321,11 @@ h2.adestia-editor__title { padding-bottom: 3px; }
 .adestia-edblock__down svg { transform: rotate(180deg); } /* the charte list has one arrow */
 .adestia-edblock__up[hidden], .adestia-edblock__down[hidden] { display: none; }
 
+/* The phone: a finger needs 44 px on the move controls (E-4). */
+@media (max-width: 820px) {
+  .adestia-edblock__bar .adestia-btn--icon.adestia-btn--sm { width: 44px; height: 44px; min-width: 44px; }
+}
+
 /* The live region: where the block went, or why it did not. */
 .adestia-movenote {
   position: fixed;

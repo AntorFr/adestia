@@ -336,7 +336,7 @@ export function Editor(props: EditorProps) {
           heading opens it. Three of the same words is two too many. */}
       <header className="adestia-editor__header">
         <div className="adestia-editor__actions">
-          <SaveStatus state={status} t={t} />
+          <SaveStatus state={status} t={t} onRetry={() => void save()} />
           {page.editable && !editing && (
             <Button
               variant="ghost"
