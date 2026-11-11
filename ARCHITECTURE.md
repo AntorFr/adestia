@@ -1210,6 +1210,24 @@ A new `:::` name is kept for a different thing (a different data shape), per the
 A template is a markdown file in the core's or a plugin's `templates/`, with a `template:` frontmatter key holding `name`, `image` and `description` (declared in `docs/donnees.md`); "New from template" (E-36) copies the body and the page's own frontmatter (`type`, `title` from the user's name) and drops the `template:` key, so a created page carries no trace of it. No template entity, no user templates (out of scope). The core's and plugins' templates and block specs reach the shell through the plugin manifest (`gallery`, `templates`, `packages/schemas`; `blocks` stays the rendering module's path), not a new route (`docs/donnees.md`). `project-management`
 ships "Project status".
 
+### AD-deplacer-1 — `moveBlock` is a pure function of the page tree, and every entry point reads its result
+`packages/web/src/editor/moveBlock.ts` exports `moveBlock(doc, from, toParent, toIndex)` returning `{ok: true, from, to, total}`
+or `{ok: false, reason}` (`depth` is the only reason tranche 3 adds; at page level a move is refused only when `from` or `to` is out of range).
+`blockview.tsx startDrag`, the **Move up / Move down** buttons, `Alt+↑/↓` and the touch long-press all call it and nothing else; the
+drop line, the live region ("Moved to position 3 of 7", localised) and the refusal line are drawn from the result. Tranche 1 only ever
+passes the page root as `toParent`. Touch: a 400 ms press on the grip starts the same drag as the pointer; the buttons stay the
+non-drag path on a phone. *Rejected*: a keyboard-only path (AD-34 already rejects it). *Reversed if* the long press collides with the
+phone's text selection on the bench — then the buttons are the touch path and the press is dropped, which does not touch B-23's promise.
+
+### AD-deplacer-2 — The gallery lists a table, not the editor's menu
+`editor/gallery.ts` merges the core table (name, line, image, group per block, in `en`/`fr`) with the `gallery` records of the manifests
+of **enabled** plugins only (the loader already reads only those: a disabled plugin has no record to list). The `/` menu
+(`slash.ts`) keeps its list and gains "Browse" as its last item; both insert through the one position model: after the focused block, end of
+the page when none, end of the container when the focus is a container (tranche 3). `packages/schemas/src/plugin.ts` validates `gallery`
+(`name`, `line`, `image`, `group`; `fields` and `view` optional and not read yet), and a plugin block with no record shows its identifier.
+The gallery is a sheet (`.adestia-sheet*`, bottom sheet on a phone) like the other sheets of the shell; no new component family.
+*Rejected*: deriving the cards from the `/` menu labels (no image, no line, no group).
+
 *Reversed if* (AD-34 to AD-36): AD-34 and AD-35 not expected; AD-36 only if Monsieur's choice on the mockup `etat-projet` (blocks A, B, C, B-29) needs a seed shape the frontmatter cannot carry — settled in the design of tranche 4.
 
 ## Refactoring targets
