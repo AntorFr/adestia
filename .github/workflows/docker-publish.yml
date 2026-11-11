@@ -2,30 +2,54 @@
 #
 # Tagging contract (the homelab convention, Renovate-friendly):
 #   git tag vX.Y.Z  ->  ghcr.io/antorfr/adestia:X.Y.Z (+ :X.Y :X)
-#   push on main    ->  :main (dev image)
-#   pull request    ->  build only, no push
+#   manual dispatch ->  the same build, on the ref it is run on
+#
+# No branch push and no pull request builds anything: the proof that a commit is
+# green is its `tests-complets` status (`attester --publier`), checked by the
+# `attestation` job before the image is built.
 #
 # Multi-arch on stable release tags only; everything else builds amd64 alone.
 name: docker-publish
 
 on:
   push:
-    branches: [main]
     tags: ['v*']
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
+  statuses: read
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  attestation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      # tests-complets green on this commit, or on a parent of the same tree
+      # (a merge commit has the content of the attested head).
+      - name: Check the tests-complets attestation
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          arbre=$(git rev-parse 'HEAD^{tree}')
+          for c in $(git rev-list --parents -n 1 HEAD); do
+            [ "$(git rev-parse "$c^{tree}")" = "$arbre" ] || continue
+            st=$(gh api "repos/$GITHUB_REPOSITORY/commits/$c/status" \
+              --jq '.statuses[] | select(.context == "tests-complets") | .state + " " + .description' | head -1)
+            [ "${st%% *}" = success ] && { echo "Attestation sur $c : ${st#* }"; exit 0; }
+          done
+          echo "::error::Pas d'attestation tests-complets sur ce contenu : attester --publier, puis relancer."
+          exit 1
+
   build:
+    needs: attestation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -34,7 +58,6 @@ jobs:
       - uses: docker/setup-buildx-action@v3
 
       - name: Login GHCR
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -47,7 +70,6 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
@@ -67,7 +89,7 @@ jobs:
           platforms: >-
             ${{ (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-'))
                 && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
