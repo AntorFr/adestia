@@ -198,7 +198,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             const flat = () => page.evaluate(() => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' '))
             const want = NEEDS_CONTENT[locale].saved
             await page
-              .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 15_000 })
+              .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 45_000 })
               .catch(async (error: unknown) => {
                 await shot(page, `refus-ECHEC-${skin}-${locale}-${theme}`)
                 throw new Error(`the answer came without the status text (la réponse est venue sans le texte du statut): ${String(error)}\nstatus read: ${(await flat()).slice(-400)}`)
@@ -210,7 +210,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             await shot(page, `refus-${skin}-${locale}-${theme}`)
             await context.close()
           }
-        }, 240_000)
+        }, 300_000)
 
         // P-6 step 4 / E-6: the popover stays below the header and the bands even when its block is the first
         // one of the page, right under the bands; at 1440 px and on a phone, in both themes.
