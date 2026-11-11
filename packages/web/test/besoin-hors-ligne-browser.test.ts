@@ -413,7 +413,7 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
         // only within one stretch of the banner being up - the proof is that one loop keeps asking.
         const askedBy = Date.now() + SHOWN_BUDGET
         const probesBy = Date.now() + SHOWN_BUDGET + PROBES_BUDGET
-        let shown: string[] = []
+        let shown: Seen[] = []
         let seenUp = false
         let turn = 0
         while (Date.now() < probesBy) {
