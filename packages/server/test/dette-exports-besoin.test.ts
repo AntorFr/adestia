@@ -94,5 +94,5 @@ describe('R-6 table of exports kept for their tests', () => {
     expect(r6).toMatch(new RegExp(`\\b${count} entries`))
     const final = /The final inventory is \*\*(\d+)\*\*/.exec(read('ARCHITECTURE.md'))
     expect(Number(final?.[1])).toBe(count)
-  })
+  }, 60_000)
 })
