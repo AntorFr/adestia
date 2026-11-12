@@ -1236,11 +1236,10 @@ The gallery is a sheet (`.adestia-sheet*`, bottom sheet on a phone) like the oth
 Tranche 3 extends `moveBlock(from, toParent, toIndex)` (AD-34) with container parents; no second path. `from` and
 `toParent` are paths in the page tree (page → section → column). The depth rule of AD-32 is checked inside `moveBlock`, which
 rejects with `{ok:false, reason}` where `reason` is one of `depth` (a section into a section, a section or columns into a
-column), `bounds` (tranche 1; `range` in the code) or `none-next` (a `parent` refusal remains for a place that holds no blocks); the UI shows the translated reason in the live region and next to the drop line.
+column), `bounds` (tranche 1) or `none-next`; the UI shows the translated reason in the live region and next to the drop line.
 Keyboard: `Alt+←` moves the block out, to just after its container in the container's parent (from a column: after the `columns`
 block); `Alt+→` moves it into the container that immediately follows it (the first column of a `columns`, the start of a
-section); when nothing follows, or the next container would break the depth rule, it refuses with its reason. Move up / Move down at the first or last place of a column cross to the neighbouring column of the band (the phone's way between
-columns, which has no drag). Moving a
+section); when nothing follows, or the next container would break the depth rule, it refuses with its reason. Moving a
 container moves its content. A column emptied stays (a `columns` always keeps 2 or 3 `col`); an empty `col` is drawn with
 its "Drop here" lane in editing and nothing in reading. The gallery inserts **Section** and **Columns** (2 columns by
 default, a setting 2/3) at the tranche-1 insertion point; when the focus is a container the block goes at its end.
