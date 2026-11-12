@@ -1239,7 +1239,7 @@ The gallery is a sheet (`.adestia-sheet*`, bottom sheet on a phone) like the oth
 A codec reads the block's lines into `rows` and `kept` (a line it cannot read, with its index). Writing returns the lines with each kept line at its index and the rows around it, so a round trip of an unedited block is byte-identical and a hand-written line is never dropped. **Raw** edits the same lines directly. The round trip (`lines → rows → lines`) is tested per codec against fixtures written by hand in the format of before the epic.
 
 ### AD-forms-3 — Apply is one document change
-**Apply** and each variant or width choice in E-6 go through the same `setBlock` change `BlockSettings` uses today: one transaction, one undo step, written by the editor's normal save. The form holds its state in the sheet until Apply; E-6 writes at once. No server route is added.
+**Apply** and each variant or width choice in E-6 go through `blockview.tsx` (`write` for E-6, `applyLines` for the form): one transaction, one undo step, written by the editor's normal save. The form holds its state in the sheet until Apply; E-6 writes at once. No server route is added.
 
 ## Decisions of adestia-preuve-tests
 
