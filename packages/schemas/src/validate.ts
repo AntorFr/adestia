@@ -131,7 +131,7 @@ function galleryText(value: unknown): PluginGalleryText | undefined {
  * Never an error: a plugin written for a shell with more line formats must
  * still load on this one, and simply gets no form (AD-forms-1).
  */
-export function readGalleryFields(raw: unknown): PluginGalleryFields | undefined {
+function readGalleryFields(raw: unknown): PluginGalleryFields | undefined {
   if (!isObject(raw)) return undefined
   const line = (GALLERY_LINE_FORMATS as readonly unknown[]).find((one) => one === raw['line'])
   if (line === undefined) return undefined
@@ -160,7 +160,7 @@ export function readGalleryFields(raw: unknown): PluginGalleryFields | undefined
 }
 
 /** A `view` declaration as the shell may read it, or undefined. */
-export function readGalleryView(raw: unknown): PluginGalleryView | undefined {
+function readGalleryView(raw: unknown): PluginGalleryView | undefined {
   if (!isObject(raw) || !Array.isArray(raw['values'])) return undefined
   const values = raw['values'] as unknown[]
   if (values.length < 2 || !values.every((v) => typeof v === 'string' && /^[a-z][a-z0-9-]*$/.test(v))) return undefined

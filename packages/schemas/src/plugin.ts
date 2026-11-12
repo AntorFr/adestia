@@ -116,7 +116,7 @@ export const GALLERY_LINE_FORMATS = ['label-value-caption', 'label-range', 'labe
 export type PluginGalleryLine = (typeof GALLERY_LINE_FORMATS)[number]
 
 export const GALLERY_COLUMN_KINDS = ['text', 'number', 'date', 'link'] as const
-export type PluginGalleryColumnKind = (typeof GALLERY_COLUMN_KINDS)[number]
+type PluginGalleryColumnKind = (typeof GALLERY_COLUMN_KINDS)[number]
 
 export interface PluginGalleryColumn {
   readonly key: string
