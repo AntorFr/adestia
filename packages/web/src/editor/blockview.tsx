@@ -27,6 +27,7 @@ import { resolveBlock, type Indexed } from '@antorfr/adestia-content'
 import { parserCtx, serializerCtx } from '@milkdown/kit/core'
 import type { Ctx } from '@milkdown/kit/ctx'
 import type { Node as ProseNode } from '@milkdown/kit/prose/model'
+import { redo, undo } from '@milkdown/kit/prose/history'
 import { NodeSelection, TextSelection } from '@milkdown/kit/prose/state'
 import type { EditorView, NodeView } from '@milkdown/kit/prose/view'
 import { createRoot, type Root } from 'react-dom/client'
@@ -376,6 +377,9 @@ class DirectiveView implements NodeView {
     this.panelRoot.render(
       <>
         {this.open && (
+          // The window is portaled out of the panel, but React events still
+          // climb through it: this is where its keys reach the editor.
+          <div style={{ display: 'contents' }} onKeyDown={(event) => this.historyKey(event)}>
           <BlockSettings
             name={this.name}
             spec={resolved?.spec}
@@ -387,6 +391,7 @@ class DirectiveView implements NodeView {
             onClose={() => this.setOpen(false)}
             {...(fields ? { onEditData: () => this.openForm() } : {})}
           />
+          </div>
         )}
         {this.form && fields && (
           <BlockForm
@@ -402,6 +407,21 @@ class DirectiveView implements NodeView {
         )}
       </>,
     )
+  }
+
+  /**
+   * Focus sits in the settings window after a choice, outside the editor's own
+   * key handling: hand undo/redo to its history, but leave a text field its
+   * native undo.
+   */
+  private historyKey(event: { ctrlKey: boolean; metaKey: boolean; altKey: boolean; shiftKey: boolean; key: string; target: EventTarget; preventDefault(): void }): void {
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) return
+    if ((event.target as HTMLElement).closest('input, textarea, select, [contenteditable="true"]')) return
+    const key = event.key.toLowerCase()
+    const run = key === 'z' ? (event.shiftKey ? redo : undo) : key === 'y' ? redo : undefined
+    if (!run) return
+    event.preventDefault()
+    run(this.view.state, this.view.dispatch)
   }
 
   private openForm(): void {
