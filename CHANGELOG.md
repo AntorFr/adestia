@@ -810,3 +810,18 @@ branch and that `test:plugins` is replayed after a red vitest run.
   the load of the full suite, each already owned by its own correction. The finding is
   recorded in `.agent/status.md`, along with the name of the epic's working branch. No code
   and no test changed: nothing changes for users.
+
+## Unreleased
+
+- **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
+  read-only page) opens a sheet of cards, grouped and searchable, for every core block and
+  every enabled plugin's; the `/` menu keeps its blocks and ends with "Browse", which opens
+  the same sheet. Arrows and Enter choose by keyboard. The block lands after the block that
+  holds the selection, at the end of the page when none does. Its form and variants come later.
+- **Move a block without the mouse** — In editing, a block moves with **Move up** / **Move down**
+  on its bar (44 px on a phone), `Alt+↑/↓`, or a long press then a drag on a touch screen; a live
+  region says "Moved to position 3 of 7". A block chosen in the gallery lands with a default body,
+  so the page is never refused for an empty block. A save that fails now reads "Not saved" with **Retry**.
+- **Gallery contract for plugins** — A plugin manifest may carry a `gallery` record per block
+  (`name`, `line`, `image`, `group`) so its block shows by name and line, not by identifier;
+  `project-management` declares `timeline` and `subproject`. A disabled plugin's blocks are absent.
