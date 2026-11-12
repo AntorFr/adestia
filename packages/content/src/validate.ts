@@ -39,7 +39,7 @@ function hasContent(node: AnyDirective): boolean {
 }
 
 /** What a container may sit in, and the columns a band may have (AD-32). */
-export const COLUMN_COUNTS: readonly number[] = [2, 3]
+const COLUMN_COUNTS: readonly number[] = [2, 3]
 
 export function validateDocument(tree: Root): readonly Diagnostic[] {
   const diagnostics: Diagnostic[] = []
