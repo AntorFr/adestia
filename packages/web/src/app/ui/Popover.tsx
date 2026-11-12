@@ -10,7 +10,16 @@ export interface PopoverProps {
   readonly children: ReactNode
   readonly label?: string
   readonly className?: string
+  /**
+   * What the panel must leave readable (the block whose settings it is): it goes below it,
+   * else above, else beside it, else — on a screen with no such room — in the larger of the
+   * two gaps, scrolling inside. Without room anywhere it hangs from the anchor as usual.
+   */
+  readonly avoid?: RefObject<HTMLElement | null>
 }
+
+/** The least height worth showing a panel at when it has to shrink to leave a block visible. */
+const LEAST = 176
 
 const GAP = 8
 
@@ -19,7 +28,7 @@ const GAP = 8
  * there is no room, bounded below its canvas chrome and inside the visible viewport.
  * It follows scrolling and resizing. Escape or a press outside closes it; focus returns to the opener.
  */
-export function Popover({ anchor, open, onClose, children, label, className }: PopoverProps) {
+export function Popover({ anchor, open, onClose, children, label, className, avoid }: PopoverProps) {
   const panel = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ top: number; left: number; maxHeight: number } | null>(null)
   useFocusScope(panel, open, { trap: false, onEscape: onClose })
@@ -62,9 +71,29 @@ export function Popover({ anchor, open, onClose, children, label, className }: P
       const below = a.bottom + GAP
       const above = a.top - GAP - h
       const preferred = below + h > bottom && above >= topLimit ? above : below
-      const top = Math.max(topLimit, Math.min(preferred, bottom - h))
-      const left = Math.max(viewportLeft + GAP, Math.min(a.left, right - w))
-      const next = { top, left, maxHeight: h }
+      let top = Math.max(topLimit, Math.min(preferred, bottom - h))
+      let left = Math.max(viewportLeft + GAP, Math.min(a.left, right - w))
+      let height = h
+      const block = avoid?.current?.getBoundingClientRect()
+      if (block && block.width > 0 && block.height > 0) {
+        const full = Math.min(box.scrollHeight + 2, available) // the panel's own height, uncut
+        const roomBelow = bottom - (block.bottom + GAP)
+        const roomAbove = block.top - GAP - topLimit
+        const hClamp = (v: number) => Math.max(topLimit, Math.min(v, bottom - full))
+        if (roomBelow >= full) { top = block.bottom + GAP; height = full }
+        else if (roomAbove >= full) { top = block.top - GAP - full; height = full }
+        else if (right - (block.right + GAP) >= w) {
+          left = block.right + GAP
+          top = hClamp(Math.max(block.top, topLimit)); height = full
+        } else if (block.left - GAP - viewportLeft - GAP >= w) {
+          left = block.left - GAP - w
+          top = hClamp(Math.max(block.top, topLimit)); height = full
+        } else if (Math.max(roomBelow, roomAbove) >= LEAST) {
+          if (roomBelow >= roomAbove) { top = block.bottom + GAP; height = roomBelow }
+          else { top = topLimit; height = roomAbove }
+        }
+      }
+      const next = { top, left, maxHeight: height }
       setPos((previous) => previous?.top === next.top && previous.left === next.left && previous.maxHeight === next.maxHeight ? previous : next)
     }
     const schedule = (event?: Event) => {
@@ -88,7 +117,7 @@ export function Popover({ anchor, open, onClose, children, label, className }: P
       viewport?.removeEventListener('scroll', schedule)
       observer?.disconnect()
     }
-  }, [open, anchor])
+  }, [open, anchor, avoid])
 
   useEffect(() => {
     if (!open) return
