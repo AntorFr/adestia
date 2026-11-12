@@ -500,8 +500,13 @@ describe.skipIf(!playwright)('adestia-pages-deplacer, from the need', () => {
         expect(c.line.trim().length, `line of ${c.name}`).toBeGreaterThan(0)
       const layout = groups.find((g) => g.group === 'Layout')
       expect(layout?.cards.map((c) => c.name).sort(), 'the Layout group holds the existing row and gallery').toEqual(['Columns', 'Image gallery'])
-      const pictures = await page.evaluate(() => [...document.querySelectorAll('.adestia-blockcard img')].map((i) => ({ ok: (i as HTMLImageElement).complete && (i as HTMLImageElement).naturalWidth > 0, src: (i as HTMLImageElement).src })))
-      expect(pictures.filter((p: any) => !p.ok), 'every card picture is drawn').toEqual([])
+      // The pictures load after the sheet opens: wait for them, a slow machine draws them late.
+      await expect
+        .poll(
+          () => page.evaluate(() => [...document.querySelectorAll('.adestia-blockcard img')].filter((i) => !((i as HTMLImageElement).complete && (i as HTMLImageElement).naturalWidth > 0)).map((i) => (i as HTMLImageElement).src)),
+          { message: 'every card picture is drawn', timeout: 30_000 },
+        )
+        .toEqual([])
       await context.close()
     }, 90_000)
 
