@@ -537,6 +537,12 @@ const FR: Readonly<Record<string, string>> = {
   'Unknown to this block': 'Inconnus de ce bloc',
   'Remove %key': 'Retirer %key',
   'new line': 'nouvelle ligne',
+  Columns: 'Colonnes',
+  'Number of columns': 'Nombre de colonnes',
+  'The last column holds blocks: empty it first. Nothing is deleted.':
+    'La dernière colonne contient des blocs : videz-la d’abord. Rien n’est supprimé.',
+  'Drop here': 'Déposer ici',
+  'folded at opening': 'repliée à l’ouverture',
   'Text blocks': 'Blocs de texte',
   'Bullet list': 'Liste à puces',
   'Numbered list': 'Liste numérotée',

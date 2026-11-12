@@ -32,6 +32,7 @@ import type { EditorView, NodeView } from '@milkdown/kit/prose/view'
 import { createRoot, type Root } from 'react-dom/client'
 
 import { BlockSettings } from './BlockSettings.js'
+import { columnsOf, isHollow, lastColumnHolds, withColumnCount } from './containers.js'
 import { domIcon } from './dom-icon.js'
 import type { IconName } from '../app/icons.js'
 import { prettify } from '../app/paths.js'
@@ -66,7 +67,7 @@ const LONG_PRESS_MS = 400
 type Posture = 'prose' | 'data' | 'atom'
 
 /** Blocks whose body is text a person writes in place. */
-const PROSE = new Set(['content', 'callout', 'gallery', 'table'])
+const PROSE = new Set(['content', 'callout', 'gallery', 'table', 'section', 'columns', 'col'])
 
 /**
  * The next block view to be built opens its settings — set by the `/` menu
@@ -85,6 +86,8 @@ export function directiveView(name: string, atom: boolean, env: EditorEnv) {
 }
 
 type Attributes = Record<string, string>
+
+const CONTAINER_NAMES = new Set(['section', 'columns', 'col'])
 
 class DirectiveView implements NodeView {
   readonly dom: HTMLElement
@@ -254,6 +257,8 @@ class DirectiveView implements NodeView {
     if (attributes['w']) this.dom.dataset['w'] = attributes['w']
     else delete this.dom.dataset['w']
     this.dom.classList.toggle('adestia-edblock--open', this.open)
+    // A column is a place, not a block: nothing to move, delete or set on it.
+    this.bar.hidden = this.name === 'col'
     // The lift button only for a block that sits inside another.
     const at = this.getPos()
     this.lift.hidden = at === undefined || this.view.state.doc.resolve(at).depth === 0
@@ -296,6 +301,11 @@ class DirectiveView implements NodeView {
       body.push('adestia-gallery')
     } else if (this.name === 'table') {
       body.push('adestia-table-scroll', 'adestia-tableblock')
+    } else if (CONTAINER_NAMES.has(this.name)) {
+      // Dashed edges and the drop lane are editing's alone (B-28): reading draws content only.
+      classes.push('adestia-edblock--container', `adestia-edblock--${this.name}`)
+      if (this.name === 'section' && attributes['closed'] === 'fold') classes.push('adestia-edblock--folded')
+      if (isHollow(this.node)) classes.push('adestia-edblock--hollow')
     }
     const hasHead = Boolean(title || attributes['ico'] || by)
     if (framed) classes.push('adestia-framed')
@@ -303,7 +313,12 @@ class DirectiveView implements NodeView {
     if (this.open) classes.push('adestia-edblock--open')
 
     setClass(this.dom, classes.join(' '))
-    if (this.contentDOM) setClass(this.contentDOM, body.join(' '))
+    if (this.contentDOM) {
+      setClass(this.contentDOM, body.join(' '))
+      if (CONTAINER_NAMES.has(this.name)) this.contentDOM.dataset['drop'] = this.t('Drop here')
+    }
+    if (this.name === 'section') this.dom.dataset['note'] = this.t('folded at opening')
+    if (this.name === 'col') this.dom.dataset['col'] = String(this.columnNumber())
     if (this.head) {
       this.head.hidden = !hasHead
       fillHead(this.head, { title, ico: attributes['ico'], by })
@@ -373,9 +388,35 @@ class DirectiveView implements NodeView {
         anchor={this.anchor}
         t={this.t}
         onChange={(next) => this.write(next)}
+        {...(this.name === 'columns'
+          ? {
+              columns: {
+                count: columnsOf(this.node),
+                canShrink: !lastColumnHolds(this.node),
+                onChange: (count: number) => this.setColumns(count),
+              },
+            }
+          : {})}
         onClose={() => this.setOpen(false)}
       />,
     )
+  }
+
+  /** Which column of its band this is, 1-based, for the label the edge wears. */
+  private columnNumber(): number {
+    const at = this.getPos()
+    if (at === undefined) return 0
+    const $at = this.view.state.doc.resolve(at)
+    return $at.index() + 1
+  }
+
+  /** The band's choice on the strip: add an empty column, or take the last away if it is empty. */
+  private setColumns(count: number): void {
+    const at = this.getPos()
+    if (at === undefined) return
+    const next = withColumnCount(this.node, this.view.state.schema, count)
+    if (!next) return
+    this.view.dispatch(this.view.state.tr.replaceWith(at, at + this.node.nodeSize, next))
   }
 
   private write(attributes: Attributes): void {

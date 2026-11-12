@@ -20,6 +20,7 @@ import { WIDTHS, type BlockSpec } from '@antorfr/adestia-content'
 
 import { Icon } from '../app/Icon.js'
 import { Button, Popover } from '../app/ui/index.js'
+import { COLUMN_CHOICES } from './containers.js'
 import { FieldRow } from './FieldRow.js'
 
 /** The reserved attributes a person sets, in the order they are asked. */
@@ -34,6 +35,14 @@ const WIDTH_LABELS: Readonly<Record<string, string>> = {
   '2/3': 'two thirds',
   '1/2': 'a half',
   '1/3': 'a third',
+}
+
+/** A `columns` band's column count, set by the choice on the strip (B-28). */
+export interface ColumnsControl {
+  readonly count: number
+  /** False when the last column holds blocks: going back would delete them. */
+  readonly canShrink: boolean
+  readonly onChange: (count: number) => void
 }
 
 export interface BlockSettingsProps {
@@ -54,6 +63,8 @@ export interface BlockSettingsProps {
   /** The block's ⚙: the window hangs from it, and focus goes back to it on close. */
   readonly anchor?: RefObject<HTMLElement | null>
   readonly onChange: (next: Record<string, string>) => void
+  /** Given for a `columns` band only. */
+  readonly columns?: ColumnsControl | undefined
   readonly onClose: () => void
   /** The shell's translator; identity in English. */
   readonly t?: (key: string) => string
@@ -66,6 +77,7 @@ export function BlockSettings({
   attributes,
   anchor,
   onChange,
+  columns,
   onClose,
   t = (key) => key,
 }: BlockSettingsProps) {
@@ -106,6 +118,37 @@ export function BlockSettings({
 
       {(about ?? spec?.description) && (
         <p className="adestia-blockset__about">{about ?? spec?.description}</p>
+      )}
+
+      {columns && (
+        <fieldset className="adestia-blockset__group">
+          <legend>{t('Columns')}</legend>
+          <div className="adestia-blockset__choice" role="group" aria-label={t('Number of columns')}>
+            {COLUMN_CHOICES.map((count) => {
+              // Going back to two is refused while the third holds something: no data is deleted.
+              const refused = count < columns.count && !columns.canShrink
+              return (
+                <Button
+                  key={count}
+                  small
+                  variant={count === columns.count ? 'accent' : 'neutral'}
+                  aria-pressed={count === columns.count}
+                  disabled={refused}
+                  aria-describedby={refused ? 'adestia-columns-why' : undefined}
+                  onClick={() => count !== columns.count && columns.onChange(count)}
+                >
+                  {count}
+                </Button>
+              )
+            })}
+          </div>
+          {columns.count > COLUMN_CHOICES[0] && !columns.canShrink && (
+            <p className="adestia-blockset__missing" id="adestia-columns-why">
+              <Icon name="circle-alert" />
+              {t('The last column holds blocks: empty it first. Nothing is deleted.')}
+            </p>
+          )}
+        </fieldset>
       )}
 
       {own.length > 0 && (
