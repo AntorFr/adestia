@@ -824,3 +824,9 @@ branch and that `test:plugins` is replayed after a red vitest run.
 - **Gallery contract for plugins** — A plugin manifest may carry a `gallery` record per block
   (`name`, `line`, `image`, `group`) so its block shows by name and line, not by identifier;
   `project-management` declares `timeline` and `subproject`. A disabled plugin's blocks are absent.
+- **Move a block into, out of and between columns and sections** — `Alt+→` takes a block into the
+  section or column band that immediately follows it, `Alt+←` out to just after its container; the grip's
+  drag and the bar's four arrows (up, down, out, in; the arrows at a column's edge cross to the next
+  column, so a phone needs no drag) end in the same move. Moving a container moves what it holds. A
+  drop that breaks the depth rule (a section in a section or a column) keeps its line, marked, with the
+  reason beside it and in the live region, and writes nothing.
