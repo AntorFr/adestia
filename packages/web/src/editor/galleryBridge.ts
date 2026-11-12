@@ -15,7 +15,7 @@ import { NodeSelection } from '@milkdown/kit/prose/state'
 
 import { insertionPoint } from './insertionPoint.js'
 import { movableSlots } from './moveBlock.js'
-import { seed } from './slash.js'
+import { OPEN_FORM, seed } from './slash.js'
 import { editorBlocks, pmId } from './vocabulary.js'
 
 const DEFAULT_BODY: Record<string, string> = {
@@ -23,7 +23,7 @@ const DEFAULT_BODY: Record<string, string> = {
   table: '| A | B |\n| --- | --- |\n| 1 | 2 |',
 }
 
-type Insert = (name: string) => boolean
+type Insert = (name: string, view?: string) => boolean
 const surfaces = new WeakMap<HTMLElement, Insert>()
 
 /** Registered by `mountMilkdown`; returns the undo of the registration. */
@@ -34,11 +34,12 @@ export function registerSurface(host: HTMLElement, editor: Editor): () => void {
   const place = () => { placed = true }
   const events = ['pointerdown', 'mousedown', 'touchstart', 'keydown'] as const
   for (const name of events) host.addEventListener(name, place, true)
-  surfaces.set(host, (name) => editor.action((ctx) => {
+  surfaces.set(host, (name, variant) => editor.action((ctx) => {
     const view = ctx.get(editorViewCtx)
     const spec = editorBlocks().find((one) => one.name === name)
     const type = view.state.schema.nodes[pmId(name)]
-    const attrs = { attributes: seed(spec ?? { name, attributes: {} } as never) }
+    // `view` is written only when the caller passes one: the default is never chosen for the user.
+    const attrs = { attributes: { ...seed(spec ?? { name, attributes: {} } as never), ...(variant ? { view: variant } : {}) } }
     // A block that holds flow must not be saved empty (the page would be refused),
     // so it lands with the body its default values give it.
     const body = spec && shapesOf(name).has('flow') ? (DEFAULT_BODY[name] ?? 'Text') : null
@@ -63,6 +64,8 @@ export function registerSurface(host: HTMLElement, editor: Editor): () => void {
     view.dispatch(tr.scrollIntoView())
     placed = true
     view.focus()
+    // The block's view exists since the dispatch; it opens its form if it has one.
+    view.nodeDOM(at)?.dispatchEvent(new CustomEvent(OPEN_FORM))
     return true
   }))
   return () => {
@@ -72,7 +75,7 @@ export function registerSurface(host: HTMLElement, editor: Editor): () => void {
 }
 
 /** Inserts a block of the gallery on the surface mounted in `host`; false when it could not. */
-export function insertFromGallery(host: HTMLElement | null, name: string): boolean {
+export function insertFromGallery(host: HTMLElement | null, name: string, view?: string): boolean {
   const insert = host ? surfaces.get(host) : undefined
-  return insert ? insert(name) : false
+  return insert ? insert(name, view) : false
 }

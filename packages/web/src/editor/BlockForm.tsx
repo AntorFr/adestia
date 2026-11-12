@@ -27,6 +27,12 @@ export interface BlockFormProps {
   /** True when the document's block no longer reads as it did when the form opened. */
   readonly stale?: boolean
   readonly locale?: string | undefined
+  /**
+   * Opened right after the gallery inserted the block (P-17 step 4): the lines
+   * it holds are the placeholder that keeps the page writable, so the form
+   * starts on one empty row instead (a table keeps its header row).
+   */
+  readonly fresh?: boolean
   readonly onApply: (lines: string[]) => void
   readonly onClose: () => void
   readonly t?: (key: string) => string
@@ -59,13 +65,23 @@ function widthOf(items: readonly Item[]): number {
   return items.reduce((width, one) => Math.max(width, cellsOf(one.row.cells).length), 0)
 }
 
-export function BlockForm({ name, fields, lines, stale = false, locale, onApply, onClose, t = (key) => key }: BlockFormProps) {
+export function BlockForm({ name, fields, lines, stale = false, locale, fresh = false, onApply, onClose, t = (key) => key }: BlockFormProps) {
   const codec = useMemo(() => codecFor(fields.line), [fields.line])
   const isTable = fields.line === 'table'
   const next = useRef(0)
   const wrap = (rows: readonly Row[]): Item[] => rows.map((row) => ({ id: next.current++, row }))
   const first = useMemo(() => codec.read(lines), [codec, lines])
-  const [items, setItems] = useState<Item[]>(() => wrap(first.rows))
+  const [items, setItems] = useState<Item[]>(() => {
+    if (!fresh) return wrap(first.rows)
+    const head = isTable ? first.rows.slice(0, 1) : []
+    const width = isTable ? Math.max(head[0] ? cellsOf(head[0].cells).length : 2, 2) : 0
+    const empty: Row = {
+      cells: Object.fromEntries(
+        (isTable ? Array.from({ length: width }, (_, i) => cellKey(i)) : fields.columns.map((c) => c.key)).map((k) => [k, '']),
+      ),
+    }
+    return wrap([...head, empty])
+  })
   const [kept, setKept] = useState<readonly Kept[]>(first.kept)
   const [raw, setRaw] = useState<string | null>(null)
   const [current, setCurrent] = useState<number | undefined>(undefined)
