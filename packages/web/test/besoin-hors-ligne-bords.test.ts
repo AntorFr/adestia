@@ -15,6 +15,9 @@ type Route = { request(): { url(): string }; abort(c?: string): Promise<void>; f
 const asRoute = (r: unknown) => r as Route
 const unroute = (page: Page, glob: string) => (page as unknown as { unroute(g: string): Promise<void> }).unroute(glob)
 
+const waitFor = (page: Page, fn: (w: string) => boolean, arg: string, timeout: number) =>
+  (page as unknown as { waitForFunction(f: (w: string) => boolean, a: string, o: { timeout: number }): Promise<unknown> }).waitForFunction(fn, arg, { timeout })
+
 async function shown(page: Page): Promise<number> {
   return page.evaluate((w: string) => [...document.querySelectorAll('[role="status"]')].filter((e) => (e.textContent ?? '').includes(w)).length, WORDS)
 }
@@ -73,17 +76,19 @@ describe.skipIf(!playwright)('B-19 · bords du bandeau « le serveur ne répond 
       await gatewayAnswered
       await probeFailed
       expect(failedProbes).toBeGreaterThan(0)
-      await page.waitForFunction(
+      await waitFor(
+        page,
         (w: string) => [...document.querySelectorAll('[role="status"]')].filter((e) => (e.textContent ?? '').includes(w)).length === 1,
         WORDS,
-        { timeout: 60_000 },
+        60_000,
       )
       expect(await shown(page)).toBe(1)
       await unroute(page, '**/api/**')
-      await page.waitForFunction(
+      await waitFor(
+        page,
         (w: string) => [...document.querySelectorAll('[role="status"]')].filter((e) => (e.textContent ?? '').includes(w)).length === 0,
         WORDS,
-        { timeout: 60_000 },
+        60_000,
       )
       expect(await shown(page)).toBe(0)
     } finally {
