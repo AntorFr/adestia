@@ -365,7 +365,7 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
 /* A refused drop keeps its line, in the danger colour, with the reason beside it (AD-structure-1). */
 .adestia-drop-line--refused {
   background: var(--danger-text);
-  box-shadow: 0 0 0 2px var(--danger-quiet, var(--accent-quiet));
+  box-shadow: 0 0 0 2px var(--accent-quiet);
 }
 .adestia-drop-line--refused::after {
   content: attr(data-reason);
@@ -633,7 +633,7 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
   margin: var(--space-3) 0;
   padding: var(--space-2) var(--space-3);
   border: 1px dashed var(--border-strong, var(--border));
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--radius-lg);
 }
 .adestia-edblock--columns > .adestia-edblock__body {
   display: grid;

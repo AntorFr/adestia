@@ -1,6 +1,6 @@
 # Adestia — architecture
 
-> Product documentation. On a feature branch of `adestia-pages` (AD-32 to AD-36) it adds that tranche on top of `epic/adestia-pages`; only what a tranche built is built (tranche 1: AD-34 and AD-36 for the page root, and the gallery; sections and columns, AD-32, come with tranche 3). "Gallery" means the block gallery sheet (E-34) and the `gallery` key of a plugin manifest, never the `:::gallery` image block. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
+> Product documentation. On a feature branch of `adestia-pages` (AD-32 to AD-36) it adds that tranche on top of `epic/adestia-pages`; only what a tranche built is built (tranche 1: AD-34 and AD-36 for the page root, and the gallery; tranche 3: sections and columns, AD-32, and the move into, out of and between them, AD-structure-1). "Gallery" means the block gallery sheet (E-34) and the `gallery` key of a plugin manifest, never the `:::gallery` image block. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
 > `main`, exactly what is built. On a feature branch of `adestia-correctifs` (e.g. the chat tranche, AD-23) it adds that tranche on top of `epic/adestia-correctifs`; nothing is in `main` until the epic merges. An epic is a group of features delivered together; a tranche is one of them. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
 > (journeys, `docs/parcours.md`), `E-n` (screens, `docs/ecrans.md`), `AD-n` (decisions,
 > this file), `R-n` (refactoring targets, this file).
@@ -118,6 +118,8 @@ Outside `packages/`:
   `useAutosave.ts` owns the document baseline and save cadence, `useEditorSurface.ts`
   the mounted writing surface, `usePageDrop.ts` the reading drop target; `SaveStatus.tsx`
   draws the save result. `moveBlock.ts` judges a move and `moveui.ts` draws its live region and drop line (AD-deplacer-1);
+  `containers.ts` says what a section, a band of columns and a column may hold and how a fresh one is built (AD-32);
+  `reader/Containers.tsx` draws them in reading (AD-structure-1);
   `BlockGallery.tsx` is the gallery sheet, `gallery.ts` merges `galleryTable.ts` (core cards) with the enabled plugins'
   `gallery` records, `galleryBridge.ts` links the editor to the sheet and `insertionPoint.ts` says where a block lands (AD-deplacer-2).
 - `plugins/` — `contract.ts` (the plugin front-end contract, `PluginApi`), `loader.ts`,
@@ -1184,7 +1186,15 @@ a section holds blocks and columns; a column holds blocks (and no section or col
 section. `w` and `row` keep their rules at the page level and inside a section (a section is a flow of bands like the page); inside a `col` the blocks are stacked at the column's full width and `w` is ignored (kept in the file, not rewritten). `closed=fold` is the saved initial state; the reader's fold toggle is local to the screen, writes nothing and works on a read-only page. The reader renders
 containers recursively; the editor drops into them (AD-34). A page without containers parses and serialises
 byte-for-byte as before (B-31), checked by round-trip tests over the pages of the repository and the seeds.
-The grammar fork `micromark-extension-directive` must accept this nesting: verified first, in tranche 3's first task.
+The grammar fork `micromark-extension-directive` accepts this nesting (verified, `packages/content/test/containers.test.ts`): the
+serialiser writes each container's fence from its own depth, so a column holding only a paragraph closes with `:::`, and one holding
+blocks with `::::` — canonical and deterministic. The validator (`validate.ts`) judges by the parent chain and keeps the text of
+what it refuses, with four codes: `container-depth` (a section in a section or a column, columns in a column), `columns-count`
+(a band of other than 2 or 3 `col`), `columns-content` (anything but `col` in a band) and `col-outside-columns`. The tranche's
+non-regression corpus (`packages/content/test/fixtures/corpus/`: the pages the bench seeds write and hand-written edge cases) pins
+what `main` writes back, byte for byte: the source itself when the page is already canonical, otherwise the `.out` file beside it
+(CRLF, unquoted attributes, a trailing blank line and a few other normalisations of `main` — B-31 promises that a page without
+containers is written back as `main` wrote it, not that sources are normalised), with the DOM of the reader as a `.html` snapshot.
 *Rejected*: a markdown table or raw HTML for layout (the editor cannot move blocks in it); a free grid with
 coordinates (not the page of a document, outside the scope); a layout stored in the frontmatter (a block would
 live in two places). *Reversed if*: the fork cannot nest directives without a change that breaks the existing pages.
@@ -1214,10 +1224,10 @@ ships "Project status".
 
 ### AD-deplacer-1 — `moveBlock` is a pure function of the page tree, and every entry point reads its result
 `packages/web/src/editor/moveBlock.ts` exports `moveBlock(doc, from, toParent, toIndex)` returning `{ok: true, from, to, total}`
-or `{ok: false, reason}` (`depth` is the only reason tranche 3 adds; at page level a move is refused only when `from` or `to` is out of range (`range`), or when `toParent` is not the page root (`parent`, tranche 1 only)).
+or `{ok: false, reason}` (tranche 3 adds `depth` and `none-next`, and takes paths through the tree — AD-structure-1; `range` is a position past either end, `parent` a place that holds no blocks).
 `blockview.tsx startDrag`, the **Move up / Move down** buttons, `Alt+↑/↓` and the touch long-press all call it and nothing else; the
 drop line, the live region ("Moved to position 3 of 7", localised) and the refusal line are drawn from the result. Tranche 1 only ever
-passes the page root as `toParent`. Touch: a 400 ms press on the grip starts the same drag as the pointer; the buttons stay the
+passed the page root as `toParent`; tranche 3 passes sections and columns too. Touch: a 400 ms press on the grip starts the same drag as the pointer; the buttons stay the
 non-drag path on a phone. *Rejected*: a keyboard-only path (AD-34 already rejects it). *Reversed if* the long press collides with the
 phone's text selection on the bench — then the buttons are the touch path and the press is dropped, which does not touch B-23's promise.
 
@@ -1233,21 +1243,28 @@ The gallery is a sheet (`.adestia-sheet*`, bottom sheet on a phone) like the oth
 *Reversed if* (AD-34 to AD-36): AD-34 and AD-35 not expected; AD-36 only if Monsieur's choice on the mockup `etat-projet` (blocks A, B, C, B-29) needs a seed shape the frontmatter cannot carry — settled in the design of tranche 4.
 
 ### AD-structure-1 — How a block moves into, out of and between containers
-Tranche 3 extends `moveBlock(from, toParent, toIndex)` (AD-34) with container parents; no second path. `from` and
-`toParent` are paths in the page tree (page → section → column). The depth rule of AD-32 is checked inside `moveBlock`, which
-rejects with `{ok:false, reason}` where `reason` is one of `depth` (a section into a section, a section or columns into a
-column), `bounds` (tranche 1) or `none-next`; the UI shows the translated reason in the live region and next to the drop line.
-Keyboard: `Alt+←` moves the block out, to just after its container in the container's parent (from a column: after the `columns`
-block); `Alt+→` moves it into the container that immediately follows it (the first column of a `columns`, the start of a
-section); when nothing follows, or the next container would break the depth rule, it refuses with its reason. Moving a
-container moves its content. A column emptied stays (a `columns` always keeps 2 or 3 `col`); an empty `col` is drawn with
-its "Drop here" lane in editing and nothing in reading. The gallery inserts **Section** and **Columns** (2 columns by
-default, a setting 2/3) at the tranche-1 insertion point; when the focus is a container the block goes at its end.
-The fold toggle is a React state of the reader, keyed by the section's position, initialised from `closed=fold`; it is never
-written, and is available when the page is read-only. Below 820 px the columns stack in source order.
+Tranche 3 extends `moveBlock(from, toParent, toIndex)` (AD-34) with container parents; no second path. `from` is a path of
+indices through the page tree (page → section → column, each index counting the movable children of its level) or a page-level
+index; `toParent` is the page, a section or a column. The depth rule of AD-32 is checked inside `moveBlock` (`mayHold` in
+`containers.ts`), which answers `{ok:false, reason}` where `reason` is `depth` (a section into a section or a column, columns into a
+column, a container into itself), `range` (past either end — the `bounds` of the first design, named `range` in the code since tranche 1),
+`parent` (a place that holds no blocks, or a lone `col`) or `none-next`; the UI shows the translated reason in the live region and
+next to the drop line, and a refused move writes nothing. `stepBlock` turns a keyboard or button step into the same call:
+`Alt+←` (**Move out of the container**) moves the block out, to just after its container in the container's parent (from a column:
+after the `columns` block); `Alt+→` (**Move into the next container**) moves it into the container that immediately follows it
+(the first column of a `columns`, the start of a section); when nothing follows, or the next container would break the depth rule,
+it refuses with its reason. **Move up / Move down** at the edge of a column pass to the neighbouring column of the band, which is
+the touch path between columns (no drag needed). The settings' "Leave the parent block" is hidden inside a section or column in
+favour of Move out. Moving a container moves its content. A column emptied stays (a `columns` always keeps 2 or 3 `col`); an empty
+`col` is drawn with its "Drop here" lane in editing and nothing in reading. The gallery inserts **Section** and **Columns** (two
+columns by default; `col` has no card) at the tranche-1 insertion point; when the focus is a container the block goes at its end.
+The count is set in the block's settings (E-6, as separate fields until tranche 2 redraws it): 2 → 3 adds an empty column, 3 → 2
+removes the last one only when it is empty, and is otherwise refused with the reason shown — no data is deleted.
+The fold toggle (`reader/Containers.tsx`) is a React state of the reader, keyed by the section's position, initialised from
+`closed=fold`; it is never written, and is available when the page is read-only. Below 820 px the columns stack in source order.
 *Rejected*: a second keyboard path; persisting the fold per user (a stored datum the epic does not have); letting an
 emptied `col` disappear (it would change a `columns` from 3 to 2 silently).
-*Reversed if*: the fork cannot nest directives (AD-32), in which case the tranche stops after its second task and goes to Monsieur.
+*Reversed if*: the fork cannot nest directives (AD-32); it can, so the tranche was built whole.
 
 ## Decisions of adestia-preuve-tests
 
