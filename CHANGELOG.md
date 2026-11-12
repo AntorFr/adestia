@@ -830,9 +830,9 @@ branch and that `test:plugins` is replayed after a red vitest run.
 ## v0.98.0-adestia-pages.3
 
 - **Three unstable tests of the pages slice wait for their state** — the 502/503/504 banner
-  case, the refused-save test and the gallery card picture test wait for what they judge
-  instead of a fixed pause, so they no longer turn red under the load of the full suite. No
-  code of the product changed: nothing changes for users.
+  case and the refused-save test (two instances) wait for what they judge instead of a fixed
+  pause, so they no longer turn red under the load of the full suite (task
+  `rouge-adestia-pages-1`). No code of the product changed: nothing changes for users.
 
 ## v0.98.0-adestia-pages.4
 
