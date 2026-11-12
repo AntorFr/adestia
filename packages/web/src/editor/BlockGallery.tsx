@@ -33,7 +33,8 @@ export function BlockGallery({ open, cards, onChoose, onClose, t }: BlockGallery
   const [picked, setPicked] = useState<Readonly<Record<string, string>>>({})
   const choose = (card: GalleryCard) => {
     const view = picked[card.id]
-    onChoose(card.id, card.view && view && view !== card.view.default && card.view.values.includes(view) ? view : undefined)
+    if (card.view && view && view !== card.view.default && card.view.values.includes(view)) onChoose(card.id, view)
+    else onChoose(card.id)
   }
 
   const shown = useMemo(() => {

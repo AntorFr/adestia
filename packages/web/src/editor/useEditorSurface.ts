@@ -19,6 +19,10 @@ export function useEditorSurface(
    * editor must not remount it and throw away what is being typed.
    */
   const env = useRef<PropertiesEnv>({})
+  // Read when a block asks, not when the surface mounted: a plugin can finish loading after the
+  // editor opened, and its block's form must still be found (the gallery lists it by then).
+  const latest = useRef({ galleryPlugins, locale })
+  latest.current = { galleryPlugins, locale }
   env.current = {
     path: page.path,
     store: page.store,
@@ -38,7 +42,8 @@ export function useEditorSurface(
     without: titleField ? ['title'] : undefined,
     t,
     say,
-    forms: (name) => galleryCards(galleryPlugins ?? [], resolveLocale(locale) === 'fr' ? 'fr' : 'en').find((card) => card.id === name)?.fields,
+    forms: (name) =>
+      galleryCards(latest.current.galleryPlugins ?? [], resolveLocale(latest.current.locale) === 'fr' ? 'fr' : 'en').find((card) => card.id === name)?.fields,
   }
 
   /*
