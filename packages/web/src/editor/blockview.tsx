@@ -24,13 +24,15 @@
  */
 
 import { resolveBlock, type Indexed } from '@antorfr/adestia-content'
-import { serializerCtx } from '@milkdown/kit/core'
+import { parserCtx, serializerCtx } from '@milkdown/kit/core'
 import type { Ctx } from '@milkdown/kit/ctx'
 import type { Node as ProseNode } from '@milkdown/kit/prose/model'
 import { NodeSelection, TextSelection } from '@milkdown/kit/prose/state'
 import type { EditorView, NodeView } from '@milkdown/kit/prose/view'
 import { createRoot, type Root } from 'react-dom/client'
 
+import { BlockForm } from './BlockForm.js'
+import { bodyLines, fenced } from './blockform/index.js'
 import { BlockSettings } from './BlockSettings.js'
 import { domIcon } from './dom-icon.js'
 import type { IconName } from '../app/icons.js'
@@ -38,6 +40,7 @@ import { prettify } from '../app/paths.js'
 import { moveBlock, slotAtPos, slotToIndex } from './moveBlock.js'
 import { announce, canMove, moveByStep, moveTo, placeOf, said, stepOf } from './moveui.js'
 import { Reader, type BlockComponents, type VocabularyContext } from './Reader.js'
+import type { PluginGalleryFields } from '@antorfr/adestia-schemas'
 import type { Say } from '../plugins/words.js'
 
 /** What a block's rendering needs to know about the page it is written in. */
@@ -56,6 +59,8 @@ export interface EditorEnv {
    * runs — so the settings panel cannot get it translated any other way.
    */
   readonly say?: Say | undefined
+  /** The form a block declares for its lines (`fields`), absent for a block with none (E-35). */
+  readonly forms?: ((name: string) => PluginGalleryFields | undefined) | undefined
   /** The editor's translator: the bar, the settings and the notes speak the instance's language. */
   readonly t?: ((key: string) => string) | undefined
 }
@@ -106,6 +111,8 @@ class DirectiveView implements NodeView {
   /** A data block showing its raw lines rather than its rendering. */
   private raw = false
   private open: boolean
+  /** The data form (E-35), with the lines the block had when it opened. */
+  private form: { readonly base: string } | undefined
 
   constructor(
     private readonly name: string,
@@ -351,8 +358,8 @@ class DirectiveView implements NodeView {
   }
 
   private renderPanel(): void {
-    this.panel.hidden = !this.open
-    if (!this.open) {
+    this.panel.hidden = !this.open && !this.form
+    if (!this.open && !this.form) {
       this.panelRoot?.render(null)
       return
     }
@@ -364,18 +371,60 @@ class DirectiveView implements NodeView {
     const about = resolved
       ? (this.env.say?.(resolved.plugin, resolved.spec.description) ?? resolved.spec.description)
       : undefined
+    const fields = this.env.forms?.(this.name)
+    const label = prettify(this.name)
     this.panelRoot.render(
-      <BlockSettings
-        name={this.name}
-        spec={resolved?.spec}
-        {...(about ? { about } : {})}
-        attributes={this.attributes}
-        anchor={this.anchor}
-        t={this.t}
-        onChange={(next) => this.write(next)}
-        onClose={() => this.setOpen(false)}
-      />,
+      <>
+        {this.open && (
+          <BlockSettings
+            name={this.name}
+            spec={resolved?.spec}
+            {...(about ? { about } : {})}
+            attributes={this.attributes}
+            anchor={this.anchor}
+            t={this.t}
+            onChange={(next) => this.write(next)}
+            onClose={() => this.setOpen(false)}
+            {...(fields ? { onEditData: () => this.openForm() } : {})}
+          />
+        )}
+        {this.form && fields && (
+          <BlockForm
+            name={label}
+            fields={fields}
+            lines={bodyLines(this.form.base)}
+            stale={this.markdownOf() !== this.form.base}
+            locale={this.env.locale}
+            t={this.t}
+            onApply={(lines) => this.applyLines(lines)}
+            onClose={() => this.closeForm()}
+          />
+        )}
+      </>,
     )
+  }
+
+  private openForm(): void {
+    this.form = { base: this.markdownOf() }
+    this.open = false
+    this.refresh()
+  }
+
+  private closeForm(): void {
+    this.form = undefined
+    this.refresh()
+  }
+
+  /** The form's lines become the block's body: one change of the document, one undo step. */
+  private applyLines(lines: string[]): void {
+    const at = this.getPos()
+    const fresh = this.ctx.get(parserCtx)(fenced(this.name, lines)).firstChild
+    if (at !== undefined && fresh && fresh.type === this.node.type && this.form && this.markdownOf() === this.form.base) {
+      this.view.dispatch(
+        this.view.state.tr.replaceWith(at + 1, at + this.node.nodeSize - 1, fresh.content).scrollIntoView(),
+      )
+    }
+    this.closeForm()
   }
 
   private write(attributes: Attributes): void {

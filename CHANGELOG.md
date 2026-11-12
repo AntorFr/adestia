@@ -822,3 +822,10 @@ branch and that `test:plugins` is replayed after a red vitest run.
   (`role="meter"`, 0–100, the label as its name) with nothing written for it. `list` keeps
   `rows`, `cards`, `chips`. The default of a variant is never written unless the user chose it.
   Blocks of `project-management` are not redrawn yet.
+- **Data form for blocks** — **Edit data** at the foot of a block's settings opens a form for its
+  lines (`figures`, `list`, `table`, and any block whose manifest declares `fields`): one row per
+  entry, a field per column, **Move up** / **Move down** and `Alt+↑/↓`, **Remove row**, **Add**, the
+  line that will be written, and **Raw**. A bad value is refused under its field and **Apply** waits.
+  **Apply** is one change (one undo step); **Cancel**, ✕, Escape and the scrim drop it. A row left
+  alone is written back byte for byte, and a line the form cannot read stays where it was, listed
+  under "Kept as written". In `en` and `fr`.

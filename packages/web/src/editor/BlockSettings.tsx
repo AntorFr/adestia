@@ -55,6 +55,8 @@ export interface BlockSettingsProps {
   readonly anchor?: RefObject<HTMLElement | null>
   readonly onChange: (next: Record<string, string>) => void
   readonly onClose: () => void
+  /** Opens the data form (E-35); absent for a block that declares no `fields`. */
+  readonly onEditData?: (() => void) | undefined
   /** The shell's translator; identity in English. */
   readonly t?: (key: string) => string
 }
@@ -67,6 +69,7 @@ export function BlockSettings({
   anchor,
   onChange,
   onClose,
+  onEditData,
   t = (key) => key,
 }: BlockSettingsProps) {
   // Without an anchor (a test, a caller that has none) the window has nothing to hang from.
@@ -226,6 +229,14 @@ export function BlockSettings({
             </div>
           ))}
         </fieldset>
+      )}
+
+      {onEditData && (
+        <div className="adestia-blockset__foot">
+          <Button icon="table" onClick={onEditData}>
+            {t('Edit data')}
+          </Button>
+        </div>
       )}
     </Popover>
   )

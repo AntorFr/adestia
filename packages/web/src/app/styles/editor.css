@@ -602,3 +602,48 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
 .adestia-blockcard__line { font-size: var(--text-xs); color: var(--text-muted); }
 .adestia-blockgallery__empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); padding: var(--space-5) var(--space-3); text-align: center; }
 .adestia-blockgallery__hint { color: var(--text-muted); font-size: var(--text-sm); }
+
+/* The data form (E-35): a row per entry, one control per column, in the shared sheet. */
+.adestia-blockset__foot {
+  display: flex;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+.adestia-blockform__body { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.adestia-blockform__rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.adestia-blockform__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.adestia-blockform__row:focus-within { border-color: var(--accent-text); }
+.adestia-blockform__cells { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: var(--space-2); min-width: 0; }
+.adestia-blockform__cells .adestia-field { margin: 0; min-width: 0; }
+.adestia-blockform__acts { display: flex; gap: var(--space-1); }
+.adestia-blockform__down svg { transform: rotate(180deg); } /* the charte list has one arrow */
+.adestia-blockform__rows--table { overflow-x: auto; }
+.adestia-blockform__rows--table .adestia-blockform__cells { grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); }
+.adestia-blockform__cols { display: flex; gap: var(--space-1); flex-wrap: wrap; }
+.adestia-blockform__add { display: flex; gap: var(--space-2); }
+.adestia-blockform__writes { margin: 0; color: var(--text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
+.adestia-blockform__writes code { font-family: var(--font-mono); }
+.adestia-blockform__raw { width: 100%; min-height: 12rem; font-family: var(--font-mono); }
+.adestia-blockform__stale { margin: 0; color: var(--danger-text); font-size: var(--text-sm); }
+.adestia-blockform__kept {
+  padding: var(--space-2);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: var(--text-xs);
+}
+.adestia-blockform__kept h3 { margin: 0 0 var(--space-1); font: 600 var(--text-xs) var(--font); }
+.adestia-blockform__kept ul { margin: 0; padding-left: var(--space-3); }
+.adestia-blockform__kept code { font-family: var(--font-mono); overflow-wrap: anywhere; white-space: pre-wrap; }

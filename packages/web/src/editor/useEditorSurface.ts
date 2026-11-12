@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
+import { resolveLocale } from '../app/i18n.js'
+import { galleryCards } from './gallery.js'
 import type { EditorProps } from './Editor.js'
 import type { PropertiesEnv } from './frontmatterview.js'
 
 export function useEditorSurface(
-  { page, mount, blocks, vocabulary, pages, fetchImpl, locale, fieldContributions, titleField, t, say }: EditorProps,
+  { page, mount, blocks, vocabulary, pages, fetchImpl, locale, fieldContributions, titleField, t, say, galleryPlugins }: EditorProps,
   editing: boolean,
   shown: string,
   saved: string,
@@ -36,6 +38,7 @@ export function useEditorSurface(
     without: titleField ? ['title'] : undefined,
     t,
     say,
+    forms: (name) => galleryCards(galleryPlugins ?? [], resolveLocale(locale) === 'fr' ? 'fr' : 'en').find((card) => card.id === name)?.fields,
   }
 
   /*

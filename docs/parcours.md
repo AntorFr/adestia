@@ -393,7 +393,7 @@ Needs: B-23, B-24
 The user has a block that looks rough and whose data is raw lines.
 
 1. The user opens the block's settings (E-6); the variants are small pictures; choosing one redraws the block in place (B-25, B-26).
-2. The user presses **Edit data**; a form (E-35) lists the figures (or phases, items): add, reorder, remove a row, with the right field per column (a number, a date, a link, or plain text; a timeline row carries no status, the line format has none) (B-27).
+2. The user presses **Edit data** (at the foot of E-6; built, `adestia-pages-blocs-formulaires-saisie`); a form (E-35) lists the figures (or phases, items): add, reorder, remove a row, with the right field per column (a number, a date, a link, or plain text; a timeline row carries no status, the line format has none) (B-27).
 3. A number that is not a number is refused under its field, in the user's language, and **Apply** waits until it is fixed (B-27). After inserting a data block from the gallery (E-34), the same form opens on the new block with one empty row (P-17 step 4, B-24).
 4. The user closes the form; the block shows the result. The raw lines are available from **Raw** in the form and say the same thing (B-27, AD-33).
 

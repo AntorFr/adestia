@@ -21,3 +21,4 @@ const CODECS: Readonly<Record<PluginGalleryLine, Codec>> = {
 export function codecFor(line: PluginGalleryLine): Codec {
   return CODECS[line]
 }
+export { bodyLines, fenced, linesOfText } from './lines.js'
