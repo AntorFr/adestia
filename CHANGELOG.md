@@ -803,6 +803,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   suite. Five distinct timeouts name what never happened. No assertion is removed. A
   test-only fix: nothing changes for users.
 
+## v0.97.12
+
+- **The attestation report no longer dirties the working copy** — `.gitignore` now ignores
+  `/rapport-tests.json`, the report that `attester` writes at the repository root, next to
+  `.suite-attestee/` and `resultats.xml`, so `git status` stays clean after an attestation. A
+  test checks it. Nothing changes for users.
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
