@@ -1,6 +1,6 @@
 # Adestia — architecture
 
-> Product documentation. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
+> Product documentation. On a feature branch of `adestia-pages` (AD-32 to AD-36) it adds that tranche on top of `epic/adestia-pages`; only what a tranche built is built (tranche 1: AD-34 and AD-36 for the page root, and the gallery; sections and columns, AD-32, come with tranche 3). "Gallery" means the block gallery sheet (E-34) and the `gallery` key of a plugin manifest, never the `:::gallery` image block. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
 > `main`, exactly what is built. On a feature branch of `adestia-correctifs` (e.g. the chat tranche, AD-23) it adds that tranche on top of `epic/adestia-correctifs`; nothing is in `main` until the epic merges. An epic is a group of features delivered together; a tranche is one of them. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
 > (journeys, `docs/parcours.md`), `E-n` (screens, `docs/ecrans.md`), `AD-n` (decisions,
 > this file), `R-n` (refactoring targets, this file).
@@ -117,7 +117,9 @@ Outside `packages/`:
   `reader/` holds the recursive walk, directive dispatch and block renderers by kind.
   `useAutosave.ts` owns the document baseline and save cadence, `useEditorSurface.ts`
   the mounted writing surface, `usePageDrop.ts` the reading drop target; `SaveStatus.tsx`
-  draws the save result.
+  draws the save result. `moveBlock.ts` judges a move and `moveui.ts` draws its live region and drop line (AD-deplacer-1);
+  `BlockGallery.tsx` is the gallery sheet, `gallery.ts` merges `galleryTable.ts` (core cards) with the enabled plugins'
+  `gallery` records, `galleryBridge.ts` links the editor to the sheet and `insertionPoint.ts` says where a block lands (AD-deplacer-2).
 - `plugins/` — `contract.ts` (the plugin front-end contract, `PluginApi`), `loader.ts`,
   `words.ts` (plugin word tables), `Boundary.tsx`, `PageEditor.tsx`.
 - `sw/` — the service worker (`sw.ts`, `policy.ts`, `register.ts`).
@@ -1196,7 +1198,7 @@ lines back gives the same rows (round-trip tested). A line the form cannot read 
 block needs a datum the line form cannot hold.
 
 ### AD-34 — One move operation under pointer, keyboard, buttons and touch
-Moving is one operation on the document tree — `moveBlock(from, toParent, toIndex)` — checked against AD-32's depth rule.
+Moving is one operation on the document tree — `moveBlock(doc, from, toParent, toIndex)` — checked against AD-32's depth rule.
 Pointer drag (`blockview.tsx startDrag`), keyboard, the buttons and touch all call it; the gallery inserts through
 the same position model. The drop line and the live region are drawn from its result. *Rejected*: a second path
 for the keyboard (two behaviours to keep equal); Crepe's own handle (limited to prose, DESIGN.md).
@@ -1209,6 +1211,24 @@ A new `:::` name is kept for a different thing (a different data shape), per the
 ### AD-36 — Templates are shipped page seeds
 A template is a markdown file in the core's or a plugin's `templates/`, with a `template:` frontmatter key holding `name`, `image` and `description` (declared in `docs/donnees.md`); "New from template" (E-36) copies the body and the page's own frontmatter (`type`, `title` from the user's name) and drops the `template:` key, so a created page carries no trace of it. No template entity, no user templates (out of scope). The core's and plugins' templates and block specs reach the shell through the plugin manifest (`gallery`, `templates`, `packages/schemas`; `blocks` stays the rendering module's path), not a new route (`docs/donnees.md`). `project-management`
 ships "Project status".
+
+### AD-deplacer-1 — `moveBlock` is a pure function of the page tree, and every entry point reads its result
+`packages/web/src/editor/moveBlock.ts` exports `moveBlock(doc, from, toParent, toIndex)` returning `{ok: true, from, to, total}`
+or `{ok: false, reason}` (`depth` is the only reason tranche 3 adds; at page level a move is refused only when `from` or `to` is out of range (`range`), or when `toParent` is not the page root (`parent`, tranche 1 only)).
+`blockview.tsx startDrag`, the **Move up / Move down** buttons, `Alt+↑/↓` and the touch long-press all call it and nothing else; the
+drop line, the live region ("Moved to position 3 of 7", localised) and the refusal line are drawn from the result. Tranche 1 only ever
+passes the page root as `toParent`. Touch: a 400 ms press on the grip starts the same drag as the pointer; the buttons stay the
+non-drag path on a phone. *Rejected*: a keyboard-only path (AD-34 already rejects it). *Reversed if* the long press collides with the
+phone's text selection on the bench — then the buttons are the touch path and the press is dropped, which does not touch B-23's promise.
+
+### AD-deplacer-2 — The gallery lists a table, not the editor's menu
+`editor/gallery.ts` merges the core table (name, line, image, group per block, in `en`/`fr`) with the `gallery` records of the manifests
+of **enabled** plugins only (the loader already reads only those: a disabled plugin has no record to list). The `/` menu
+(`slash.ts`) keeps its list and gains "Browse" as its last item; both insert through the one position model: after the focused block, end of
+the page when none, end of the container when the focus is a container (tranche 3). `packages/schemas/src/plugin.ts` validates `gallery`
+(`name`, `line`, `image`, `group`; `fields` and `view` optional and not read yet), and a plugin block with no record shows its identifier.
+The gallery is a sheet (`.adestia-sheet*`, bottom sheet on a phone) like the other sheets of the shell; no new component family.
+*Rejected*: deriving the cards from the `/` menu labels (no image, no line, no group).
 
 *Reversed if* (AD-34 to AD-36): AD-34 and AD-35 not expected; AD-36 only if Monsieur's choice on the mockup `etat-projet` (blocks A, B, C, B-29) needs a seed shape the frontmatter cannot carry — settled in the design of tranche 4.
 

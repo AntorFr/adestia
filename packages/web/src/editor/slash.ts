@@ -19,7 +19,7 @@
 
 import { shapesOf, type BlockSpec } from '@antorfr/adestia-content'
 import type { BlockEditFeatureConfig } from '@milkdown/crepe/feature/block-edit'
-import { commandsCtx, schemaCtx } from '@milkdown/kit/core'
+import { commandsCtx, editorViewCtx, schemaCtx } from '@milkdown/kit/core'
 import {
   addBlockTypeCommand,
   clearTextInCurrentBlockCommand,
@@ -57,6 +57,9 @@ const ICONS: Readonly<Record<string, IconName>> = {
   row: 'corner-down-left',
 }
 
+/** What "Browse" says to the editor bar: open the gallery. */
+export const OPEN_GALLERY = 'adestia:open-gallery'
+
 /** Anything the table gains before somebody chooses it an icon. */
 const FALLBACK: IconName = 'sparkles'
 
@@ -79,7 +82,7 @@ function insertable(spec: BlockSpec): boolean {
  * for a section's subject — and the settings open on it. Nothing else is
  * written: an attribute at its default reads as a decision nobody made.
  */
-function seed(spec: BlockSpec): Record<string, string> {
+export function seed(spec: BlockSpec): Record<string, string> {
   const attributes: Record<string, string> = {}
   for (const [name, attribute] of Object.entries(spec.attributes)) {
     if (!attribute.required) continue
@@ -132,4 +135,13 @@ export function buildBlockMenu(builder: MenuBuilder, t: (key: string) => string 
       },
     })
   }
+  // Last, and always: the gallery shows what a short menu cannot (E-34).
+  group.addItem('browse', {
+    label: t('Browse'),
+    icon: iconMarkup('search'),
+    onRun: (ctx) => {
+      ctx.get(commandsCtx).call(clearTextInCurrentBlockCommand.key)
+      ctx.get(editorViewCtx).dom.dispatchEvent(new CustomEvent(OPEN_GALLERY, { bubbles: true }))
+    },
+  })
 }

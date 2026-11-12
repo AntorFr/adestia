@@ -86,6 +86,26 @@ function checkRelativePath(
   }
 }
 
+/** A gallery sentence: a non-empty string, or `{en, fr?}` with non-empty strings. */
+function checkGalleryText(raw: Raw, key: string, field: string, issues: ValidationIssue[]): void {
+  const value = raw[key]
+  const at = `${field}.${key}`
+  if (value === undefined) {
+    issues.push({ field: at, message: 'is required' })
+  } else if (typeof value === 'string') {
+    if (value.length === 0) issues.push({ field: at, message: 'must be a non-empty string' })
+  } else if (isObject(value)) {
+    if (typeof value['en'] !== 'string' || value['en'].length === 0) {
+      issues.push({ field: at, message: 'must have a non-empty "en"' })
+    }
+    if (value['fr'] !== undefined && (typeof value['fr'] !== 'string' || value['fr'].length === 0)) {
+      issues.push({ field: at, message: '"fr" must be a non-empty string' })
+    }
+  } else {
+    issues.push({ field: at, message: 'must be a string or an {en, fr} pair' })
+  }
+}
+
 function checkSchemaVersion(
   raw: Raw,
   expected: number,
@@ -211,6 +231,30 @@ export function parsePluginManifest(input: unknown, folderName: string): PluginM
         if (attributes !== undefined && !isObject(attributes)) {
           issues.push({ field: `${field}.attributes`, message: 'must be an object' })
         }
+      }
+    }
+  }
+
+  const gallery = input['gallery']
+  if (gallery !== undefined) {
+    if (!isObject(gallery)) {
+      issues.push({ field: 'gallery', message: 'must be an object of gallery records, by block name' })
+    } else {
+      for (const [name, entry] of Object.entries(gallery)) {
+        const field = `gallery.${name}`
+        if (!/^[a-z][a-z0-9-]*$/.test(name)) {
+          issues.push({ field, message: 'is not a block name (lowercase, digits and dashes)' })
+        }
+        if (!isObject(entry)) {
+          issues.push({ field, message: 'must be an object' })
+          continue
+        }
+        for (const key of ['name', 'line'] as const) checkGalleryText(entry, key, field, issues)
+        const sub: ValidationIssue[] = []
+        checkString(entry, 'image', sub, true)
+        checkRelativePath(entry, 'image', sub)
+        checkString(entry, 'group', sub, true)
+        for (const i of sub) issues.push({ field: `${field}.${i.field}`, message: i.message })
       }
     }
   }
