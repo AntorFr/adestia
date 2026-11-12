@@ -792,3 +792,28 @@ branch and that `test:plugins` is replayed after a red vitest run.
   instead of `waitForTimeout(500)`, and the list-icon test does the same for its two former
   fixed delays, so neither turns red under the load of the full suite. No assertion is
   removed. A test-only fix: nothing changes for users.
+
+## v0.97.11
+
+- **The pages "refused save" test now waits for each state before moving on** — the
+  `sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur` test presses Enter
+  on the "/" menu only once no save is in flight, waits for the callout block to enter the
+  editor (reopening the menu up to three times if an autosave closed it), then waits for the
+  PUT that carries the `:::callout`, so it no longer turns red under the load of the full
+  suite. Five distinct timeouts name what never happened. No assertion is removed. A
+  test-only fix: nothing changes for users.
+
+## Unreleased
+
+- **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
+  read-only page) opens a sheet of cards, grouped and searchable, for every core block and
+  every enabled plugin's; the `/` menu keeps its blocks and ends with "Browse", which opens
+  the same sheet. Arrows and Enter choose by keyboard. The block lands after the block that
+  holds the selection, at the end of the page when none does. Its form and variants come later.
+- **Move a block without the mouse** — In editing, a block moves with **Move up** / **Move down**
+  on its bar (44 px on a phone), `Alt+↑/↓`, or a long press then a drag on a touch screen; a live
+  region says "Moved to position 3 of 7". A block chosen in the gallery lands with a default body,
+  so the page is never refused for an empty block. A save that fails now reads "Not saved" with **Retry**.
+- **Gallery contract for plugins** — A plugin manifest may carry a `gallery` record per block
+  (`name`, `line`, `image`, `group`) so its block shows by name and line, not by identifier;
+  `project-management` declares `timeline` and `subproject`. A disabled plugin's blocks are absent.

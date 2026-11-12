@@ -4,6 +4,8 @@ export type {
   PluginBlockAttribute,
   PluginBlockSpec,
   PluginFieldSpec,
+  PluginGalleryEntry,
+  PluginGalleryText,
   PluginMcpServer,
   PluginManifest,
 } from './plugin.js'

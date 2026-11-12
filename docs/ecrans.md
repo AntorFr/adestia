@@ -124,7 +124,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-29 | Meals page layout | a page with `type: meals` | `plugins/meals/web/layouts.js`, `frise.js`, `meals.css` | Meal timeline (frise), drag to reorder, dish detail (`.meals-modal`) | P-5, P-11 |
 | E-30 | Scan overlay | composer button "Scan barcodes" | `plugins/scan/web/chrome.js`, `scanner.js`, `scan.css` | Full-screen camera, decoded codes list, “Add to message” into the composer | P-11 |
 | E-31 | Project-management blocks | `:::timeline` and `:::subproject` blocks in a page | `plugins/project-management/web/blocks.js`, `model.js`, `pm.css` | Timeline of dated sub-pages, project status pills | P-11 |
-| E-34 | Block gallery | **Add block** in the editor bar, or "Browse" at the foot of the `/` menu | `editor/BlockGallery.tsx` (new) | Browse the blocks, see each, insert one at a chosen place | P-17, P-19, P-20 |
+| E-34 | Block gallery | **Add block** in the editor bar, or "Browse" at the foot of the `/` menu | `editor/BlockGallery.tsx` | Browse the blocks, see each, insert one at a chosen place | P-17, P-19, P-20 |
 | E-35 | Block data form | **Edit data** in E-6, or after an insertion from E-34 | `editor/BlockForm.tsx` (new) | Fill the figures, phases, items, rows of a block in fields | P-18, P-20 |
 | E-36 | New from template | **New from template** button in the header of E-3, shown only where the folder can be written (new: today a page is created by asking the agent) | `app/NewFromTemplate.tsx` (new), in the shared sheet | Choose a shipped template, name the page, create it in the folder and open it in editing | P-20 |
 | E-32 | Offline banner | above the open screen, whichever it is, while the server does not answer (it pushes the screen down, it does not cover it) | `app/Offline.tsx`, `app/App.tsx` | Say "The server is not responding"; goes away by itself when it answers (`adestia-ajouts`, B-19) | P-16 |
@@ -511,13 +511,36 @@ status page from the template, with the candidate project blocks). Light and dar
 
 | E-n | Adds | Notes |
 |---|---|---|
-| E-4 (editing) | **Move up / Move down** on the block bar, keyboard move (focus on the bar, `Alt+↑/↓`; `Alt+←/→` goes in/out of a container), touch move, a live region "Moved to position 3 of 7", the drop line also shown inside containers, a visible reason when a drop is refused | tranche 1 for the page level; tranche 3 for containers. The grip and its pointer drag stay |
+| E-4 (editing) | **Move up / Move down** on the block bar, keyboard move (focus on the bar, `Alt+↑/↓`), touch move, a live region "Moved to position 3 of 7", the drop line; tranche 3 adds `Alt+←/→` (in/out of a container), the drop line inside containers and the refusal of a drop | tranche 1 is the page level only. The grip and its pointer drag stay; at page level no drop can be refused (nothing is a container yet), so tranche 1 writes no refusal. The block bar reads, in order: grip (`Move`), **Move up**, **Move down**, `trash-2`, settings (the existing "Leave the parent block" button, hidden at the page level, sits before `trash-2`). States in "E-4 move and E-34, states" below |
 | E-4 (reading and editing) | `section` (title, fold control, optional icon) and `columns` (2 or 3, stacking under 820 px) | tranche 3. A page without containers is drawn as today (B-31) |
 | E-6 | redrawn: grouped fields, labels in the user's language (closes Q-3 for blocks), variants as small pictures, live effect, **Edit data** | tranche 2; same popover, bounded as now |
-| E-34 | gallery sheet (bottom sheet on a phone): search field, blocks in groups (Text, Data, Layout, Project, plugins), a card each with a picture and one line; keyboard: arrows, Enter inserts; a block with variants shows them as small pictures on its card and the chosen one is inserted (the same pictures as E-6); empty search state; no loading state (the list is local) | tranche 1 lists the blocks that exist; later tranches add theirs |
+| E-34 | gallery sheet titled **Add block** (bottom sheet on a phone): search field, blocks in groups (Text, Data, Layout, Project, plugins' own group), a card each with a picture and one line; keyboard: arrows, Enter inserts; a block with variants shows them as small pictures on its card and the chosen one is inserted (the same pictures as E-6). Opened by **Add block** in the editor bar or by "Browse" in the `/` menu (a row of E-4's slash menu, whose last item it is) | tranche 1 lists the blocks that exist; later tranches add theirs. States in "E-4 move and E-34, states" below |
 | E-35 | form in the shared sheet: one row per figure/phase/item, add, remove (named `trash-2`), reorder with the same move controls, fields typed (text, number, date, link; no status column, see "E-35 as built"); validation said under the field; **Raw** switches to the lines | tranche 2 |
 | E-36 | sheet opened from E-3: the shipped templates as cards (picture, name, one line), a title field, **Create**; the page is written in the open folder by the same write path as an edit, then opened in E-4; states: empty (no template shipped: the button is hidden), name already taken (said under the field), write refused (the shared error line) | tranche 4. No "blank page" card: that is not added here |
 | E-31 | redrawn blocks and the added project blocks, chosen on `etat-projet` | tranche 4; the amber/late rules of E-31 stay |
+
+
+### E-4 move and E-34, states (`adestia-pages-deplacer`)
+
+Texts are in `en` and `fr` like the rest of the shell.
+
+| State | E-4, moving | E-34, gallery |
+|---|---|---|
+| Normal | the block moves one place; the live region says "Moved to position 3 of 7" (a note shown for a few seconds, no toast) | cards as described above; the card under focus is marked, Enter or a click on a card inserts at the insertion point and closes the sheet (no separate confirm button); **x** and `Escape` close it without inserting; the search field reads "Search a block…"; each card shows its name and one line, e.g. "Pages of one kind, listed where you put it." for Content |
+| Empty | a page of one block: the move controls are disabled (a disabled button, not hidden); a page of zero blocks has nothing to move, and **Add block** opens the gallery, which inserts at the end of the page | search with no match: `search` icon, "No block called "gantt"", "Try "timeline", or clear the search to browse everything." No "nothing to list" case: the core blocks always exist |
+| First / last block | **Move up** disabled on the first, **Move down** on the last; `Alt+↑/↓` does nothing and the live region says "Already first" / "Already last" | — |
+| Loading | none: the move is local | none: the list is local; a card's picture is drawn with it |
+| Image absent | — | a plugin without `image` gets a neutral card picture (generic bars); the name and the line still show |
+| Error | a failed save after a move is E-4's `failed` state: the save status says "Not saved" with E-4's existing **Retry**; the moved order stays on screen until Retry succeeds or the page is reloaded, which shows the order the file holds | an insertion refused because the page was written elsewhere says "The page changed." with **Reload** (the existing banner); the sheet closes at the moment of the insertion attempt, not before (a write by the agent while the sheet is open changes nothing until then); nothing is inserted |
+| Offline | the move is an edit: it follows the offline banner (E-32) and E-4's save states unchanged | same: the sheet opens, the insertion is an edit; the banner says "The server is not responding" (E-32) |
+| Read-only | no move controls, no grip, no shortcut: the page has no **Edit** (E-4, read-only) | **Add block** is absent and so is "Browse" in the `/` menu (E-4 not in editing) |
+| Extreme content | a long block title is truncated on the bar, never pushed off | names and lines are truncated to one line each (`text-overflow`), the full name in the card's accessible name; dozens of cards scroll in the sheet; the search ignores case and accents |
+| Phone | move controls on each bar stay reachable (44 px); a long press (400 ms) on the grip lifts the block (the dragging style, no haptic), a drag then moves it, moving away before 400 ms or releasing without moving cancels | bottom sheet, 80 % of the height, the search field on top, closing with the soft keyboard open first closes the keyboard |
+| Drop refused | none at page level (tranche 3 adds its text; the mockup shows that text, marked tranche 3; the Layout group of the gallery holds the existing `row` ("Columns") and `gallery` cards) | — |
+
+Card names as written, core: Content, Callout, Figures, List, Table, Columns (the existing `:::row`, not the tranche 3
+`columns` container), Image gallery; with `project-management` enabled: Timeline, Sub-projects (the `subproject` block); a
+plugin block with no record shows its identifier as name, the plugin's id as group and no line. The picture is the block's `image`.
 
 ## The plugins' screens, as built
 

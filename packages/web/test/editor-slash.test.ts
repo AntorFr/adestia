@@ -52,7 +52,7 @@ describe('the block menu', () => {
     // A block's settings open where it is inserted now, so a required
     // attribute is something to ASK for — `content` comes in on its `type`.
     // `app` stays out: the core's own table says nothing draws it.
-    expect(items().map((item) => item.key)).toEqual(['callout', 'row', 'gallery', 'content', 'figures', 'table', 'list'])
+    expect(items().map((item) => item.key)).toEqual(['callout', 'row', 'gallery', 'content', 'figures', 'table', 'list', 'browse'])
     expect(items().map((item) => item.key)).not.toContain('app')
   })
 

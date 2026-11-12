@@ -140,28 +140,68 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               .catch(() => null)
             // the editor is mounted and holds the page text: the signal that a click lands on the real paragraph
             await page.waitForFunction(() => [...document.querySelectorAll('.ProseMirror')].some((e) => (e.textContent ?? '').includes('Corps.')), null, { timeout: 45_000 })
+            // saves the page makes while it is being typed into (the autosave of the intermediate text): counted from
+            // before the first keystroke, so Enter is not pressed while one is in flight — its answer would rebase the
+            // editor under the block just picked and the refusal would never leave
+            const puts: string[] = []
+            let inFlight = 0
+            const isSave = (r: any) => r.method() === 'PUT' && r.url().includes(`/api/pages/refus-${i}`)
+            page.on('request', (r: any) => { if (isSave(r)) inFlight++ })
+            page.on('requestfinished', (r: any) => { if (isSave(r)) inFlight-- })
+            page.on('requestfailed', (r: any) => { if (isSave(r)) inFlight-- })
+            page.on('response', (r: any) => { if (isSave(r.request())) puts.push(String(r.status())) })
             await page.locator('.ProseMirror').last().getByText('Corps.').click()
             await page.keyboard.press('End')
             await page.keyboard.press('Enter')
-            await page.keyboard.type('/')
-            await page.locator('.milkdown-slash-menu').first().waitFor({ state: 'visible', timeout: 45_000 })
-            await page.keyboard.type('callout')
-            // the menu has filtered itself down to the block: the proof Enter will pick it
-            await page.waitForFunction(() => {
+            // The slash menu can lose the Enter under load: an autosave of the intermediate text answers between the
+            // checks and the keystroke, rebases the editor and closes the menu. The signal is the block itself: until it
+            // is in the editor, the line is cleared and the menu opened again (3 attempts), then the wait blames the pick.
+            const callout = page.locator('.ProseMirror [data-block="callout"]').first()
+            const menuFiltered = (ms: number) => page.waitForFunction(() => {
               const menu = document.querySelector('.milkdown-slash-menu') as HTMLElement | null
               return !!menu && menu.dataset.show === 'true' && /callout/.test(menu.innerText) && !/Heading/.test(menu.innerText)
-            }, null, { timeout: 30_000 })
-            await page.keyboard.press('Enter') // an empty :::callout, which the vocabulary refuses at save
-            // first signal: the save left and the server answered it
-            expect(await saveAnswered, 'the save never left: no PUT answered').not.toBeNull()
-            // second signal: the status carries the refusal
+            }, null, { timeout: ms })
+            let picked = false
+            for (let attempt = 0; attempt < 3 && !picked; attempt++) {
+              if (attempt > 0) await page.keyboard.press('Shift+Home') // the line holds what is left of the last try: typed over
+              await page.keyboard.type('/')
+              const last = attempt === 2
+              // a menu that never opens (the '/' lost to a rebase under load) is a failed attempt, not a verdict: only the last one blames it
+              const opened = await page.locator('.milkdown-slash-menu').first().waitFor({ state: 'visible', timeout: last ? 45_000 : 10_000 }).then(() => true, () => false)
+              if (!opened) {
+                if (last) throw new Error(`the slash menu never opened after 3 attempts (saves seen: [${puts.join(',')}])`)
+                continue
+              }
+              await page.keyboard.type('callout')
+              // the menu has filtered itself down to the block: the proof Enter will pick it
+              const filtered = await menuFiltered(last ? 30_000 : 10_000).then(() => true, () => false)
+              if (!filtered) {
+                if (last) throw new Error(`the slash menu never filtered down to the callout after 3 attempts (saves seen: [${puts.join(',')}])`)
+                continue
+              }
+              // no save in flight: the signal that the editor is at rest and Enter lands on the menu alone
+              for (const start = Date.now(); inFlight > 0; ) {
+                if (Date.now() - start > 30_000) throw new Error(`an autosave never answered before the block was picked (saves seen: [${puts.join(',')}])`)
+                await page.waitForTimeout(50)
+              }
+              await page.keyboard.press('Enter') // an empty :::callout, which the vocabulary refuses at save
+              // the proof the keystroke landed on the menu: the block is in the editor. Without it an Enter that fell
+              // through as a newline would leave no refusal to wait for, and the wait below would blame the save
+              picked = await callout.waitFor({ state: 'attached', timeout: attempt === 2 ? 45_000 : 10_000 }).then(() => true, () => false)
+            }
+            if (!picked) {
+              await shot(page, `refus-ECHEC-bloc-${skin}-${locale}-${theme}`)
+              throw new Error(`the callout never entered the editor: Enter did not pick the block, so no refusal could leave (saves seen: [${puts.join(',')}])`)
+            }
+            expect(await saveAnswered, `the save never left: no PUT carrying the empty callout was answered (l'enregistrement n'est jamais parti); PUT statuses seen: [${puts.join(',')}]`).not.toBeNull()
+            // first signal above: the save left and the server answered it; second signal: the status carries the refusal
             const flat = () => page.evaluate(() => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' '))
             const want = NEEDS_CONTENT[locale].saved
             await page
               .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 15_000 })
               .catch(async (error: unknown) => {
                 await shot(page, `refus-ECHEC-${skin}-${locale}-${theme}`)
-                throw new Error(`the answer came without the status text: ${String(error)}\nstatus read: ${(await flat()).slice(-400)}`)
+                throw new Error(`the answer came without the status text (la réponse est venue sans le texte du statut): ${String(error)}\nstatus read: ${(await flat()).slice(-400)}`)
               })
             const other = locale === 'fr' ? NEEDS_CONTENT.en.saved : NEEDS_CONTENT.fr.saved
             expect(await flat(), `${theme}`).not.toContain(other)
