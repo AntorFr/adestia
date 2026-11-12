@@ -34,6 +34,8 @@ Aucune cause hors tests (config vitest, mémoire, délai) n'apparaît dans le ra
 montre aucun rouge ni instable. Les dix rejeux de `npx vitest run` n'ont pas été joués : les rapports ne sont pas perdus et un
 passage dure ~25 min. L'étape se juge au rejeu de la suite de l'epic une fois `rouge-adestia-pages-1` livrée.
 
+Corrigés par `feature/rouge-adestia-pages-1` (tests seuls, code du produit inchangé) : le cas B-19 « 502/503/504 » de `besoin-hors-ligne-bords.test.ts` ne laisse répondre que l'appel sous test (tout autre appel `/api/` est coupé : une réponse efface le bandeau et retire la boucle de sonde) et attend des signaux (réponse passerelle, sonde échouée, bandeau présent, puis parti) au lieu de 10 s / 8 s ; `sauvegarde_refusee_…` de `besoin-pages-ensemble-browser.test.ts` relance sa frappe `/` en se replaçant en fin de document (une réponse d'autosave peut avoir retiré la ligne vide et le focus), attend le statut 45 s, avec un `beforeAll` de 180 s et un délai de test de 300 s.
+
 ## Défauts connus
 
 La liste de référence est dans [ARCHITECTURE.md](../ARCHITECTURE.md), section
