@@ -1292,7 +1292,7 @@ portion; **kept: reason** names what B-1 deliberately leaves.
 
 ## Block settings and data forms, in detail (`adestia-pages-blocs-formulaires`)
 
-Tranche 2 of `adestia-pages` builds E-6 and E-35 as the mock-ups `reglages-formulaires` and `blocs-avant-apres` show them. What it adds to the framing's rows above:
+Tranche 2 of `adestia-pages` builds E-6 and E-35 as the mock-ups `reglages-formulaires` and `blocs-avant-apres` (`docs/maquettes/*.html`) show them; the "as built" paragraphs below, then this section's text, govern where a mock-up differs. What it adds to the framing's rows above:
 
 **Blocks redrawn (B-25), core only.** `figures`, `list`, `table`, `callout`, `content` and `gallery` are redrawn on the charter's tokens; `timeline` and `subproject` (E-31) are tranche 4's: this tranche gives `timeline` its form (E-35) and its gallery entry, not its redraw or its `view` variants. Variants are `view` values (AD-35) and only these two blocks have more than one: `figures` = `tiles` (default, a tile per figure with its caption) | `inline` (one line of figures); `list` = `rows` (default) | `cards` | `chips` (already in the spec: it gets pictures and a redraw). The mock-up's "meter" is not a variant: a tile whose figure is a percentage draws its bar, nothing is written for it. The other four blocks have one redraw and no `view`.
 
