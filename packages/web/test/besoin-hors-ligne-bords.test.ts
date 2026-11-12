@@ -12,6 +12,26 @@ import { type Browser, type Page, type Instance, launch, newBrowser, open, playw
 
 const WORDS = 'The server is not responding'
 type Route = { request(): { url(): string }; abort(c?: string): Promise<void>; fulfill(o: { status?: number; contentType?: string; body?: string }): Promise<void>; continue(): Promise<void> }
+type Ev = { on(e: string, f: (r: unknown) => void): void }
+/**
+ * Calls the page has sent and not yet heard back from (answer headers or failure). Tracked from the
+ * start so that, once a route is armed, the ones it could not catch can be waited out.
+ */
+function trackInFlight(page: Page) {
+  const pending = new Set<unknown>()
+  const done = (r: unknown) => pending.delete(r)
+  const ev = page as unknown as Ev
+  ev.on('request', (r) => { if (/\/api\//.test((r as { url(): string }).url())) pending.add(r) })
+  ev.on('response', (r) => done((r as { request(): unknown }).request()))
+  ev.on('requestfailed', done)
+  return {
+    /** Resolves when every call pending right now has been answered or has failed. */
+    async drain(): Promise<void> {
+      const seen = [...pending]
+      while (seen.some((r) => pending.has(r))) await new Promise((r) => setTimeout(r, 50))
+    },
+  }
+}
 const asRoute = (r: unknown) => r as Route
 const unroute = (page: Page, glob: string) => (page as unknown as { unroute(g: string): Promise<void> }).unroute(glob)
 
@@ -48,8 +68,10 @@ describe.skipIf(!playwright)('B-19 · bords du bandeau « le serveur ne répond 
     return o
   }
 
+  let flight: ReturnType<typeof trackInFlight>
   it.each([502, 503, 504])('un %i sur un appel /api/ alors que la sonde échoue : le bandeau apparaît ; la sonde repasse : il part seul', async (status) => {
-    const { context, page } = await ready()
+    const { context, page } = await open(browser, inst.url, { theme: 'light', size: 'desk', locale: 'en', route: '/', before: async (p) => { flight = trackInFlight(p) } })
+    await page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
     try {
       // The link is down for the whole page but the one call under test: no other /api/ call may
       // answer in between (an answer clears the banner and retires the probe loop).
@@ -71,6 +93,9 @@ describe.skipIf(!playwright)('B-19 · bords du bandeau « le serveur ne répond 
           await asRoute(r).abort('failed')
         }
       })
+      // A call sent before the route existed is not caught by it: if it answers late it clears the
+      // banner and retires the probe loop. Wait for those to be heard back, then provoke the 502.
+      await flight.drain()
       await page.evaluate(() => (location.hash = '/settings/instructions'))
       // Signals, not seconds: the simulated request went out, and the probe it started failed.
       await gatewayAnswered
