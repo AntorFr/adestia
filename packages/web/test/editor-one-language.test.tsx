@@ -26,7 +26,7 @@ const fr = translator('fr')
 const en = translator('en')
 
 const FRENCH_IN_ENGLISH = [
-  'Fermer', 'Réglages du bloc', 'Ce bloc', 'Déplacer le bloc', 'Aperçu', 'Liste à puces', 'Aucun fichier ici.',
+  'Fermer', 'Réglages du bloc', 'Contenu', 'Déplacer le bloc', 'Aperçu', 'Liste à puces', 'Aucun fichier ici.',
   'Enregistrement', 'Enregistré', 'introuvable',
 ]
 const ENGLISH_IN_FRENCH = ['Saving…', 'Saved', 'this page was not found', 'The agent changed this page']
@@ -53,14 +53,14 @@ describe('BlockSettings', () => {
   it('speaks French, and none of the English words it used to carry', () => {
     const out = settings(fr)
     expect(out).toContain('Réglages du bloc')
-    expect(out).toContain('Ce bloc')
+    expect(out).toContain('Contenu')
     expect(out).toContain('Fermer')
-    absent(out, ['Block settings', 'This block', 'aria-label="Close"'])
+    absent(out, ['Block settings', 'Content', 'aria-label="Close"'])
   })
   it('speaks English, and none of the French words', () => {
     const out = settings(en)
     expect(out).toContain('Block settings')
-    expect(out).toContain('This block')
+    expect(out).toContain('Content')
     absent(out, FRENCH_IN_ENGLISH)
   })
 })
