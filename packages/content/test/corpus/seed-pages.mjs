@@ -11,7 +11,7 @@
  * Plain Node, no dependency, so the corpus test and the script that (re)writes
  * the fixtures (`write-fixtures.mjs`) read the seeds the same way.
  */
-import { lstat, mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { pathToFileURL } from 'node:url'

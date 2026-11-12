@@ -1,0 +1,7 @@
+---
+title: Membre 2
+type: fichecrlf
+cat: bois
+---
+
+Corps.

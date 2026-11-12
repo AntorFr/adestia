@@ -1,0 +1,9 @@
+---
+title: Collection crlf
+type: collection
+of: fichecrlf
+groupBy: cat
+into: crlf-coll/membres
+---
+
+Les fiches.

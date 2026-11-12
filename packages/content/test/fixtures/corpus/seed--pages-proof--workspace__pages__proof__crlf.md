@@ -1,0 +1,10 @@
+---
+title: CRLF proof
+status: active
+role: proof
+cat: bench
+---  
+
+# CRLF proof
+
+The editor and index read the same fields.

@@ -1,0 +1,27 @@
+---
+title: Six blocs six-boutons
+---
+
+:::callout{ico="💡" title="Bloc 1"}
+Texte du bloc 1.
+:::
+
+:::callout{ico="💡" title="Bloc 2"}
+Texte du bloc 2.
+:::
+
+:::callout{ico="💡" title="Bloc 3"}
+Texte du bloc 3.
+:::
+
+:::callout{ico="💡" title="Bloc 4"}
+Texte du bloc 4.
+:::
+
+:::callout{ico="💡" title="Bloc 5"}
+Texte du bloc 5.
+:::
+
+:::callout{ico="💡" title="Bloc 6"}
+Texte du bloc 6.
+:::

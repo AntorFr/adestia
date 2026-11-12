@@ -1,0 +1,6 @@
+---
+title: Note CRLF valide
+every: 2h
+---
+
+Fais le point.
