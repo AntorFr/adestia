@@ -72,6 +72,8 @@ export type Ctx = {
    * the source tells the two apart, so only the head reads this.
    */
   readonly prose?: boolean
+  /** Inside a `col`: `w` is ignored at render time (it stays in the file). */
+  readonly inColumns?: boolean
 }
 
 

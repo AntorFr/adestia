@@ -550,6 +550,7 @@ const FR: Readonly<Record<string, string>> = {
   'This list needs the pages index.': 'Cette liste a besoin de l’index des pages.',
   'Nothing under this page.': 'Rien sous cette page.',
   'nothing carries this name here': 'rien ne porte ce nom ici',
+  'Untitled section': 'Section sans titre',
   'this block does not render yet': 'ce bloc ne s’affiche pas encore',
   'this page was not found': 'cette fiche est introuvable',
   '%n pages carry this id': '%n fiches portent cet identifiant',

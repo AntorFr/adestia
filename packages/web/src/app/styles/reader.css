@@ -623,3 +623,47 @@
 /* Crepe paints its own surface; ours is the canvas the page already sits on. */
 .adestia-editor__surface .milkdown,
 .adestia-editor__surface .milkdown .editor { background: none; }
+
+/* Containers (AD-32). In reading they draw content alone: no dashed edge, no
+   drop lane, an empty column is empty. */
+.adestia-block-section { margin: 1.4em 0; }
+.adestia-block-section__head { margin: 0; font: inherit; }
+.adestia-block-section__toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 28px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.adestia-block-section__title {
+  font: 600 1.1rem/1.25 var(--font-title);
+  letter-spacing: var(--title-track);
+}
+.adestia-block-section__chevron { flex: none; transition: transform 0.15s; }
+.adestia-block-section--closed .adestia-block-section__chevron { transform: rotate(-90deg); }
+.adestia-block-section__body { margin-top: var(--space-2); }
+.adestia-block-section__body[hidden] { display: none; }
+.adestia-block-section__body > :last-child { margin-bottom: 0; }
+
+.adestia-columns {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0 0 1.4em;
+}
+.adestia-columns--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.adestia-columns--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.adestia-col { min-width: 0; }
+.adestia-col > :first-child { margin-top: 0; }
+.adestia-col > :last-child { margin-bottom: 0; }
+/* Media queries cannot read a custom property: 820px is --breakpoint-mobile.
+   Stacked, the columns keep the order of the file. */
+@media (max-width: 820px) {
+  .adestia-columns--2,
+  .adestia-columns--3 { grid-template-columns: minmax(0, 1fr); }
+}
