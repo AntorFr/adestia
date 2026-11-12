@@ -257,6 +257,32 @@
   font-size: var(--text-xs);
 }
 .adestia-figure__label em { font-style: normal; color: var(--text-faint); }
+/* A percentage tile draws its bar: a track and a fill, nothing written for it. */
+.adestia-figure__meter {
+  display: block;
+  height: 6px;
+  margin-top: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.adestia-figure__meter > i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+/* `view=inline` — one line of figures, the value beside its label. */
+.adestia-figures--inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+  align-items: baseline;
+}
+.adestia-figure--inline {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.adestia-figure--inline .adestia-figure__label { display: inline; margin: 0; }
 
 /* `:::table` — the ordinary table, with its first column read as a tone.
    Scrolls in its own box: a wide grid must never make the page move

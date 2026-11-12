@@ -214,7 +214,11 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     name: 'figures',
     content: 'flow',
     description: 'Figures drawn as tiles, from a markdown list.',
-    attributes: {},
+    attributes: {
+      // `tiles` is a tile per figure (a percentage tile draws its bar, which
+      // is a drawing and not a value); `inline` is one line of figures.
+      view: { values: ['tiles', 'inline'], default: 'tiles' },
+    },
   },
 
   /**
