@@ -118,7 +118,7 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
         }
         continue
       }
-      if (attributeSpec.values && !attributeSpec.values.includes(value)) {
+      if (attributeSpec.values && !attributeSpec.fallback && !attributeSpec.values.includes(value)) {
         diagnostics.push({
           severity: 'error',
           block: name,
