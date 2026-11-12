@@ -33,7 +33,8 @@ export default async function scenario() {
       await page.waitForSelector('.adestia-blockform')
       const shot = (name) => page.screenshot({ path: join(out, `${width}-${theme}-${name}.png`) })
       await shot('1-normal')
-      await page.getByRole('button', { name: /^(Add|Ajouter)$/ }).click()
+      // Enough rows for the last one to sit under the foot of the scrolling body: it must scroll into view.
+      for (let n = 0; n < 5; n += 1) await page.getByRole('button', { name: /^(Add|Ajouter)$/ }).click()
       await page.locator('.adestia-blockform__row').last().getByLabel(/Value|Valeur/).fill('three')
       await shot('2-invalid')
       await page.getByRole('button', { name: /^Raw$|^Brut$/ }).click()

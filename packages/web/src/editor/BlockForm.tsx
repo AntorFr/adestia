@@ -10,7 +10,7 @@
  * it was.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 
 import type { PluginGalleryColumn, PluginGalleryFields, PluginGalleryText } from '@antorfr/adestia-schemas'
 
@@ -78,8 +78,16 @@ export function BlockForm({ name, fields, lines, stale = false, locale, onApply,
     focus.current = null
     const row = body.current?.querySelector<HTMLElement>(`[data-row="${wanted.id}"]`)
     const target = row?.querySelector<HTMLElement>(wanted.select)
+    // Focus alone does not bring a row under the foot of the scrolling body into view.
+    row?.scrollIntoView?.({ block: 'nearest' })
     ;(target && !target.hasAttribute('disabled') ? target : row?.querySelector<HTMLElement>('input'))?.focus()
   })
+
+  // A message that appears under the field being typed in must not sit under the foot of the body.
+  useEffect(() => {
+    if (current === undefined) return
+    body.current?.querySelector<HTMLElement>(`[data-row="${current}"]`)?.scrollIntoView?.({ block: 'nearest' })
+  }, [items, current])
 
   const columns: readonly PluginGalleryColumn[] = isTable
     ? Array.from({ length: widthOf(items) }, (_, i) => ({ key: cellKey(i), kind: 'text' as const, label: '' }))
@@ -177,7 +185,7 @@ export function BlockForm({ name, fields, lines, stale = false, locale, onApply,
   const apply = () => onApply(raw !== null ? linesOfText(raw) : written())
   const blocked = stale || (raw === null && problems.size > 0)
 
-  const shown = kept.filter((one) => !(isTable && isDelimiter(one.line)))
+  const shown = kept.filter((one) => one.line.trim() !== '' && !(isTable && isDelimiter(one.line)))
   const focused = items.find((one) => one.id === current) ?? items[items.length - 1]
 
   return (
@@ -246,7 +254,17 @@ export function BlockForm({ name, fields, lines, stale = false, locale, onApply,
                     ))}
                   </div>
                 )}
-                <ol className={`adestia-blockform__rows${isTable ? ' adestia-blockform__rows--table' : ''}`}>
+                {!isTable && (
+                  <div className="adestia-blockform__head" style={{ '--cols': columns.length } as CSSProperties} aria-hidden="true">
+                    {columns.map((column) => (
+                      <span key={column.key}>{say(column.label, locale, t)}</span>
+                    ))}
+                  </div>
+                )}
+                <ol
+                  className={`adestia-blockform__rows${isTable ? ' adestia-blockform__rows--table' : ''}`}
+                  style={{ '--cols': columns.length } as CSSProperties}
+                >
                   {items.map((one, index) => {
                     const bad = problems.get(one.id) ?? []
                     return (
