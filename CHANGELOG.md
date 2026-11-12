@@ -822,6 +822,12 @@ branch and that `test:plugins` is replayed after a red vitest run.
   (`role="meter"`, 0–100, the label as its name) with nothing written for it. `list` keeps
   `rows`, `cards`, `chips`. The default of a variant is never written unless the user chose it.
   Blocks of `project-management` are not redrawn yet.
+- **Block settings redrawn** — The settings of a block are grouped *Look* (a block with several
+  `view`s, such as `figures` or `list`, shows them as small pictures), *Content*, *Layout* (width
+  as ⅓ ½ ⅔ Full, then « Show a box » Yes/No) and *Title and icon*, with a label and one line of
+  help in `en` or `fr`; only a plugin block's attribute shows its identifier. A variant or width
+  applies at once, in one undo step; a default is written only when chosen. Foreign attributes
+  sit last under « Other attributes », and the heading is absent when there are none.
 - **Data form for blocks** — **Edit data** at the foot of a block's settings opens a form for its
   lines (`figures`, `list`, `table`, and any block whose manifest declares `fields`): one row per
   entry, a field per column, **Move up** / **Move down** and `Alt+↑/↓`, **Remove row**, **Add**, the

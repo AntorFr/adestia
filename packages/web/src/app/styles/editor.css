@@ -647,3 +647,7 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
 .adestia-blockform__kept h3 { margin: 0 0 var(--space-1); font: 600 var(--text-xs) var(--font); }
 .adestia-blockform__kept ul { margin: 0; padding-left: var(--space-3); }
 .adestia-blockform__kept code { font-family: var(--font-mono); overflow-wrap: anywhere; white-space: pre-wrap; }
+
+/* E-6: the help line under a segmented control sits as under any field. */
+.adestia-blockset .adestia-field > .adestia-segmented { align-self: flex-start; max-width: 100%; }
+.adestia-blockset .adestia-field > .adestia-segmented--image { align-self: stretch; }
