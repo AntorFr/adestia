@@ -11,7 +11,18 @@
  * definitions rather than maintained beside them; one source of truth, always.
  */
 
-import { PLUGIN_KINDS, PLUGIN_SCHEMA_VERSION, type PluginManifest } from './plugin.js'
+import {
+  GALLERY_COLUMN_KINDS,
+  GALLERY_LINE_FORMATS,
+  PLUGIN_KINDS,
+  PLUGIN_SCHEMA_VERSION,
+  type PluginGalleryColumn,
+  type PluginGalleryEntry,
+  type PluginGalleryFields,
+  type PluginGalleryText,
+  type PluginGalleryView,
+  type PluginManifest,
+} from './plugin.js'
 import { SKIN_SCHEMA_VERSION, type SkinManifest } from './skin.js'
 
 export interface ValidationIssue {
@@ -103,6 +114,70 @@ function checkGalleryText(raw: Raw, key: string, field: string, issues: Validati
     }
   } else {
     issues.push({ field: at, message: 'must be a string or an {en, fr} pair' })
+  }
+}
+
+function galleryText(value: unknown): PluginGalleryText | undefined {
+  if (typeof value === 'string') return value.length > 0 ? value : undefined
+  if (!isObject(value) || typeof value['en'] !== 'string' || value['en'].length === 0) return undefined
+  const fr = value['fr']
+  if (fr === undefined) return { en: value['en'] }
+  return typeof fr === 'string' && fr.length > 0 ? { en: value['en'], fr } : undefined
+}
+
+/**
+ * A `fields` declaration as the shell may read it, or undefined.
+ *
+ * Never an error: a plugin written for a shell with more line formats must
+ * still load on this one, and simply gets no form (AD-forms-1).
+ */
+export function readGalleryFields(raw: unknown): PluginGalleryFields | undefined {
+  if (!isObject(raw)) return undefined
+  const line = (GALLERY_LINE_FORMATS as readonly unknown[]).find((one) => one === raw['line'])
+  if (line === undefined) return undefined
+  const given = raw['columns']
+  if (!Array.isArray(given)) return undefined
+  const columns: PluginGalleryColumn[] = []
+  const seen = new Set<string>()
+  for (const one of given as unknown[]) {
+    if (!isObject(one)) return undefined
+    const key = one['key']
+    const kind = (GALLERY_COLUMN_KINDS as readonly unknown[]).find((k) => k === one['kind'])
+    const label = galleryText(one['label'])
+    if (typeof key !== 'string' || !/^[a-z][A-Za-z0-9_-]*$/.test(key) || seen.has(key)) return undefined
+    if (kind === undefined || label === undefined) return undefined
+    if (one['required'] !== undefined && typeof one['required'] !== 'boolean') return undefined
+    seen.add(key)
+    columns.push({
+      key,
+      kind: kind as PluginGalleryColumn['kind'],
+      label,
+      ...(one['required'] === true ? { required: true } : {}),
+    })
+  }
+  if (columns.length === 0 && line !== 'table') return undefined
+  return { columns, line: line as PluginGalleryFields['line'] }
+}
+
+/** A `view` declaration as the shell may read it, or undefined. */
+export function readGalleryView(raw: unknown): PluginGalleryView | undefined {
+  if (!isObject(raw) || !Array.isArray(raw['values'])) return undefined
+  const values = raw['values'] as unknown[]
+  if (values.length < 2 || !values.every((v) => typeof v === 'string' && /^[a-z][a-z0-9-]*$/.test(v))) return undefined
+  if (new Set(values).size !== values.length) return undefined
+  if (typeof raw['default'] !== 'string' || !values.includes(raw['default'])) return undefined
+  return { values: values as string[], default: raw['default'] }
+}
+
+/** The entry with `fields` and `view` reduced to what is readable. */
+function readGalleryEntry(entry: Raw): PluginGalleryEntry {
+  const { fields, view, ...rest } = entry
+  const readFields = readGalleryFields(fields)
+  const readView = readGalleryView(view)
+  return {
+    ...(rest as unknown as PluginGalleryEntry),
+    ...(readFields ? { fields: readFields } : {}),
+    ...(readView ? { view: readView } : {}),
   }
 }
 
@@ -330,6 +405,12 @@ export function parsePluginManifest(input: unknown, folderName: string): PluginM
 
   if (issues.length > 0) {
     throw new ManifestError(`plugin manifest for "${folderName}"`, issues)
+  }
+  const given = input['gallery']
+  if (isObject(given)) {
+    const read: Record<string, PluginGalleryEntry> = {}
+    for (const [name, entry] of Object.entries(given)) read[name] = readGalleryEntry(entry as Raw)
+    return { ...input, gallery: read } as unknown as PluginManifest
   }
   return input as unknown as PluginManifest
 }
