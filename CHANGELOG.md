@@ -817,3 +817,8 @@ branch and that `test:plugins` is replayed after a red vitest run.
 - **Gallery contract for plugins** — A plugin manifest may carry a `gallery` record per block
   (`name`, `line`, `image`, `group`) so its block shows by name and line, not by identifier;
   `project-management` declares `timeline` and `subproject`. A disabled plugin's blocks are absent.
+- **Core blocks redrawn, `figures` gets `view`** — `figures` reads as tiles (default) or as one
+  line (`view=inline`); a tile whose figure is a percentage draws a bar named for screen readers
+  (`role="meter"`, 0–100, the label as its name) with nothing written for it. `list` keeps
+  `rows`, `cards`, `chips`. The default of a variant is never written unless the user chose it.
+  Blocks of `project-management` are not redrawn yet.
