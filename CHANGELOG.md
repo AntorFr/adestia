@@ -840,6 +840,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   `usePage` following the feed (30 s per test, 15 s per `waitFor`) and the P-2 tabs test of
   the chat (180 s). Assertions and product code are unchanged: nothing changes for users.
 
+## v0.98.0-adestia-pages.5
+
+- **The epic's red tests are green again** — the CHANGELOG guard (B-5) finds an entry for every
+  pre-release tag and `.agent/status.md` cites the current one; the `etape > guards` step and
+  the refused-save test (Nestor, English) no longer turn red. Documentation only: nothing
+  changes for users (task `rouge-adestia-pages-3`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
