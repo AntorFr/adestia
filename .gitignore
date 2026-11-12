@@ -26,3 +26,7 @@ bench/shots*/
 # transcripts, copies of an agent's pages — is evidence for one conversation,
 # not an artefact of the repository, and some of it is personal.
 tmp/
+
+# Written by scripts/suite-attestee.sh
+.suite-attestee/
+resultats.xml

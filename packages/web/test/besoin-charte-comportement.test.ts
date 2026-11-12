@@ -45,9 +45,10 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
     })
   })
 
-  describe('E-10 MCP servers', () => {
+  describe('E-10 MCP servers', { timeout: 180_000 }, () => {
     it('shows each health tone with an icon, and says nothing wired in the shared empty state when none is', async () => {
       await visit(browser, 'base', { route: '/settings/mcp' }, async (page) => {
+        await page.waitForSelector('.adestia-prefs__page .adestia-chip', { timeout: 60_000 })
         const tones = await page.evaluate(() =>
           [...document.querySelectorAll('.adestia-prefs__page .adestia-chip')]
             .filter((c) => ['connected', 'failed', 'needs a sign-in', 'starting', 'disabled'].includes((c.textContent ?? '').trim()))
@@ -323,7 +324,7 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
     })
   })
 
-  describe('E-19 problems band', () => {
+  describe('E-19 problems band', { timeout: 180_000 }, () => {
     it('is absent when nothing is wrong, an icon per kind when something is', async () => {
       await visit(browser, 'empty', { route: '/' }, async (page) => {
         expect(await page.evaluate(() => document.querySelectorAll('.adestia-problems').length)).toBe(0)

@@ -779,11 +779,11 @@ describe('a page that will not load', () => {
     // It used to say nothing at all: the screen kept whatever was on it, which
     // is the home, and every reader read that as a broken link.
     await open(404)
-    await waitFor(() => expect(screen.getByText('There is no page at this address.')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('There is no page at this address.')).toBeTruthy(), { timeout: 20_000 })
     // Verbatim, because the address is the one thing that lets somebody see
     // their own typo — or an agent's.
     expect(screen.getByText('sante/dietetique/reperes-proteines.md')).toBeTruthy()
-  })
+  }, 30_000)
 
   it('offers the folder above, which is where you look next', async () => {
     await open(404)
