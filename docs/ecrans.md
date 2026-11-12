@@ -536,7 +536,7 @@ Texts are in `en` and `fr` like the rest of the shell.
 | Read-only | no move controls, no grip, no shortcut: the page has no **Edit** (E-4, read-only) | **Add block** is absent and so is "Browse" in the `/` menu (E-4 not in editing) |
 | Extreme content | a long block title is truncated on the bar, never pushed off | names and lines are truncated to one line each (`text-overflow`), the full name in the card's accessible name; dozens of cards scroll in the sheet; the search ignores case and accents |
 | Phone | move controls on each bar stay reachable (44 px); a long press (400 ms) on the grip lifts the block (the dragging style, no haptic), a drag then moves it, moving away before 400 ms or releasing without moving cancels | bottom sheet, 80 % of the height, the search field on top, closing with the soft keyboard open first closes the keyboard |
-| Drop refused | none at page level (tranche 3 adds its text; the mockup shows that text, marked tranche 3; the Layout group of the gallery holds `section` ("Section"), `columns` ("Columns"), `row` ("Line break" — renamed so two cards do not share a name) and `gallery`; `col` has no card) | — |
+| Drop refused | none at page level (tranche 3 adds its text; the mockup shows that text, marked tranche 3; the Layout group of the gallery holds the existing `row` ("Columns") and `gallery` cards) | — |
 
 Card names as written, core: Content, Callout, Figures, List, Table, Columns (the existing `:::row`, not the tranche 3
 `columns` container), Image gallery; with `project-management` enabled: Timeline, Sub-projects (the `subproject` block); a
