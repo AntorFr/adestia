@@ -20,8 +20,8 @@ function pm(): GalleryPlugin {
 }
 
 describe('core gallery table', () => {
-  it('covers the seven insertable core blocks', () => {
-    expect(Object.keys(CORE_GALLERY).sort()).toEqual(['callout', 'content', 'figures', 'gallery', 'list', 'row', 'table'])
+  it('covers the nine insertable core blocks (col is not one)', () => {
+    expect(Object.keys(CORE_GALLERY).sort()).toEqual(['callout', 'columns', 'content', 'figures', 'gallery', 'list', 'row', 'section', 'table'])
   })
 
   it.each(Object.entries(CORE_GALLERY))('%s has name, line, image, group in en and fr', (_id, card) => {
