@@ -33,6 +33,7 @@ import type { EditorView, NodeView } from '@milkdown/kit/prose/view'
 import { createRoot, type Root } from 'react-dom/client'
 
 import { BlockForm } from './BlockForm.js'
+import { OPEN_FORM } from './slash.js'
 import { bodyLines, fenced } from './blockform/index.js'
 import { BlockSettings } from './BlockSettings.js'
 import { domIcon } from './dom-icon.js'
@@ -113,7 +114,7 @@ class DirectiveView implements NodeView {
   private raw = false
   private open: boolean
   /** The data form (E-35), with the lines the block had when it opened. */
-  private form: { readonly base: string } | undefined
+  private form: { readonly base: string; readonly fresh: boolean } | undefined
 
   constructor(
     private readonly name: string,
@@ -184,6 +185,9 @@ class DirectiveView implements NodeView {
     this.down = action('arrow-up', t('Move down'), () => this.step(1), 'adestia-edblock__down')
     // Alt+↑/↓ from anywhere in the block: its bar, or the caret in its body.
     // Neighbours moved without this view being told: read the ends again when it is reached.
+    this.dom.addEventListener(OPEN_FORM, () => {
+      if (this.env.forms?.(this.name)) this.openForm(true)
+    })
     this.dom.addEventListener('pointerover', () => this.syncMove())
     this.dom.addEventListener('focusin', () => this.syncMove())
     this.dom.addEventListener('keydown', (event) => {
@@ -400,6 +404,7 @@ class DirectiveView implements NodeView {
             lines={bodyLines(this.form.base)}
             stale={this.markdownOf() !== this.form.base}
             locale={this.env.locale}
+            fresh={this.form.fresh}
             t={this.t}
             onApply={(lines) => this.applyLines(lines)}
             onClose={() => this.closeForm()}
@@ -424,8 +429,8 @@ class DirectiveView implements NodeView {
     run(this.view.state, this.view.dispatch)
   }
 
-  private openForm(): void {
-    this.form = { base: this.markdownOf() }
+  private openForm(fresh = false): void {
+    this.form = { base: this.markdownOf(), fresh }
     this.open = false
     this.refresh()
   }
