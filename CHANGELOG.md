@@ -802,3 +802,10 @@ branch and that `test:plugins` is replayed after a red vitest run.
   PUT that carries the `:::callout`, so it no longer turns red under the load of the full
   suite. Five distinct timeouts name what never happened. No assertion is removed. A
   test-only fix: nothing changes for users.
+
+## v0.97.12
+
+- **The attestation report no longer dirties the working copy** — `.gitignore` now ignores
+  `/rapport-tests.json`, the report that `attester` writes at the repository root, next to
+  `.suite-attestee/` and `resultats.xml`, so `git status` stays clean after an attestation. A
+  test checks it. Nothing changes for users.
