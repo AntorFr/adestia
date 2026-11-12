@@ -71,9 +71,15 @@ const FALLBACK: IconName = 'sparkles'
  *
  * `app` stays out: the core's own table says nothing draws it, and offering a
  * block that renders as a notice is a dead end in a menu.
+ *
+ * `section`, `columns` and `col` stay out too, until the editing task draws and
+ * inserts them: a `col` set down outside `columns` is a `col-outside-columns`
+ * diagnostic, not a block.
  */
+const NOT_YET_INSERTABLE = new Set(['app', 'section', 'columns', 'col'])
+
 function insertable(spec: BlockSpec): boolean {
-  return spec.name !== 'app'
+  return !NOT_YET_INSERTABLE.has(spec.name)
 }
 
 /**
