@@ -35,6 +35,8 @@ import { BlockSettings } from './BlockSettings.js'
 import { domIcon } from './dom-icon.js'
 import type { IconName } from '../app/icons.js'
 import { prettify } from '../app/paths.js'
+import { moveBlock, slotAtPos, slotToIndex } from './moveBlock.js'
+import { announce, canMove, moveByStep, moveTo, placeOf, said, stepOf } from './moveui.js'
 import { Reader, type BlockComponents, type VocabularyContext } from './Reader.js'
 import type { Say } from '../plugins/words.js'
 
@@ -57,6 +59,9 @@ export interface EditorEnv {
   /** The editor's translator: the bar, the settings and the notes speak the instance's language. */
   readonly t?: ((key: string) => string) | undefined
 }
+
+/** How long a finger rests on the grip before the drag starts (AD-deplacer-1). */
+const LONG_PRESS_MS = 400
 
 type Posture = 'prose' | 'data' | 'atom'
 
@@ -93,6 +98,8 @@ class DirectiveView implements NodeView {
   private previewRoot?: Root
   private readonly head?: HTMLElement
   private readonly lift: HTMLButtonElement
+  private readonly up: HTMLButtonElement
+  private readonly down: HTMLButtonElement
   /** The ⚙ as a ref, which is what the settings window hangs from and returns focus to. */
   private readonly anchor: { current: HTMLElement | null }
   private readonly t: (key: string) => string
@@ -160,9 +167,24 @@ class DirectiveView implements NodeView {
     const grip = iconButton('grip-vertical', t('Move block'), 'adestia-edblock__grip')
     grip.addEventListener('pointerdown', (event) => {
       event.preventDefault()
-      this.startDrag(event)
+      this.press(event)
     })
+    // A long press on a phone must not become the browser's text selection or menu.
+    grip.addEventListener('contextmenu', (event) => event.preventDefault())
     this.bar.append(grip)
+    this.up = action('arrow-up', t('Move up'), () => this.step(-1), 'adestia-edblock__up')
+    this.down = action('arrow-up', t('Move down'), () => this.step(1), 'adestia-edblock__down')
+    // Alt+↑/↓ from anywhere in the block: its bar, or the caret in its body.
+    // Neighbours moved without this view being told: read the ends again when it is reached.
+    this.dom.addEventListener('pointerover', () => this.syncMove())
+    this.dom.addEventListener('focusin', () => this.syncMove())
+    this.dom.addEventListener('keydown', (event) => {
+      const direction = stepOf(event)
+      if (!direction) return
+      event.preventDefault()
+      event.stopPropagation()
+      this.step(direction, true)
+    })
     this.lift = action('corner-left-up', t('Leave the parent block'), () => this.liftOut(), 'adestia-edblock__lift')
     action('trash-2', t('Delete block'), () => this.remove(), 'adestia-edblock__remove')
     const gear = iconButton('settings', t('Block settings'), 'adestia-edblock__gear')
@@ -362,16 +384,78 @@ class DirectiveView implements NodeView {
     this.view.dispatch(this.view.state.tr.setNodeMarkup(at, undefined, { ...this.node.attrs, attributes }))
   }
 
+  /** The page-level place of this block, or undefined for one inside another (tranche 3). */
+  private place(): { index: number; total: number; at: number } | undefined {
+    const at = this.getPos()
+    if (at === undefined || this.view.state.doc.resolve(at).depth !== 0) return undefined
+    const { index, total } = placeOf(this.view, at)
+    return index < 0 ? undefined : { index, total, at }
+  }
+
+  /** Move up / Move down: disabled at the ends, hidden for a nested block. */
+  private syncMove(): void {
+    const place = this.place()
+    this.up.hidden = this.down.hidden = place === undefined
+    if (!place) return
+    this.up.disabled = !canMove(this.view, place.index, -1)
+    this.down.disabled = !canMove(this.view, place.index, 1)
+  }
+
+  /** One place up or down, from a button or Alt+↑/↓; focus follows the control used. */
+  private step(direction: -1 | 1, fromKey = false): void {
+    const place = this.place()
+    if (!place) return
+    const focused = this.dom.ownerDocument.activeElement
+    const onBar = focused instanceof HTMLElement && this.bar.contains(focused) ? focused.className : undefined
+    const moved = moveByStep(this.view, place.index, direction, this.t)
+    if (moved === undefined) return
+    // The move rebuilds the view; give the keyboard back to the same control.
+    const next = this.view.nodeDOM(moved)
+    if (!(next instanceof HTMLElement)) return
+    const control = fromKey && onBar ? next.querySelector<HTMLElement>(`.adestia-edblock__bar > button[class="${onBar}"]`) : null
+    if (control) control.focus()
+    else if (fromKey) this.view.focus()
+  }
+
+  /** A press on the grip: the pointer drags at once, a finger after 400 ms without moving. */
+  private press(start: PointerEvent): void {
+    if (start.pointerType !== 'touch') {
+      this.startDrag(start)
+      return
+    }
+    const doc = this.view.dom.ownerDocument
+    let last = start
+    const cancel = () => {
+      clearTimeout(timer)
+      doc.removeEventListener('pointermove', onMove)
+      doc.removeEventListener('pointerup', cancel)
+      doc.removeEventListener('pointercancel', cancel)
+    }
+    const timer = setTimeout(() => {
+      cancel()
+      this.startDrag(last)
+    }, LONG_PRESS_MS)
+    // A finger that travels before the delay is scrolling, not dragging.
+    const onMove = (event: PointerEvent) => {
+      last = event
+      if (Math.hypot(event.clientX - start.clientX, event.clientY - start.clientY) > 10) cancel()
+    }
+    doc.addEventListener('pointermove', onMove)
+    doc.addEventListener('pointerup', cancel)
+    doc.addEventListener('pointercancel', cancel)
+  }
+
   /**
    * Dragging the block to where the pointer is — ALWAYS between two things
-   * at the top of the page, never inside a block: a block dropped into
-   * another is the accident Crepe's handle made possible, and it is also
-   * how a nested block gets out. A line shows where it will land:
-   * horizontal between full-width things, vertical inside a band.
+   * at the top of the page, never inside a block. A line shows where it will
+   * land: horizontal between full-width things, vertical inside a band. What
+   * the drop would do is `moveBlock`'s answer; a refusal is said, not silent.
    */
   private startDrag(start: PointerEvent): void {
     const view = this.view
     const doc = view.dom.ownerDocument
+    const from = this.place()?.index
+    if (from === undefined) return
     const line = doc.createElement('div')
     line.className = 'adestia-drop-line'
     doc.body.append(line)
@@ -388,10 +472,13 @@ class DirectiveView implements NodeView {
       }
       const found = dropTarget(view, x, y)
       target = found?.pos
-      if (!found) {
+      const result = found ? moveBlock(view.state.doc, from, view.state.doc, this.indexFor(from, found.pos)) : undefined
+      if (!found || !result?.ok) {
         line.hidden = true
+        announce(doc, result ? said(result, this.t) : '')
         return
       }
+      announce(doc, '')
       line.hidden = false
       Object.assign(line.style, found.line)
     }
@@ -402,7 +489,8 @@ class DirectiveView implements NodeView {
       line.remove()
       this.dom.classList.remove('adestia-edblock--dragging')
       doc.body.classList.remove('adestia-dragging-block')
-      if (commit && target !== undefined) this.moveTo(target)
+      announce(doc, '')
+      if (commit && target !== undefined) moveTo(view, from, this.indexFor(from, target), this.t)
     }
     const onMove = (event: PointerEvent) => place(event.clientX, event.clientY)
     const onUp = () => stop(true)
@@ -417,18 +505,9 @@ class DirectiveView implements NodeView {
     place(start.clientX, start.clientY)
   }
 
-  /** Moved to a top-level position of the document as it stood. */
-  private moveTo(target: number): void {
-    const at = this.getPos()
-    if (at === undefined) return
-    const size = this.node.nodeSize
-    // Dropped on itself or right beside itself: nothing moves.
-    if (target >= at && target <= at + size) return
-    const tr = this.view.state.tr.delete(at, at + size)
-    const to = tr.mapping.map(target)
-    tr.insert(to, this.node)
-    tr.setSelection(NodeSelection.create(tr.doc, to))
-    this.view.dispatch(tr.scrollIntoView())
+  /** The index block `from` will have if dropped at document position `pos`. */
+  private indexFor(from: number, pos: number): number {
+    return slotToIndex(from, slotAtPos(this.view.state.doc, pos))
   }
 
   /** Out of the block it sits in, just after it. */
@@ -472,6 +551,7 @@ class DirectiveView implements NodeView {
   }
 
   selectNode(): void {
+    this.syncMove()
     this.dom.classList.add('ProseMirror-selectednode')
   }
 

@@ -86,5 +86,31 @@
         }
       }
     }
+  },
+  "gallery": {
+    "subproject": {
+      "name": {
+        "en": "Sub-projects",
+        "fr": "Sous-projets"
+      },
+      "line": {
+        "en": "The sub-projects below this page and where each stands.",
+        "fr": "Les sous-projets de cette page et où en est chacun."
+      },
+      "image": "./web/gallery/subproject.svg",
+      "group": "Project"
+    },
+    "timeline": {
+      "name": {
+        "en": "Timeline",
+        "fr": "Frise chronologique"
+      },
+      "line": {
+        "en": "Phases and milestones on a time axis.",
+        "fr": "Les phases et les jalons sur un axe de temps."
+      },
+      "image": "./web/gallery/timeline.svg",
+      "group": "Project"
+    }
   }
 }

@@ -44,6 +44,8 @@ import type { PropertiesEnv } from './frontmatterview.js'
 import { assetUrl } from './links.js'
 import { buildBlockMenu } from './slash.js'
 import { buildBlockTypes } from './toolbar.js'
+import { moveShortcut } from './moveui.js'
+import { registerSurface } from './galleryBridge.js'
 import { adestiaVocabulary, editorBlocks, pmId } from './vocabulary.js'
 
 /**
@@ -109,6 +111,7 @@ export function mountMilkdown(
   })
 
   crepe.editor.use(adestiaVocabulary(env))
+  crepe.editor.use(moveShortcut(t))
   // Crepe's block handle — the `+ ⠿` beside a line — kept to the page's own
   // text. Set after Crepe's own config, which it replaces.
   crepe.editor.config((ctx) => {
@@ -184,5 +187,9 @@ export function mountMilkdown(
 
   // A page switch must tear the editor down: two live instances on one host
   // leave the second reading the first's document.
-  return () => void crepe.destroy()
+  const unregister = registerSurface(element, crepe.editor)
+  return () => {
+    unregister()
+    void crepe.destroy()
+  }
 }

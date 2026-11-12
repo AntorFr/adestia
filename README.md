@@ -55,13 +55,14 @@ node bench/sweep.mjs                   # every screen, light and dark, desk and 
 node bench/scenarios/chargements.mjs   # takes several minutes (16 capture combinations); loading and Retry on E-3, E-4, E-8, E-9, E-11, E-13 (needs the build; images in $BENCH_OUT); the plugins' E-25 and E-28 are covered by plugins/*/test/chargement.test.js and, in a browser, by bench/tests/plugins-chargements-besoin.test.mjs, not by this scenario; to see them by hand, start the launcher from the clone's root (the atelier and parcours plugins come from `./plugins`) and open #/atelier or a parcours page
 node bench/scenarios/page-suivie.mjs   # the open page follows the agent, B-17 (needs the build; BENCH_SKINS, BENCH_LOCALES narrow it)
 node bench/scenarios/hors-ligne.mjs     # stops and restarts a real bench instance: the offline banner E-32 on E-2, E-4 and E-14 (needs the build; images in $BENCH_OUT)
+BENCH_URL=<printed-url> node bench/scenarios/pages-matrix.mjs bench/scenarios/galerie.mjs   # the block gallery, E-34: Add block, search, empty search, insertion (needs the build and a launcher on `node bench/launch.mjs --engine fake --seed pages --skin alfred --locale en`, the skin and locale `pages-matrix.mjs` plays with `BENCH_URL`, read from `BENCH_SKIN` and `BENCH_LOCALE`, default `alfred` and `en`; images in $BENCH_OUT). Moving a block (B-23) has no scenario: its proof is `packages/web/test/move-block.test.ts` (the operation) and, in a browser, `packages/web/test/ensemble-pages-deplacer-browser.test.ts` (`Alt+↑/↓`, the long press and drag, the phone buttons)
 node bench/scenarios/chat-ajouts.mjs   # the chat's loading, Retry and context-lost line, E-16 (needs the build; seed `chat-ajouts`; about 20 s per skin × language, `BENCH_SKINS` and `BENCH_LOCALES` narrow it, it always plays desk and phone; images in $BENCH_OUT, `bench/shots-chat-ajouts/`)
 ```
 
 The scenarios need Playwright and Chromium installed on the host (the runner image ships Playwright 1.63; nothing in the repo installs them); `BENCH_SIZES` (only where a scenario says so), `BENCH_SKINS`, `BENCH_LOCALES` and `BENCH_OUT` narrow or move a run. It takes them from the environment (it looks in `/usr/lib/node_modules`, then `npm root -g`); the `pages-*` scenarios look only in `/usr/lib/node_modules`, so a host with another global root must link it there for them (`chargements.mjs`, `page-suivie.mjs` and the sweep search both places, as above): `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
 add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
 removes its throwaway data; in a script, start it in the background and keep its pid
-(`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. The seed brings its own two small plugins (`bench-notes`, `bench-degraded`), so the boot log says `2 of 2 plugin(s) active`, not the ten of `plugins/`: that is normal. Its boot log includes two plugins refused on purpose (`bench-refused`, a name mismatch, and `bench-invalid`, an invalid manifest; both part of the seed): not an error.
+(`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. The seed brings its own two small plugins (`bench-notes`, `bench-degraded`), so the boot log says `2 of 2 plugin(s) active` (`3 of 3` with `--seed pages`, which adds `project-management`), not the ten of `plugins/`: that is normal. Its boot log includes two plugins refused on purpose (`bench-refused`, a name mismatch, and `bench-invalid`, an invalid manifest; both part of the seed): not an error.
 
 `--engine claude` runs a real turn instead (needs `CLAUDE_CODE_OAUTH_TOKEN`).
 For the pages state matrix (four skins, both languages, both themes, desktop
@@ -92,7 +93,9 @@ Adestia's own interface.
 - **Pages both hands write**: markdown files with a closed vocabulary of typed
   blocks, edited in a Notion-like editor or by the agent with its own file
   tools. One grammar renders, edits and validates them, so a save cannot change
-  what a page means. A save is refused if the agent wrote underneath you. The page you have open follows the
+  what a page means. In editing, a block moves with the **Move up** / **Move down** buttons, `Alt+↑/↓`
+  or a long press on its grip then a drag, and **Add block** (or **Browse** in the `/` menu) opens a gallery
+  of the core blocks and those of the enabled plugins. A save is refused if the agent wrote underneath you. The page you have open follows the
   agent: in reading it refreshes by itself; while you edit, a banner "The page changed." offers
   **Reload** and never touches what you typed (nothing moves if `workspace.watch.enabled` is false).
   Home shows a loading row
