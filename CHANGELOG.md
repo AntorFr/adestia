@@ -818,6 +818,28 @@ branch and that `test:plugins` is replayed after a red vitest run.
   recorded in `.agent/status.md`, along with the name of the epic's working branch. No code
   and no test changed: nothing changes for users.
 
+## v0.98.0-adestia-pages.2
+
+- **The pages slice 1 is in: block gallery, move without the mouse** — the editor bar's
+  **Add block** opens a searchable sheet of block cards (plugins declare a `gallery` record
+  per block), a block moves with **Move up** / **Move down**, `Alt+↑/↓` or a long press then
+  a drag, a block chosen in the gallery lands with a default body, and a failed save reads
+  "Not saved" with **Retry**. The same entries stay under "Unreleased" until the epic enters
+  `main`.
+
+## v0.98.0-adestia-pages.3
+
+- **Three unstable tests of the pages slice wait for their state** — the 502/503/504 banner
+  case, the refused-save test and the gallery card picture test wait for what they judge
+  instead of a fixed pause, so they no longer turn red under the load of the full suite. No
+  code of the product changed: nothing changes for users.
+
+## v0.98.0-adestia-pages.4
+
+- **Two load-sensitive tests get a deadline that holds on a busy machine** — the tests of
+  `usePage` following the feed (30 s per test, 15 s per `waitFor`) and the P-2 tabs test of
+  the chat (180 s). Assertions and product code are unchanged: nothing changes for users.
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
