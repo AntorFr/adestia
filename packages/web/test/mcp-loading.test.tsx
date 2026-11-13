@@ -201,9 +201,13 @@ describe('E-10 refetch after a write', () => {
       return Promise.resolve(res(200, { servers: [] }))
     })
     render(<Shell fetchImpl={fetchImpl} start="notion" />)
-    const area = await screen.findByRole('textbox')
+    const area = (await screen.findByRole('textbox')) as HTMLTextAreaElement
+    // The box exists before the seeding effect has filled it: typing now would be erased.
+    await waitFor(() => expect(area.value).toBe(`${JSON.stringify(SERVERS.servers[0]?.config, null, 2)}\n`))
     fireEvent.change(area, { target: { value: '{"name":"notion","command":"node"}' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    const save = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement
+    await waitFor(() => expect(save.disabled).toBe(false))
+    fireEvent.click(save)
     await waitFor(() => expect(lists).toBe(2))
     expect(screen.queryByText('Loading…')).toBeNull()
     await act(async () => { refetch.settle(res(200, SERVERS)) })
