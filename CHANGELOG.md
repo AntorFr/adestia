@@ -847,6 +847,19 @@ branch and that `test:plugins` is replayed after a red vitest run.
   the refused-save test (Nestor, English) no longer turn red. Documentation only: nothing
   changes for users (task `rouge-adestia-pages-3`).
 
+## v0.98.0-adestia-pages.6
+
+- **Core blocks redrawn** — `figures` reads as tiles or as one line (`view=inline`), and a
+  percentage figure draws a bar named for screen readers. An unknown `view` reads as the
+  block's default instead of an error.
+- **Block settings grouped** — the settings of a block are grouped (Look, Content, Layout,
+  Title and icon), labelled and helped in `en` or `fr`; a block's variants are drawn as small
+  pictures and a choice applies at once, in one undo step. The window sits beside its block so
+  the choice stays in view, and undo and redo reach the editor from it.
+- **Data form** — **Edit data** (with a **Raw** switch) fills in `figures`, `timeline`, `list`,
+  `table`, cards and any block whose manifest declares `fields`; **Apply** is one change.
+  The block gallery shows variants and opens the form after a data block is inserted.
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
