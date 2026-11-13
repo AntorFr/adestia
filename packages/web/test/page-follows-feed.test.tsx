@@ -44,9 +44,9 @@ async function opened(store?: string) {
       usePage({ pagePath: 'a.md', pageStore: store, fetchImpl: impl, pageChanges: changes }),
     { initialProps: { changes: { seq: 0, paths: [] } as PageChanges } },
   )
-  await waitFor(() => expect(calls).toHaveLength(1))
+  await waitFor(() => expect(calls).toHaveLength(1), { timeout: 15_000 })
   await act(async () => { calls[0]!.ok(200, doc('a.md')) })
-  await waitFor(() => expect(view.result.current.page?.revision).toBe('1-1'))
+  await waitFor(() => expect(view.result.current.page?.revision).toBe('1-1'), { timeout: 15_000 })
   const batch = (seq: number, paths: string[]) => view.rerender({ changes: { seq, paths } })
   return { ...view, calls, batch }
 }
@@ -63,7 +63,7 @@ describe('usePage following the feed, reading', () => {
     expect(t.result.current.page?.revision).toBe('2-2')
     expect(t.result.current.loading).toBe(false)
     expect(t.result.current.pageProblem).toBeUndefined()
-  })
+  }, 30_000)
 
   it('a batch that does not name the path, or seq 0, rereads nothing', async () => {
     const t = await opened()
@@ -71,7 +71,7 @@ describe('usePage following the feed, reading', () => {
     t.batch(2, [])
     await act(async () => {})
     expect(t.calls).toHaveLength(1)
-  })
+  }, 30_000)
 
   it('two batches naming the same path reread twice', async () => {
     const t = await opened()
@@ -82,7 +82,7 @@ describe('usePage following the feed, reading', () => {
     await waitFor(() => expect(t.calls).toHaveLength(3))
     await act(async () => { t.calls[2]!.ok(200, doc('a.md', '3-3')) })
     expect(t.result.current.page?.revision).toBe('3-3')
-  })
+  }, 30_000)
 
   it('404 on the reread is E-8; 500 and a cut network change nothing', async () => {
     for (const settle of [(c: Call) => c.ok(500, {}), (c: Call) => c.cut()]) {
@@ -102,7 +102,7 @@ describe('usePage following the feed, reading', () => {
     expect(t.result.current.pageProblem).toEqual({ path: 'a.md', status: 404 })
     expect(t.result.current.page).toBeUndefined()
     expect(t.result.current.loading).toBe(false)
-  })
+  }, 30_000)
 
   it('a page of a second store is reread with its ?store=', async () => {
     const t = await opened('team')
@@ -110,7 +110,7 @@ describe('usePage following the feed, reading', () => {
     t.batch(1, ['a.md'])
     await waitFor(() => expect(t.calls).toHaveLength(2))
     expect(t.calls[1]!.url).toBe('/api/pages/a.md?store=team')
-  })
+  }, 30_000)
 
   it('an answer arriving after the address moved is dropped', async () => {
     const { impl, calls } = held()

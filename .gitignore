@@ -30,3 +30,5 @@ tmp/
 # Written by scripts/suite-attestee.sh
 .suite-attestee/
 resultats.xml
+# Written at the root by attester (rule R15)
+/rapport-tests.json

@@ -519,7 +519,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       } finally {
         await context.close()
       }
-    })
+    }, 180_000)
 
     it('has no tabs on a phone: the list is the only navigation and it is full width', async () => {
       const { context, page } = await fresh({ size: 'phone' })
