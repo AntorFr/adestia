@@ -1,0 +1,9 @@
+---
+title: Bloc en haut
+---
+
+:::callout{ico=💡 title="Bloc haut"}
+Dedans.
+:::
+
+Suite.

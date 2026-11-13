@@ -13,8 +13,8 @@ import type { Editor } from '@milkdown/kit/core'
 import { shapesOf } from '@antorfr/adestia-content'
 import { NodeSelection } from '@milkdown/kit/prose/state'
 
-import { insertionPoint } from './insertionPoint.js'
-import { movableSlots } from './moveBlock.js'
+import { CONTAINERS, freshContainer } from './containers.js'
+import { insertionPos } from './insertionPoint.js'
 import { seed } from './slash.js'
 import { editorBlocks, pmId } from './vocabulary.js'
 
@@ -42,8 +42,8 @@ export function registerSurface(host: HTMLElement, editor: Editor): () => void {
     // A block that holds flow must not be saved empty (the page would be refused),
     // so it lands with the body its default values give it.
     const body = spec && shapesOf(name).has('flow') ? (DEFAULT_BODY[name] ?? 'Text') : null
-    let node = null
-    if (spec && type && body) {
+    let node = CONTAINERS.has(name) ? freshContainer(view.state.schema, name) : null
+    if (!node && spec && type && body) {
       try {
         node = type.createAndFill(attrs, ctx.get(parserCtx)(body).content)
       } catch { node = null }
@@ -51,13 +51,9 @@ export function registerSurface(host: HTMLElement, editor: Editor): () => void {
     if (spec && type && !node) node = type.createAndFill(attrs)
     if (!node) return false
     const { doc, selection } = view.state
-    const point = placed
-      ? insertionPoint(doc, { from: selection.from, to: selection.to, depth: selection.$from.depth })
-      : { parent: doc, index: movableSlots(doc).length }
-    const slots = movableSlots(doc)
-    const before = slots[point.index]
-    const last = slots[slots.length - 1]
-    const at = before ? before.pos : last ? last.pos + last.size : doc.content.size
+    const at = placed
+      ? insertionPos(doc, { from: selection.from, to: selection.to, depth: selection.$from.depth }, name)
+      : insertionPos(doc, undefined, name)
     const tr = view.state.tr.insert(at, node)
     tr.setSelection(NodeSelection.create(tr.doc, at))
     view.dispatch(tr.scrollIntoView())

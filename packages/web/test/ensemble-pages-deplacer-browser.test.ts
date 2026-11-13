@@ -475,7 +475,7 @@ describe.skipIf(!playwright)('adestia-pages-deplacer, from the need', () => {
       await page.keyboard.press('ArrowDown')
       await expect.poll(marked, { timeout: 5_000 }).not.toBe(first)
       const chosen = await marked()
-      const fence: Record<string, string> = { Content: 'content', Callout: 'callout', Figures: 'figures', Table: 'table', List: 'list', Columns: 'row', 'Image gallery': 'gallery' }
+      const fence: Record<string, string> = { Content: 'content', Callout: 'callout', Figures: 'figures', Table: 'table', List: 'list', Section: 'section', Columns: 'col', 'Line break': 'row', 'Image gallery': 'gallery' }
       expect(Object.keys(fence), `the marked card (${chosen}) is a core card`).toContain(chosen)
       await page.keyboard.press('Enter')
       await page.getByRole('dialog', { name: 'Add block' }).waitFor({ state: 'detached', timeout: 10_000 })
@@ -492,14 +492,14 @@ describe.skipIf(!playwright)('adestia-pages-deplacer, from the need', () => {
       await openGallery(page)
       const groups = await catalogue(page)
       const all = names(groups)
-      for (const n of ['Content', 'Callout', 'Figures', 'List', 'Table', 'Columns', 'Image gallery']) expect(all, `core card ${n}`).toContain(n)
-      for (const id of ['row', 'gallery', 'content', 'callout', 'figures', 'list', 'table']) expect(all, `identifier ${id} shown as a name`).not.toContain(id)
+      for (const n of ['Content', 'Callout', 'Figures', 'List', 'Table', 'Section', 'Columns', 'Line break', 'Image gallery']) expect(all, `core card ${n}`).toContain(n)
+      for (const id of ['row', 'section', 'gallery', 'content', 'callout', 'figures', 'list', 'table']) expect(all, `identifier ${id} shown as a name`).not.toContain(id)
       const content = groups.flatMap((g) => g.cards).find((c) => c.name === 'Content')
       expect(content?.line).toBe('Pages of one kind, listed where you put it.')
-      for (const c of groups.flatMap((g) => g.cards).filter((c) => ['Content', 'Callout', 'Figures', 'List', 'Table', 'Columns', 'Image gallery'].includes(c.name)))
+      for (const c of groups.flatMap((g) => g.cards).filter((c) => ['Content', 'Callout', 'Figures', 'List', 'Table', 'Section', 'Columns', 'Line break', 'Image gallery'].includes(c.name)))
         expect(c.line.trim().length, `line of ${c.name}`).toBeGreaterThan(0)
       const layout = groups.find((g) => g.group === 'Layout')
-      expect(layout?.cards.map((c) => c.name).sort(), 'the Layout group holds the existing row and gallery').toEqual(['Columns', 'Image gallery'])
+      expect(layout?.cards.map((c) => c.name).sort(), 'the Layout group holds section, columns, the row and gallery').toEqual(['Columns', 'Image gallery', 'Line break', 'Section'])
       // The pictures load after the sheet opens: wait for them, a slow machine draws them late.
       await expect
         .poll(

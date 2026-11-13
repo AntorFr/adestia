@@ -8,6 +8,7 @@ import { TableBlock } from './TableBlock.js'
 import { ListBlock } from './ListBlock.js'
 import { Contributed } from './Contributed.js'
 import { Note, sayOf } from './Note.js'
+import { Columns, Section } from './Containers.js'
 
 export function directive(node: Node, ctx: Ctx, renderChildren: RenderChildren): ReactNode {
   // WHO draws this block is decided before anything is drawn. The core's
@@ -68,6 +69,16 @@ export function directive(node: Node, ctx: Ctx, renderChildren: RenderChildren):
       // Ends the line of `w=` blocks it sits between, which `children`
       // does by seeing a block with no width — and draws nothing itself.
       return null
+    }
+    if (node.type === 'containerDirective' && name === 'section') {
+      return <Section node={node} ctx={ctx}>{renderChildren(node, ctx)}</Section>
+    }
+    if (node.type === 'containerDirective' && name === 'columns') {
+      return <Columns node={node}>{renderChildren(node, { ...ctx, inColumns: true })}</Columns>
+    }
+    if (node.type === 'containerDirective' && name === 'col') {
+      // `w` means nothing here: a column is one cell of its band already.
+      return <div className="adestia-col">{renderChildren(node, { ...ctx, inColumns: true })}</div>
     }
     if (node.type === 'containerDirective' && name === 'gallery') {
       return place(<div className="adestia-gallery">{renderChildren(node, ctx)}</div>)

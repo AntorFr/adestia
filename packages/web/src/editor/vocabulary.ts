@@ -400,7 +400,9 @@ export function adestiaVocabulary(env: PropertiesEnv = {}): MilkdownPlugin[] {
   const generic = editorBlocks()
     .filter((spec) => !HAND_WRITTEN.has(spec.name))
     .map((spec) => {
-      const atom = !(shapesOf(spec.name).has('flow') || shapesOf(spec.name).has('optional'))
+      const shapes = shapesOf(spec.name)
+      // `container` (AD-32) holds blocks: an atom would eat them.
+      const atom = !(shapes.has('flow') || shapes.has('optional') || shapes.has('container'))
       return { name: spec.name, atom }
     })
     // A container as soon as ANY definition of the name takes a body. The

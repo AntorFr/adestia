@@ -1,0 +1,14 @@
+---
+title: Projet
+type: project-management
+---
+
+:::callout{ico=💡 title="Bloc 1"}
+Texte du bloc 1.
+:::
+
+:::timeline
+:::
+
+:::subproject
+:::

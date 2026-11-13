@@ -55,7 +55,7 @@ const lines = (page: any): Promise<{ name: string; line: string; clipped: boolea
     })
   })
 
-const CORE = ['Content', 'Callout', 'Figures', 'List', 'Table', 'Columns', 'Image gallery']
+const CORE = ['Content', 'Callout', 'Figures', 'List', 'Table', 'Section', 'Columns', 'Line break', 'Image gallery']
 
 describe.skipIf(!playwright)('adestia-pages-deplacer, card lines from the need', () => {
   let instance: Instance
