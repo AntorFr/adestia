@@ -190,6 +190,7 @@ function pages(): Record<string, string> {
   for (const name of ['galerie-section', 'galerie-colonnes', 'galerie-les-deux']) files[name] = page(`Galerie ${name}`, callout('Bloc 1'))
   files['conteneur'] = page('Conteneur déplacé', `::::section{title="Section A"}\n${callout('Bloc 1')}\n::::\n\n${callout('Bloc 2')}`)
   files['colonnes-trois'] = page('Trois colonnes', `:::::columns\n::::col\n${callout('Bloc 1')}\n::::\n\n::::col\n::::\n\n::::col\n${callout('Bloc 3')}\n::::\n:::::`)
+  files['telephone-barres'] = page('Colonnes telephone-barres', band(callout('Bloc 1'), callout('Bloc 2')))
   files['bande-reglage'] = page('Bande réglage', band(callout('Bloc 1')))
   files['profondeur-clavier'] = page('Profondeur clavier', `${deep('A')}\n\n${band()}`)
   files['profondeur-sections'] = page('Profondeur sections', `${deep('A')}\n\n${deep('B')}`)
@@ -531,6 +532,51 @@ describe.skipIf(!playwright)('pages structure, from the need', () => {
     b = await touchBar(page, 2)
     await control(b, 'Move up').tap()
     await waitOutline(instance.url, 'telephone-bord', 'columns[col[callout(Bloc 1) callout(Bloc 2)] col[callout(Bloc 3)]]')
+    await context.close()
+  }, 120_000)
+
+  // B-23 / E-4 phone: the band's bar and the selected block's bar must not sit one over the other. Breaks if the
+  // container's bar (two rows of 44 px) covers the Up/Down of the block inside it, which is the touch path to move.
+  it('telephone_barre_de_la_bande_ne_recouvre_pas_move_up_et_move_down_du_bloc_choisi', async () => {
+    const { context, page } = await visit(browser, instance.url, 'en', 'phone', 'telephone-barres')
+    await edit(page, 5)
+    const b = await touchBar(page, 1)
+    await b.getByText('Texte de Bloc 1.').tap()
+    await page.waitForTimeout(500)
+    await shot(page, 'telephone-barres')
+    for (const name of ['Move up', 'Move down']) {
+      const btn = control(b, name)
+      await btn.scrollIntoViewIfNeeded()
+      const box_ = await btn.boundingBox()
+      expect(box_, name).not.toBeNull()
+      const { x, y, width, height } = box_ as { x: number; y: number; width: number; height: number }
+      expect(width, `${name} is a finger target`).toBeGreaterThanOrEqual(44)
+      const hit = await page.evaluate(
+        ([cx, cy, label]: [number, number, string]) => {
+          const top = document.elementFromPoint(cx, cy)
+          return top?.closest('button')?.getAttribute('aria-label') === label
+        },
+        [x + width / 2, y + height / 2, name] as [number, number, string],
+      )
+      expect(hit, `${name} of the selected block is covered by another bar`).toBe(true)
+    }
+    // one bar at a time: no other bar that can be seen or touched overlaps the selected block's bar
+    const overlapping = await page.evaluate((el: HTMLElement) => {
+      const mine = el.querySelector(':scope > .adestia-edblock__bar') as HTMLElement
+      const r = mine.getBoundingClientRect()
+      return [...document.querySelectorAll('.adestia-edblock__bar')]
+        .filter((o) => o !== mine)
+        .filter((o) => {
+          const cs = getComputedStyle(o)
+          if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0 || cs.pointerEvents === 'none') return false
+          const q = o.getBoundingClientRect()
+          return q.width > 0 && q.height > 0 && q.left < r.right && q.right > r.left && q.top < r.bottom && q.bottom > r.top
+        }).length
+    }, await b.elementHandle())
+    expect(overlapping, 'another bar, visible, sits over the selected block\'s bar').toBe(0)
+    // and it works with a finger, crossing to the neighbour column
+    await control(b, 'Move down').tap()
+    await waitOutline(instance.url, 'telephone-barres', 'columns[col[] col[callout(Bloc 1) callout(Bloc 2)]]')
     await context.close()
   }, 120_000)
 
