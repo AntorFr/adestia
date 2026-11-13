@@ -8,7 +8,7 @@
  */
 
 import { Crepe, CrepeFeature } from '@milkdown/crepe'
-import { editorViewCtx } from '@milkdown/kit/core'
+import { editorViewCtx, serializerCtx } from '@milkdown/kit/core'
 import { blockConfig } from '@milkdown/kit/plugin/block'
 import { remarkPreserveEmptyLinePlugin } from '@milkdown/kit/preset/commonmark'
 import type { Node as ProseNode, ResolvedPos } from '@milkdown/kit/prose/model'
@@ -43,6 +43,7 @@ import '@milkdown/crepe/theme/common/ai.css'
 import type { PropertiesEnv } from './frontmatterview.js'
 import { assetUrl } from './links.js'
 import { buildBlockMenu } from './slash.js'
+import { REPORT_NOW } from './reportNow.js'
 import { buildBlockTypes } from './toolbar.js'
 import { moveShortcut } from './moveui.js'
 import { registerSurface } from './galleryBridge.js'
@@ -163,6 +164,16 @@ export function mountMilkdown(
       })
       crepe.on((listener) => {
         listener.markdownUpdated((_ctx, next) => onChange(next))
+      })
+      /*
+       * The listener above reports 200 ms AFTER an edit and drops what is
+       * pending when the editor is destroyed, so a `Done` pressed right after
+       * a form's Apply left the page unchanged and lost the change without a
+       * word. A block that has just replaced its own body asks for the report
+       * at once.
+       */
+      element.addEventListener(REPORT_NOW, () => {
+        crepe.editor.action((ctx) => onChange(ctx.get(serializerCtx)(ctx.get(editorViewCtx).state.doc)))
       })
     })
     // Never silently. `create()` rejects when the document holds a node this

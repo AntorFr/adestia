@@ -44,6 +44,7 @@ import { announce, canMove, moveByStep, moveTo, placeOf, said, stepOf } from './
 import { Reader, type BlockComponents, type VocabularyContext } from './Reader.js'
 import type { PluginGalleryFields } from '@antorfr/adestia-schemas'
 import type { Say } from '../plugins/words.js'
+import { REPORT_NOW } from './reportNow.js'
 
 /** What a block's rendering needs to know about the page it is written in. */
 export interface EditorEnv {
@@ -452,6 +453,7 @@ class DirectiveView implements NodeView {
       this.view.dispatch(
         this.view.state.tr.replaceWith(at + 1, at + this.node.nodeSize - 1, fresh.content).scrollIntoView(),
       )
+      this.dom.dispatchEvent(new Event(REPORT_NOW, { bubbles: true }))
     }
     this.closeForm()
   }
