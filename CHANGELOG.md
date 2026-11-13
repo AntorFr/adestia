@@ -847,6 +847,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   the refused-save test (Nestor, English) no longer turn red. Documentation only: nothing
   changes for users (task `rouge-adestia-pages-3`).
 
+## v0.98.0-adestia-pages.7
+
+- **Sections and columns** — A page can hold foldable **Sections** and bands of two or three
+  **Columns**, added from the block gallery, and blocks move into, out of and between them
+  (drag, `Alt+←/→`, or the bar's arrows, which a phone can reach). A move that would nest too
+  deep is refused with its reason. A page without containers is written back exactly as before.
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
