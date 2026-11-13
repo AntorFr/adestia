@@ -860,6 +860,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   `table`, cards and any block whose manifest declares `fields`; **Apply** is one change.
   The block gallery shows variants and opens the form after a data block is inserted.
 
+## v0.98.0-adestia-pages.7
+
+- **The epic's red tests are green again** — the CHANGELOG guard (B-5) finds an entry for the
+  `v0.98.0-adestia-pages.6` pre-release and `.agent/status.md` cites the current one; the
+  `etape > guards` step no longer turns red. Documentation only: nothing changes for users
+  (task `rouge-adestia-pages-5`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
