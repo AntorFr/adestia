@@ -37,6 +37,11 @@ export interface AttributeSpec {
   /** Closed set of accepted values. Absent means any non-empty string. */
   readonly values?: readonly string[]
   readonly default?: string
+  /**
+   * A value outside `values` is read as `default`, without a diagnostic: a
+   * display variant (AD-35) never makes a page unreadable.
+   */
+  readonly fallback?: boolean
 }
 
 export interface BlockSpec {
@@ -214,7 +219,11 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     name: 'figures',
     content: 'flow',
     description: 'Figures drawn as tiles, from a markdown list.',
-    attributes: {},
+    attributes: {
+      // `tiles` is a tile per figure (a percentage tile draws its bar, which
+      // is a drawing and not a value); `inline` is one line of figures.
+      view: { values: ['tiles', 'inline'], default: 'tiles', fallback: true },
+    },
   },
 
   /**
@@ -301,7 +310,7 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
       // How the ENTRIES are laid out — rows, a grid of cards, chips — and
       // never whether the block is boxed: that is `frame=card`. Every value is
       // drawn for both sources; over files, `cards` is the contact sheet.
-      view: { values: ['rows', 'cards', 'chips'], default: 'rows' },
+      view: { values: ['rows', 'cards', 'chips'], default: 'rows', fallback: true },
     },
   },
 }
