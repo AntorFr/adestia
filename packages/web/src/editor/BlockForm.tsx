@@ -308,7 +308,9 @@ export function BlockForm({ name, fields, lines, stale = false, locale, fresh = 
                         data-row={one.id}
                         onFocus={() => setCurrent(one.id)}
                         onKeyDown={(event) => {
-                          const by = stepOf(event.nativeEvent)
+                          const key = stepOf(event.nativeEvent)
+                          // A row moves up or down only: Alt+←/→ move a block in and out of containers.
+                          const by = key === 'up' ? -1 : key === 'down' ? 1 : undefined
                           if (!by) return
                           event.preventDefault()
                           move(one.id, by, 'input')
