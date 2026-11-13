@@ -129,6 +129,9 @@ export function BlockForm({ name, fields, lines, stale = false, locale, fresh = 
     return out
   }, [items, codec, fields, isTable])
 
+  // A caption is the longest thing a row holds: it gets the larger share of the width.
+  const grid = columns.map((c) => `minmax(0, ${c.key === 'caption' ? 2 : 1}fr)`).join(' ')
+
   const labelOf = (key: string): string => {
     const column = columns.find((one) => one.key === key)
     return column && column.label !== '' ? say(column.label, locale, t) : key
@@ -187,7 +190,18 @@ export function BlockForm({ name, fields, lines, stale = false, locale, fresh = 
 
   const written = (): string[] => codec.write(items.map((one) => one.row), kept)
 
-  const toRaw = () => setRaw(written().join('\n'))
+  // Raw shows what the form writes. The editor's serializer spells every bullet `*` where the page says `-`:
+  // when ALL the list lines read `*`, that is the serializer's hand and not the page's, so Raw says `-`.
+  const toRaw = () => {
+    const out = written()
+    const bullets = out.flatMap((line) => (codec.parse(line) ? [/^\s*([-*+])\s/.exec(line)?.[1]] : []))
+    const serialized = !isTable && bullets.length > 0 && bullets.every((b) => b === '*')
+    setRaw(
+      out
+        .map((line) => (serialized && codec.parse(line) ? line.replace(/^(\s*)\*(\s)/, '$1-$2') : line))
+        .join('\n'),
+    )
+  }
   const toForm = () => {
     if (raw === null) return
     const read = codec.read(linesOfText(raw))
@@ -198,7 +212,11 @@ export function BlockForm({ name, fields, lines, stale = false, locale, fresh = 
   }
 
   // Raw is read as it stands: a line the form cannot read shows under "Kept as written" when switching back.
-  const apply = () => onApply(raw !== null ? linesOfText(raw) : written())
+  // The server refuses a block with no body at all: an empty block is written as one empty bullet, which draws nothing.
+  const apply = () => {
+    const out = raw !== null ? linesOfText(raw) : written()
+    onApply(out.some((line) => line.trim() !== '') ? out : ['-'])
+  }
   const blocked = stale || (raw === null && problems.size > 0)
 
   const shown = kept.filter((one) => one.line.trim() !== '' && !(isTable && isDelimiter(one.line)))
@@ -271,7 +289,7 @@ export function BlockForm({ name, fields, lines, stale = false, locale, fresh = 
                   </div>
                 )}
                 {!isTable && (
-                  <div className="adestia-blockform__head" style={{ '--cols': columns.length } as CSSProperties} aria-hidden="true">
+                  <div className="adestia-blockform__head" style={{ '--cols': columns.length, '--grid': grid } as CSSProperties} aria-hidden="true">
                     {columns.map((column) => (
                       <span key={column.key}>{say(column.label, locale, t)}</span>
                     ))}
@@ -279,7 +297,7 @@ export function BlockForm({ name, fields, lines, stale = false, locale, fresh = 
                 )}
                 <ol
                   className={`adestia-blockform__rows${isTable ? ' adestia-blockform__rows--table' : ''}`}
-                  style={{ '--cols': columns.length } as CSSProperties}
+                  style={{ '--cols': columns.length, '--grid': grid } as CSSProperties}
                 >
                   {items.map((one, index) => {
                     const bad = problems.get(one.id) ?? []

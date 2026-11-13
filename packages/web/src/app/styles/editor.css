@@ -636,10 +636,10 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
 .adestia-blockform__head { display: none; }
 /* Desk: one aligned grid, the column names once above it (the mock-up's rows); the phone keeps each field's own label. */
 @media (min-width: 641px) {
-  .adestia-blockform { --blockform-acts: 7.5rem; }
+  .adestia-blockform { --blockform-acts: 7.5rem; width: min(52rem, calc(100vw - 2 * var(--space-4))); }
   .adestia-blockform__head {
     display: grid;
-    grid-template-columns: repeat(var(--cols), minmax(0, 1fr)) var(--blockform-acts);
+    grid-template-columns: var(--grid) var(--blockform-acts);
     gap: var(--space-2);
     padding: 0 calc(var(--space-2) + 1px);
     margin-bottom: calc(var(--space-2) * -1);
@@ -651,7 +651,7 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
     grid-template-columns: minmax(0, 1fr) var(--blockform-acts);
   }
   .adestia-blockform__rows:not(.adestia-blockform__rows--table) .adestia-blockform__cells {
-    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    grid-template-columns: var(--grid);
   }
   .adestia-blockform__rows:not(.adestia-blockform__rows--table) .adestia-field__label {
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;

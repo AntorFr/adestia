@@ -53,7 +53,8 @@ export function makeCodec(
     while (r < rows.length || k < sorted.length) {
       const next = sorted[k]
       if (next && (next.index <= out.length || r >= rows.length)) {
-        out.push(next.line)
+        // The editor's serializer indents a line riding under a bullet; the page did not.
+        out.push(out.length > 0 ? next.line.replace(/^ {2}(?=\S)/, '') : next.line)
         k += 1
         continue
       }
