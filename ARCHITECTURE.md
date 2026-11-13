@@ -1,6 +1,6 @@
 # Adestia — architecture
 
-> Product documentation. On a feature branch of `adestia-pages` (AD-32 to AD-36) it adds that tranche on top of `epic/adestia-pages`; only what a tranche built is built (tranche 1: AD-34 and AD-36 for the page root, and the gallery; sections and columns, AD-32, come with tranche 3). "Gallery" means the block gallery sheet (E-34) and the `gallery` key of a plugin manifest, never the `:::gallery` image block. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
+> Product documentation. On a feature branch of `adestia-pages` (AD-32 to AD-36) it adds that tranche on top of `epic/adestia-pages`; only what a tranche built is built (tranche 1: AD-34 and AD-36 for the page root, and the gallery; tranche 2: AD-33 and AD-35, block variants, settings and data forms; sections and columns, AD-32, come with tranche 3). "Gallery" means the block gallery sheet (E-34) and the `gallery` key of a plugin manifest, never the `:::gallery` image block. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
 > `main`, exactly what is built. On a feature branch of `adestia-correctifs` (e.g. the chat tranche, AD-23) it adds that tranche on top of `epic/adestia-correctifs`; nothing is in `main` until the epic merges. An epic is a group of features delivered together; a tranche is one of them. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
 > (journeys, `docs/parcours.md`), `E-n` (screens, `docs/ecrans.md`), `AD-n` (decisions,
 > this file), `R-n` (refactoring targets, this file).
@@ -1239,7 +1239,7 @@ The gallery is a sheet (`.adestia-sheet*`, bottom sheet on a phone) like the oth
 A codec reads the block's lines into `rows` and `kept` (a line it cannot read, with its index). Writing returns the lines with each kept line at its index and the rows around it, so a round trip of an unedited block is byte-identical and a hand-written line is never dropped. **Raw** edits the same lines directly. The round trip (`lines → rows → lines`) is tested per codec against fixtures written by hand in the format of before the epic.
 
 ### AD-forms-3 — Apply is one document change
-**Apply** and each variant or width choice in E-6 go through the same `setBlock` change `BlockSettings` uses today: one transaction, one undo step, written by the editor's normal save. The form holds its state in the sheet until Apply; E-6 writes at once. No server route is added.
+**Apply** and each variant or width choice in E-6 go through `blockview.tsx` (`write` for E-6, `applyLines` for the form): one transaction, one undo step, written by the editor's normal save. The form holds its state in the sheet until Apply; E-6 writes at once. No server route is added.
 
 ## Decisions of adestia-preuve-tests
 

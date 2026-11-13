@@ -89,6 +89,8 @@ export interface BlockSettingsProps {
   readonly attributes: Readonly<Record<string, string>>
   /** The block's ⚙: the window hangs from it, and focus goes back to it on close. */
   readonly anchor?: RefObject<HTMLElement | null>
+  /** The block itself: the window keeps off it so the effect of a choice stays in sight. */
+  readonly avoid?: RefObject<HTMLElement | null>
   readonly onChange: (next: Record<string, string>) => void
   readonly onClose: () => void
   /** Opens the data form (E-35); absent for a block that declares no `fields`. */
@@ -103,6 +105,7 @@ export function BlockSettings({
   about,
   attributes,
   anchor,
+  avoid,
   onChange,
   onClose,
   onEditData,
@@ -147,6 +150,7 @@ export function BlockSettings({
   return (
     <Popover
       anchor={anchor ?? orphan}
+      {...(avoid ? { avoid } : {})}
       open
       onClose={onClose}
       label={t('Block settings %name').replace('%name', name)}

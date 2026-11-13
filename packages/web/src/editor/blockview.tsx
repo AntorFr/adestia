@@ -109,6 +109,8 @@ class DirectiveView implements NodeView {
   private readonly down: HTMLButtonElement
   /** The ⚙ as a ref, which is what the settings window hangs from and returns focus to. */
   private readonly anchor: { current: HTMLElement | null }
+  /** This block's own element, which its settings window keeps clear of. */
+  private readonly self: { current: HTMLElement | null }
   private readonly t: (key: string) => string
   /** A data block showing its raw lines rather than its rendering. */
   private raw = false
@@ -201,6 +203,7 @@ class DirectiveView implements NodeView {
     action('trash-2', t('Delete block'), () => this.remove(), 'adestia-edblock__remove')
     const gear = iconButton('settings', t('Block settings'), 'adestia-edblock__gear')
     this.anchor = { current: gear }
+    this.self = { current: this.dom }
     gear.addEventListener('mousedown', (event) => {
       event.preventDefault()
       // Focus goes to the ⚙ itself, so that closing the window gives it back here.
@@ -390,6 +393,7 @@ class DirectiveView implements NodeView {
             {...(about ? { about } : {})}
             attributes={this.attributes}
             anchor={this.anchor}
+            avoid={this.self}
             t={this.t}
             onChange={(next) => this.write(next)}
             onClose={() => this.setOpen(false)}
