@@ -96,7 +96,7 @@ Adestia's own interface.
   tools. One grammar renders, edits and validates them, so a save cannot change
   what a page means. In editing, a block moves with the **Move up** / **Move down** buttons, `Alt+↑/↓`
   or a long press on its grip then a drag, and **Add block** (or **Browse** in the `/` menu) opens a gallery
-  of the core blocks and those of the enabled plugins. A save is refused if the agent wrote underneath you. The page you have open follows the
+  of the core blocks and those of the enabled plugins. A block's settings (gear) offer its look as small pictures, and **Edit data** opens a form to add, reorder and remove the rows of a `figures`, `timeline`, `list` or `table` block (**Raw** shows the lines; see `docs/ecrans.md`, E-6 and E-35). A save is refused if the agent wrote underneath you. The page you have open follows the
   agent: in reading it refreshes by itself; while you edit, a banner "The page changed." offers
   **Reload** and never touches what you typed (nothing moves if `workspace.watch.enabled` is false).
   Home shows a loading row
