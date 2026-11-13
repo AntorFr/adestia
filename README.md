@@ -57,6 +57,7 @@ node bench/scenarios/page-suivie.mjs   # the open page follows the agent, B-17 (
 node bench/scenarios/hors-ligne.mjs     # stops and restarts a real bench instance: the offline banner E-32 on E-2, E-4 and E-14 (needs the build; images in $BENCH_OUT)
 BENCH_URL=<printed-url> node bench/scenarios/pages-matrix.mjs bench/scenarios/galerie.mjs   # the block gallery, E-34: Add block, search, empty search, insertion (needs the build and a launcher on `node bench/launch.mjs --engine fake --seed pages --skin alfred --locale en`, the skin and locale `pages-matrix.mjs` plays with `BENCH_URL`, read from `BENCH_SKIN` and `BENCH_LOCALE`, default `alfred` and `en`; images in $BENCH_OUT). Moving a block (B-23) has no scenario: its proof is `packages/web/test/move-block.test.ts` (the operation) and, in a browser, `packages/web/test/ensemble-pages-deplacer-browser.test.ts` (`Alt+↑/↓`, the long press and drag, the phone buttons)
 node bench/scenarios/chat-ajouts.mjs   # the chat's loading, Retry and context-lost line, E-16 (needs the build; seed `chat-ajouts`; about 20 s per skin × language, `BENCH_SKINS` and `BENCH_LOCALES` narrow it, it always plays desk and phone; images in $BENCH_OUT, `bench/shots-chat-ajouts/`)
+BENCH_URL=<printed-url> node bench/scenarios/reglages-blocs.mjs   # the block settings E-6 on a `figures` block; `saisie-formulaire.mjs` the same way plays the data form E-35 (each runs alone; needs the build and a launcher on `node bench/launch.mjs --engine fake --seed saisie`; desk and phone, light and dark; images in $BENCH_OUT)
 ```
 
 The scenarios need Playwright and Chromium installed on the host (the runner image ships Playwright 1.63; nothing in the repo installs them); `BENCH_SIZES` (only where a scenario says so), `BENCH_SKINS`, `BENCH_LOCALES` and `BENCH_OUT` narrow or move a run. It takes them from the environment (it looks in `/usr/lib/node_modules`, then `npm root -g`); the `pages-*` scenarios look only in `/usr/lib/node_modules`, so a host with another global root must link it there for them (`chargements.mjs`, `page-suivie.mjs` and the sweep search both places, as above): `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
@@ -95,7 +96,7 @@ Adestia's own interface.
   tools. One grammar renders, edits and validates them, so a save cannot change
   what a page means. In editing, a block moves with the **Move up** / **Move down** buttons, `Alt+↑/↓`
   or a long press on its grip then a drag, and **Add block** (or **Browse** in the `/` menu) opens a gallery
-  of the core blocks and those of the enabled plugins. A save is refused if the agent wrote underneath you. The page you have open follows the
+  of the core blocks and those of the enabled plugins. A block's settings (gear) offer its look as small pictures, and **Edit data** opens a form to add, reorder and remove the rows of a `figures`, `timeline`, `list` or `table` block (**Raw** shows the lines; see `docs/ecrans.md`, E-6 and E-35). A save is refused if the agent wrote underneath you. The page you have open follows the
   agent: in reading it refreshes by itself; while you edit, a banner "The page changed." offers
   **Reload** and never touches what you typed (nothing moves if `workspace.watch.enabled` is false).
   Home shows a loading row

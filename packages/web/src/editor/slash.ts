@@ -65,6 +65,8 @@ const ICONS: Readonly<Record<string, IconName>> = {
 
 /** What "Browse" says to the editor bar: open the gallery. */
 export const OPEN_GALLERY = 'adestia:open-gallery'
+/** Told to a block just inserted from the gallery: open its data form if it has one (P-17 step 4). */
+export const OPEN_FORM = 'adestia:open-form'
 
 /** Anything the table gains before somebody chooses it an icon. */
 const FALLBACK: IconName = 'sparkles'

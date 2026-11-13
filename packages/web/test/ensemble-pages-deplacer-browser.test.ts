@@ -396,6 +396,14 @@ describe.skipIf(!playwright)('adestia-pages-deplacer, from the need', () => {
       for (const [i, name] of all.entries()) {
         const gallery = await openGallery(page)
         await card(gallery, name).click()
+        // A block with fields opens its data form on insertion (P-17 step 4): Cancel keeps the provisional body,
+        // and the sheet must be gone before the gallery is opened again.
+        const form = page.locator('.adestia-sheet').filter({ hasText: '— data' })
+        if (['Figures', 'List', 'Table', 'Timeline'].includes(name)) {
+          await form.waitFor({ timeout: 10_000 })
+          await form.getByRole('button', { name: 'Cancel' }).click()
+          await form.waitFor({ state: 'detached', timeout: 10_000 })
+        } else expect(await form.count(), `${name} opens no form`).toBe(0)
         await expect.poll(async () => (await fences(instance.url, 'galerie-tous')).length, { timeout: 20_000, message: `${name} saved` }).toBe(2 + i + 1)
         expect(await page.getByText(/Not saved/).count(), `refusal after ${name}`).toBe(0)
       }

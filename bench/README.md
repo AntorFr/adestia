@@ -66,6 +66,7 @@ or scenario caller. It uses the repository's TypeScript parser, without a browse
 | `--seed` | What it shows |
 |---|---|
 | `base` | The populated instance: 20+ pages in two stores (every core block, a lost and an ambiguous wikilink, a vocabulary the product refuses to save, an unreadable frontmatter, a stray `app:`, files, two collections), conversations (running, unread, idle, archived, long, medium, a thread with every bubble state), six MCP servers in every health, instructions and three catalogues (importable, empty, unreachable), four delegations from two callers, a brief, a stored credential, a refused plugin and a plugin delivering a skill. No settings route: E-14 says it does not expose its configuration. |
+| `saisie` | `base` plus the reference pages of the data form E-35 and the settings E-6 (`figures`, `list`, `table`, `timeline`, each with a line nobody can read), for `scenarios/saisie-formulaire.mjs` and `scenarios/reglages-blocs.mjs`. |
 | `chat-ajouts` | E-16 loading, failure and the context-lost line: the base instance plus a conversation with two `contextLost` agent messages, a plain one and 20 more rows. |
 | `chat-permission` | E-17/E-18: isolated desk/phone threads, pending/signed/denied/expired signatures, questions with and without a lasting rule; `permissions.mode: ask` also supports the real-Claude proof. |
 | `config-writable` | `base`, with the configuration file the screen reads and writes. |

@@ -1,6 +1,6 @@
 # Adestia — architecture
 
-> Product documentation. On a feature branch of `adestia-pages` (AD-32 to AD-36) it adds that tranche on top of `epic/adestia-pages`; only what a tranche built is built (tranche 1: AD-34 and AD-36 for the page root, and the gallery; tranche 3: sections and columns, AD-32, and the move into, out of and between them, AD-structure-1). "Gallery" means the block gallery sheet (E-34) and the `gallery` key of a plugin manifest, never the `:::gallery` image block. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
+> Product documentation. On a feature branch of `adestia-pages` (AD-32 to AD-36) it adds that tranche on top of `epic/adestia-pages`; only what a tranche built is built (tranche 1: AD-34 and AD-36 for the page root, and the gallery; tranche 2: AD-33 and AD-35, block variants, settings and data forms; tranche 3: sections and columns, AD-32, and the move into, out of and between them, AD-structure-1). "Gallery" means the block gallery sheet (E-34) and the `gallery` key of a plugin manifest, never the `:::gallery` image block. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
 > `main`, exactly what is built. On a feature branch of `adestia-correctifs` (e.g. the chat tranche, AD-23) it adds that tranche on top of `epic/adestia-correctifs`; nothing is in `main` until the epic merges. An epic is a group of features delivered together; a tranche is one of them. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
 > (journeys, `docs/parcours.md`), `E-n` (screens, `docs/ecrans.md`), `AD-n` (decisions,
 > this file), `R-n` (refactoring targets, this file).
@@ -1236,7 +1236,7 @@ phone's text selection on the bench — then the buttons are the touch path and 
 of **enabled** plugins only (the loader already reads only those: a disabled plugin has no record to list). The `/` menu
 (`slash.ts`) keeps its list and gains "Browse" as its last item; both insert through the one position model: after the focused block, end of
 the page when none, end of the container when the focus is a container (tranche 3). `packages/schemas/src/plugin.ts` validates `gallery`
-(`name`, `line`, `image`, `group`; `fields` and `view` optional and not read yet), and a plugin block with no record shows its identifier.
+(`name`, `line`, `image`, `group`; `fields` and `view` optional, read by the shell as AD-forms-1 and AD-35 say), and a plugin block with no record shows its identifier.
 The gallery is a sheet (`.adestia-sheet*`, bottom sheet on a phone) like the other sheets of the shell; no new component family.
 *Rejected*: deriving the cards from the `/` menu labels (no image, no line, no group).
 
@@ -1258,13 +1258,22 @@ the touch path between columns (no drag needed). The settings' "Leave the parent
 favour of Move out. Moving a container moves its content. A column emptied stays (a `columns` always keeps 2 or 3 `col`); an empty
 `col` is drawn with its "Drop here" lane in editing and nothing in reading. The gallery inserts **Section** and **Columns** (two
 columns by default; `col` has no card) at the tranche-1 insertion point; when the focus is a container the block goes at its end.
-The count is set in the block's settings (E-6, as separate fields until tranche 2 redraws it): 2 → 3 adds an empty column, 3 → 2
+The count is set in the block's settings (E-6, in its own Columns group above the redrawn groups of tranche 2): 2 → 3 adds an empty column, 3 → 2
 removes the last one only when it is empty, and is otherwise refused with the reason shown — no data is deleted.
 The fold toggle (`reader/Containers.tsx`) is a React state of the reader, keyed by the section's position, initialised from
 `closed=fold`; it is never written, and is available when the page is read-only. Below 820 px the columns stack in source order.
 *Rejected*: a second keyboard path; persisting the fold per user (a stored datum the epic does not have); letting an
 emptied `col` disappear (it would change a `columns` from 3 to 2 silently).
 *Reversed if*: the fork cannot nest directives (AD-32); it can, so the tranche was built whole.
+
+### AD-forms-1 — A `fields` entry is a list of typed columns plus a line codec
+*(tranche `adestia-pages-blocs-formulaires`, refines AD-33.)* The `fields` of a block's `gallery` entry (core table or plugin manifest) is `{ "columns": [{ "key", "kind": "text|number|date|link", "label", "required"? }], "line": "label-value-caption | label-range | label-value | table" }`. The contract accepts `link`, but no block declares it and the form draws it as a plain text field. `line` names one of four codecs written once in the shell (`editor/blockform/`), one per line format that exists today; it is not a free template, so no plugin can invent a line format the reader does not parse. `label` is a string or an `{en, fr}` pair, as in the template declarations. A plugin that declares a `fields` without a known `line` has it ignored (no **Edit data**), never an error. *Rejected*: a per-block form component (a plugin block gets no form); a format string (a second grammar). *Reversed if*: a block needs a column kind the four cannot say.
+
+### AD-forms-2 — The form edits rows; lines it cannot read ride along
+A codec reads the block's lines into `rows` and `kept` (a line it cannot read, with its index). Writing returns the lines with each kept line at its index and the rows around it, so a round trip of an unedited block is byte-identical and a hand-written line is never dropped. **Raw** edits the same lines directly, with the page's own bullet (`-`: the editor's serializer spells `*`), and an empty **Raw** is written as one empty bullet, since the server refuses a block with no body. The round trip (`lines → rows → lines`) is tested per codec against fixtures written by hand in the format of before the epic.
+
+### AD-forms-3 — Apply is one document change
+**Apply** and each variant or width choice in E-6 go through `blockview.tsx` (`write` for E-6, `applyLines` for the form): one transaction, one undo step, written by the editor's normal save. The form holds its state in the sheet until Apply; E-6 writes at once. No server route is added.
 
 ## Decisions of adestia-preuve-tests
 

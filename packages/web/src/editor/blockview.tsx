@@ -24,13 +24,17 @@
  */
 
 import { resolveBlock, type Indexed } from '@antorfr/adestia-content'
-import { serializerCtx } from '@milkdown/kit/core'
+import { parserCtx, serializerCtx } from '@milkdown/kit/core'
 import type { Ctx } from '@milkdown/kit/ctx'
 import type { Node as ProseNode } from '@milkdown/kit/prose/model'
+import { redo, undo } from '@milkdown/kit/prose/history'
 import { NodeSelection, TextSelection } from '@milkdown/kit/prose/state'
 import type { EditorView, NodeView } from '@milkdown/kit/prose/view'
 import { createRoot, type Root } from 'react-dom/client'
 
+import { BlockForm } from './BlockForm.js'
+import { OPEN_FORM } from './slash.js'
+import { bodyLines, fenced } from './blockform/index.js'
 import { BlockSettings } from './BlockSettings.js'
 import { columnsOf, isHollow, lastColumnHolds, withColumnCount } from './containers.js'
 import { domIcon } from './dom-icon.js'
@@ -39,7 +43,9 @@ import { prettify } from '../app/paths.js'
 import { moveBlock, nodeAtPath, slotAtPosIn, slotToIndex, slotsAt, type Direction, type Path } from './moveBlock.js'
 import { announce, canMove, moveByStep, moveTo, placeOf, said, stepOf } from './moveui.js'
 import { Reader, type BlockComponents, type VocabularyContext } from './Reader.js'
+import type { PluginGalleryFields } from '@antorfr/adestia-schemas'
 import type { Say } from '../plugins/words.js'
+import { REPORT_NOW } from './reportNow.js'
 
 /** What a block's rendering needs to know about the page it is written in. */
 export interface EditorEnv {
@@ -57,6 +63,8 @@ export interface EditorEnv {
    * runs — so the settings panel cannot get it translated any other way.
    */
   readonly say?: Say | undefined
+  /** The form a block declares for its lines (`fields`), absent for a block with none (E-35). */
+  readonly forms?: ((name: string) => PluginGalleryFields | undefined) | undefined
   /** The editor's translator: the bar, the settings and the notes speak the instance's language. */
   readonly t?: ((key: string) => string) | undefined
 }
@@ -107,10 +115,14 @@ class DirectiveView implements NodeView {
   private readonly into: HTMLButtonElement
   /** The ⚙ as a ref, which is what the settings window hangs from and returns focus to. */
   private readonly anchor: { current: HTMLElement | null }
+  /** This block's own element, which its settings window keeps clear of. */
+  private readonly self: { current: HTMLElement | null }
   private readonly t: (key: string) => string
   /** A data block showing its raw lines rather than its rendering. */
   private raw = false
   private open: boolean
+  /** The data form (E-35), with the lines the block had when it opened. */
+  private form: { readonly base: string; readonly fresh: boolean } | undefined
 
   constructor(
     private readonly name: string,
@@ -184,6 +196,9 @@ class DirectiveView implements NodeView {
     this.into = action('arrow-up', t('Move into the next container'), () => this.step('in'), 'adestia-edblock__into')
     // Alt+↑/↓ from anywhere in the block: its bar, or the caret in its body.
     // Neighbours moved without this view being told: read the ends again when it is reached.
+    this.dom.addEventListener(OPEN_FORM, () => {
+      if (this.env.forms?.(this.name)) this.openForm(true)
+    })
     this.dom.addEventListener('pointerover', () => this.syncMove())
     this.dom.addEventListener('focusin', () => this.syncMove())
     this.dom.addEventListener('keydown', (event) => {
@@ -197,6 +212,7 @@ class DirectiveView implements NodeView {
     action('trash-2', t('Delete block'), () => this.remove(), 'adestia-edblock__remove')
     const gear = iconButton('settings', t('Block settings'), 'adestia-edblock__gear')
     this.anchor = { current: gear }
+    this.self = { current: this.dom }
     gear.addEventListener('mousedown', (event) => {
       event.preventDefault()
       // Focus goes to the ⚙ itself, so that closing the window gives it back here.
@@ -372,8 +388,8 @@ class DirectiveView implements NodeView {
   }
 
   private renderPanel(): void {
-    this.panel.hidden = !this.open
-    if (!this.open) {
+    this.panel.hidden = !this.open && !this.form
+    if (!this.open && !this.form) {
       this.panelRoot?.render(null)
       return
     }
@@ -385,27 +401,91 @@ class DirectiveView implements NodeView {
     const about = resolved
       ? (this.env.say?.(resolved.plugin, resolved.spec.description) ?? resolved.spec.description)
       : undefined
+    const fields = this.env.forms?.(this.name)
+    const label = prettify(this.name)
     this.panelRoot.render(
-      <BlockSettings
-        name={this.name}
-        spec={resolved?.spec}
-        {...(about ? { about } : {})}
-        attributes={this.attributes}
-        anchor={this.anchor}
-        t={this.t}
-        onChange={(next) => this.write(next)}
-        {...(this.name === 'columns'
-          ? {
-              columns: {
-                count: columnsOf(this.node),
-                canShrink: !lastColumnHolds(this.node),
-                onChange: (count: number) => this.setColumns(count),
-              },
-            }
-          : {})}
-        onClose={() => this.setOpen(false)}
-      />,
+      <>
+        {this.open && (
+          // The window is portaled out of the panel, but React events still
+          // climb through it: this is where its keys reach the editor.
+          <div style={{ display: 'contents' }} onKeyDown={(event) => this.historyKey(event)}>
+          <BlockSettings
+            name={this.name}
+            spec={resolved?.spec}
+            {...(about ? { about } : {})}
+            attributes={this.attributes}
+            anchor={this.anchor}
+            avoid={this.self}
+            t={this.t}
+            onChange={(next) => this.write(next)}
+            {...(this.name === 'columns'
+              ? {
+                  columns: {
+                    count: columnsOf(this.node),
+                    canShrink: !lastColumnHolds(this.node),
+                    onChange: (count: number) => this.setColumns(count),
+                  },
+                }
+              : {})}
+            onClose={() => this.setOpen(false)}
+            {...(fields ? { onEditData: () => this.openForm() } : {})}
+          />
+          </div>
+        )}
+        {this.form && fields && (
+          <BlockForm
+            name={label}
+            fields={fields}
+            lines={bodyLines(this.form.base)}
+            stale={this.markdownOf() !== this.form.base}
+            locale={this.env.locale}
+            fresh={this.form.fresh}
+            t={this.t}
+            onApply={(lines) => this.applyLines(lines)}
+            onClose={() => this.closeForm()}
+          />
+        )}
+      </>,
     )
+  }
+
+  /**
+   * Focus sits in the settings window after a choice, outside the editor's own
+   * key handling: hand undo/redo to its history, but leave a text field its
+   * native undo.
+   */
+  private historyKey(event: { ctrlKey: boolean; metaKey: boolean; altKey: boolean; shiftKey: boolean; key: string; target: EventTarget; preventDefault(): void }): void {
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) return
+    if ((event.target as HTMLElement).closest('input, textarea, select, [contenteditable="true"]')) return
+    const key = event.key.toLowerCase()
+    const run = key === 'z' ? (event.shiftKey ? redo : undo) : key === 'y' ? redo : undefined
+    if (!run) return
+    event.preventDefault()
+    run(this.view.state, this.view.dispatch)
+  }
+
+  private openForm(fresh = false): void {
+    this.form = { base: this.markdownOf(), fresh }
+    this.open = false
+    this.refresh()
+  }
+
+  private closeForm(): void {
+    this.form = undefined
+    this.refresh()
+  }
+
+  /** The form's lines become the block's body: one change of the document, one undo step. */
+  private applyLines(lines: string[]): void {
+    const at = this.getPos()
+    const fresh = this.ctx.get(parserCtx)(fenced(this.name, lines)).firstChild
+    if (at !== undefined && fresh && fresh.type === this.node.type && this.form && this.markdownOf() === this.form.base) {
+      this.view.dispatch(
+        this.view.state.tr.replaceWith(at + 1, at + this.node.nodeSize - 1, fresh.content).scrollIntoView(),
+      )
+      this.dom.dispatchEvent(new Event(REPORT_NOW, { bubbles: true }))
+    }
+    this.closeForm()
   }
 
   /** Which column of its band this is, 1-based, for the label the edge wears. */

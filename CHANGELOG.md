@@ -853,7 +853,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
   read-only page) opens a sheet of cards, grouped and searchable, for every core block and
   every enabled plugin's; the `/` menu keeps its blocks and ends with "Browse", which opens
   the same sheet. Arrows and Enter choose by keyboard. The block lands after the block that
-  holds the selection, at the end of the page when none does. Its form and variants come later.
+  holds the selection, at the end of the page when none does. Its variants and the form of a data block came with the next slice (below).
 - **Move a block without the mouse** — In editing, a block moves with **Move up** / **Move down**
   on its bar (44 px on a phone), `Alt+↑/↓`, or a long press then a drag on a touch screen; a live
   region says "Moved to position 3 of 7". A block chosen in the gallery lands with a default body,
@@ -874,3 +874,21 @@ branch and that `test:plugins` is replayed after a red vitest run.
   column, so a phone needs no drag) end in the same move. Moving a container moves what it holds. A
   drop that breaks the depth rule (a section in a section or a column) keeps its line, marked, with the
   reason beside it and in the live region, and writes nothing.
+- **Core blocks redrawn, `figures` gets `view`** — `figures` reads as tiles (default) or as one
+  line (`view=inline`); a tile whose figure is a percentage draws a bar named for screen readers
+  (`role="meter"`, 0–100, the label as its name) with nothing written for it. `list` keeps
+  `rows`, `cards`, `chips`. The default of a variant is never written unless the user chose it.
+  Blocks of `project-management` are not redrawn yet.
+- **Block settings redrawn** — The settings of a block are grouped *Look* (a block with several
+  `view`s, such as `figures` or `list`, shows them as small pictures), *Content*, *Layout* (width
+  as ⅓ ½ ⅔ Full, then « Show a box » Yes/No) and *Title and icon*, with a label and one line of
+  help in `en` or `fr`; only a plugin block's attribute shows its identifier. A variant or width
+  applies at once, in one undo step; a default is written only when chosen. Foreign attributes
+  sit last under « Other attributes », and the heading is absent when there are none.
+- **Data form for blocks** — **Edit data** at the foot of a block's settings opens a form for its
+  lines (`figures`, `list`, `table`, and any block whose manifest declares `fields`): one row per
+  entry, a field per column, **Move up** / **Move down** and `Alt+↑/↓`, **Remove row**, **Add**, the
+  line that will be written, and **Raw**. A bad value is refused under its field and **Apply** waits.
+  **Apply** is one change (one undo step); **Cancel**, ✕, Escape and the scrim drop it. A row left
+  alone is written back byte for byte, and a line the form cannot read stays where it was, listed
+  under "Kept as written". In `en` and `fr`.

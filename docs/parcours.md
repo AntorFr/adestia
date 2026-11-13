@@ -152,7 +152,7 @@ keep opening as they did (B-31).
 
 - **B-23** — A block moves without a mouse: from the keyboard, from **Move up / Move down** controls on its bar, and by touch (a long press then drag, or the same controls). The move works at the page level today; the same controls move it across containers once B-28 exists. *(P-17)*
 - **B-24** — The user browses all the blocks the instance offers (core and enabled plugins) in a **block gallery**: each with its name, a picture of how it looks, one line saying what it is for; choosing one inserts it at the **insertion point** (after the block that has focus or selection; at the end of the page when none; at the end of the container when the focus is a container), and opens its form (B-27) when it needs data. The `/` menu stays. *(P-17)*
-- **B-25** — Every block is redrawn to look finished (the blocks of the core and of `project-management`), and where one data can read in several ways the block offers display variants (`view`), chosen from the settings (B-26) or the gallery. *(P-18)*
+- **B-25** — Every block is redrawn to look finished (the blocks of the core in tranche 2; those of `project-management`, `timeline` included, in tranche 4), and where one data can read in several ways the block offers display variants (`view`), chosen from the settings (B-26) or the gallery. *(P-18)*
 - **B-26** — The block settings (E-6) are redrawn: labels in the user's language, fields grouped and explained, the variants shown as small pictures rather than words, the effect visible while the user changes it. No raw attribute is shown by default. *(P-18)*
 - **B-27** — The data of a block is entered in a form, not as raw markdown lines: the figures of `figures`, the phases and milestones of `timeline`, the items of `list` and `table`, the cards. The raw lines stay one click away; what the form writes is the same file as before (AD-33). *(P-18)*
 - **B-28** — A page has **sections** (a titled group of blocks that may be folded) and **columns** (two or three side by side that stack on a phone); a block is dropped into, out of, and between them, with the pointer, the keyboard and the buttons of B-23. Nesting is bounded (AD-32). *(P-19)*
@@ -384,7 +384,7 @@ The user has a page with six blocks in the wrong order, on a laptop, and later o
 1. The user opens the page in editing (E-4). Each block bar shows **Move up**, **Move down** and the grip (B-23).
 2. With the keyboard, the user focuses a block bar and presses the move shortcut; the block moves one place, a live region says where (B-23).
 3. On the phone, the user presses the block's move control, or long-presses the grip and drags (B-23).
-4. The user wants a block they do not know the name of: **Add block** (or `/` then "Browse") opens the gallery (E-34); they scan the pictures, choose "Figures", and it lands at the insertion point with its default values (B-24). Its form opens only from tranche 2 (E-35, B-27); before it, nothing opens.
+4. The user wants a block they do not know the name of: **Add block** (or `/` then "Browse") opens the gallery (E-34); they scan the pictures, choose "Figures", and it lands at the insertion point with its default values (B-24). For a block with data (`figures`, `timeline`, `list`, `table`, cards) its form (E-35, B-27) opens on the new block; any other block opens nothing.
 5. *Failure.* The page was written elsewhere while the sheet was open: the banner "The page changed." with **Reload** shows, nothing is inserted. On the first block **Move up** is disabled; `Alt+↑` does nothing and the live region says "Already first". On a read-only page none of these controls exist.
 
 Needs: B-23, B-24
@@ -393,8 +393,9 @@ Needs: B-23, B-24
 The user has a block that looks rough and whose data is raw lines.
 
 1. The user opens the block's settings (E-6); the variants are small pictures; choosing one redraws the block in place (B-25, B-26).
-2. The user presses **Edit data**; a form (E-35) lists the figures (or phases, items): add, reorder, remove a row, with the right field per column (a number, a date, a status) (B-27).
-3. The user closes the form; the block shows the result. The raw lines are available from **Raw** in the form and say the same thing (B-27, AD-33).
+2. The user presses **Edit data** (at the foot of E-6; built, `adestia-pages-blocs-formulaires-saisie`); a form (E-35) lists the figures (or phases, items): add, reorder, remove a row, with the right field per column (a number, a date, or plain text; a timeline row carries no status, the line format has none) (B-27).
+3. A number that is not a number is refused under its field, in the user's language, and **Apply** waits until it is fixed (B-27). After inserting a data block from the gallery (E-34), the same form opens on the new block with one empty row (P-17 step 4, B-24).
+4. The user closes the form; the block shows the result. The raw lines are available from **Raw** in the form and say the same thing (B-27, AD-33).
 
 Needs: B-25, B-26, B-27
 
