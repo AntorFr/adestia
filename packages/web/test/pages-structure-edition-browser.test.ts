@@ -141,6 +141,26 @@ describe.skipIf(!playwright)('adestia-pages-structure-edition', () => {
     await after.context.close()
   }, 180_000)
 
+  // Breaks if a container without title keeps an empty header's room (display:flex beating [hidden]).
+  it('entete_cache_sans_titre_ne_prend_aucune_place', async () => {
+    const path = 'galerie-fin'
+    const { context, page } = await visit(browser, instance.url, path)
+    await edit(page)
+    await page.locator('[data-block="callout"]').first().getByText(/Texte du bloc/).first().click()
+    await (await openGallery(page)).getByRole('option', { name: 'Section', exact: true }).click()
+    await expect.poll(() => fences(instance.url, path), { timeout: 20_000 }).toContain('section')
+    await (await openGallery(page)).getByRole('option', { name: 'Columns', exact: true }).click()
+    await expect.poll(() => page.locator('[data-block="col"]').count(), { timeout: 20_000 }).toBe(2)
+    const heads = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-block="section"] .adestia-head, [data-block="columns"] .adestia-head, [data-block="col"] .adestia-head')]
+        .filter((h) => (h as HTMLElement).hidden)
+        .map((h) => ({ display: getComputedStyle(h).display, height: h.getBoundingClientRect().height })),
+    )
+    expect(heads.length).toBeGreaterThanOrEqual(4)
+    for (const h of heads) expect(h).toEqual({ display: 'none', height: 0 })
+    await context.close()
+  }, 120_000)
+
   // Breaks if opening and saving an untouched page rewrites it.
   it('page_sans_conteneur_ouverte_puis_enregistree_reste_identique', async () => {
     const path = 'galerie-annule'
