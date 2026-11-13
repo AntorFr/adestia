@@ -518,6 +518,12 @@ const FR: Readonly<Record<string, string>> = {
   'Already first': 'Déjà en premier',
   'Already last': 'Déjà en dernier',
   'It cannot go there': 'Il ne peut pas aller là',
+  'Already at the page level': 'Déjà au niveau de la page',
+  'Too deep: a section or columns cannot go inside a column, nor a section inside a section':
+    'Trop profond : une section ou des colonnes ne vont pas dans une colonne, ni une section dans une section',
+  'Nothing after it can take the block': 'Rien après lui ne peut accueillir le bloc',
+  'Move out of the container': 'Sortir du conteneur',
+  'Move into the next container': 'Entrer dans le conteneur suivant',
   'Leave the parent block': 'Sortir du bloc parent',
   'Delete block': 'Supprimer le bloc',
   Preview: 'Aperçu',
