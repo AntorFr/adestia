@@ -1226,7 +1226,7 @@ phone's text selection on the bench — then the buttons are the touch path and 
 of **enabled** plugins only (the loader already reads only those: a disabled plugin has no record to list). The `/` menu
 (`slash.ts`) keeps its list and gains "Browse" as its last item; both insert through the one position model: after the focused block, end of
 the page when none, end of the container when the focus is a container (tranche 3). `packages/schemas/src/plugin.ts` validates `gallery`
-(`name`, `line`, `image`, `group`; `fields` and `view` optional and not read yet), and a plugin block with no record shows its identifier.
+(`name`, `line`, `image`, `group`; `fields` and `view` optional, read by the shell as AD-forms-1 and AD-35 say), and a plugin block with no record shows its identifier.
 The gallery is a sheet (`.adestia-sheet*`, bottom sheet on a phone) like the other sheets of the shell; no new component family.
 *Rejected*: deriving the cards from the `/` menu labels (no image, no line, no group).
 
