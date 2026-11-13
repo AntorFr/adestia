@@ -20,20 +20,12 @@
 
 ## Étape vitest rouge de `epic/adestia-pages` à 28e089c9 (`rouge-adestia-pages-2`)
 
-Source : `resultats.xml` du pod `sdlc-adestia-pages-deplacer-mouvement-review-1` (écrit à 17:36:53, fin de la mesure à 17:36:55) et
-liste des instables de la mesure `28e089c9`. L'étape `vitest` y est en échec (« step vitest failed ») ; le rapport ne contient
-qu'un seul test en échec, les deux autres viennent de la mesure. Tous sont pris ailleurs, aucun code ni test n'est changé ici :
+Mesure `28e089c9` : l'étape `vitest` échouait sur trois tests instables sous charge, pris par `rouge-adestia-pages-1`, tests seuls, code du produit inchangé :
 
-| Test | Classe | Sort |
-|---|---|---|
-| `besoin-hors-ligne-bords.test.ts` > B-19 … un 502 sur un appel /api/ alors que la sonde échoue : le bandeau apparaît ; la sonde repasse : il part seul | instable sous charge (`expected +0 to be 1`) | `rouge-adestia-pages-1-bandeau-502` |
-| `besoin-pages-ensemble-browser.test.ts` > … alfred / fr > `sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur` | instable sous charge | `rouge-adestia-pages-1-refus-sauvegarde` |
-| même fichier > … dobby / fr > même test | instable sous charge | `rouge-adestia-pages-1-refus-sauvegarde` |
+- `besoin-hors-ligne-bords.test.ts` (B-19, 502/503/504) : seul l'appel sous test répond (une réponse tardive efface le bandeau et retire la boucle de sonde), les appels partis avant la route sont attendus, puis des signaux remplacent les délais de 10 s / 8 s ;
+- `besoin-pages-ensemble-browser.test.ts`, `sauvegarde_refusee_…` (alfred, dobby, nestor ; fr et en) : la frappe `/` se replace en fin de document (un autosave peut avoir retiré la ligne vide et le focus), statut attendu 45 s, `beforeAll` de 180 s, test de 300 s.
 
-Aucune cause hors tests (config vitest, mémoire, délai) n'apparaît dans le rapport. La mesure de `810fa3cc` (tête actuelle de l'epic) ne
-montre aucun rouge ni instable. Les dix rejeux de `npx vitest run` n'ont pas été joués : les rapports ne sont pas perdus et un
-passage dure ~25 min. L'étape se juge au rejeu de la suite de l'epic une fois `rouge-adestia-pages-1` livrée. Corrigés par `feature/rouge-adestia-pages-1` (tests seuls, code du produit inchangé) : le cas B-19 « 502/503/504 » de `besoin-hors-ligne-bords.test.ts` ne laisse répondre que l'appel sous test (tout autre appel `/api/` est coupé : une réponse efface le bandeau et retire la boucle de sonde ; les appels partis avant l'installation de la route sont attendus avant le 502, leur réponse tardive étant la cause du rouge sous charge, 10/10 verts sous charge) et attend des signaux (réponse passerelle, sonde échouée, bandeau présent, puis parti) au lieu de 10 s / 8 s ; `sauvegarde_refusee_…` de `besoin-pages-ensemble-browser.test.ts` relance sa frappe `/` en se replaçant en fin de document (une réponse d'autosave peut avoir retiré la ligne vide et le focus), attend le statut 45 s, avec un `beforeAll` de 180 s et un délai de test de 300 s.
-`sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur` est vert pour les six instances (alfred, dobby, nestor ; fr et en) à trois `npx vitest run` complets de suite, build à jour, sur le code de l'epic portant `rouge-adestia-pages-1-refus-sauvegarde` (fichier seul : 9 rejeux verts sur 10 avant la coupure, 56/56 chacun). Test et code du produit inchangés. **Piège** : ces trois passes ont rougi ailleurs sous la charge, par des délais de 5 s (`besoin-charte-comportement.test.ts` aux trois, `files`, `restart`, `app`, `shell-markup` une fois chacun) : rouges d'ailleurs, non traités ici.
+**Piège** : les passes de contrôle ont aussi rougi ailleurs sous la charge, par des délais de 5 s (`besoin-charte-comportement.test.ts`, `files`, `restart`, `app`, `shell-markup`) : voir le budget de ce dernier plus bas.
 
 ## Défauts connus
 
