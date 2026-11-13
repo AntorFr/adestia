@@ -867,6 +867,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   `etape > guards` step no longer turns red. Documentation only: nothing changes for users
   (task `rouge-adestia-pages-5`).
 
+## v0.98.0-adestia-pages.8
+
+- **The epic's red shell test is green again** — the "renders missing at 1440px unchanged"
+  case of the shell markup tests now imports the editor before it runs, so its wait is on the
+  screen and not on a module being transformed under load. Test only: nothing changes for
+  users (task `rouge-adestia-pages-7`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
