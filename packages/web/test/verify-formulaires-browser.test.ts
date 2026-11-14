@@ -609,10 +609,20 @@ describe.skipIf(!playwright)('blocs finis, réglages lisibles, données en formu
       const { context, page, w } = await visit(en, 't-ordre')
       await startEditing(page, w)
       const form = await openForm(page, w, 'Cadrage', 'Timeline — data')
-      await form.getByRole('listitem').nth(0).getByLabel('Due', { exact: true }).fill('2026-01-15')
-      await form.getByRole('listitem').nth(0).getByLabel('Due', { exact: true }).blur()
-      expect(await form.getByText('Due is before start', { exact: true }).count()).toBe(0)
-      expect(await form.getByRole('button', { name: w.apply, exact: true }).isDisabled()).toBe(false)
+      const due = form.getByRole('listitem').nth(0).getByLabel('Due', { exact: true })
+      const message = form.getByText('Due is before start', { exact: true })
+      const applyButton = form.getByRole('button', { name: w.apply, exact: true })
+      // Signal that validation is live: an earlier due is refused first. Reading
+      // "no message" straight after the fill would pass before React rendered.
+      await due.fill('2026-01-01')
+      await message.waitFor({ timeout: 10_000 })
+      await expect.poll(() => applyButton.isDisabled(), { timeout: 10_000 }).toBe(true)
+      // Then the equal date: the refusal must lift and Apply come back.
+      await due.fill('2026-01-15')
+      await due.blur()
+      await message.waitFor({ state: 'detached', timeout: 10_000 })
+      await expect.poll(() => applyButton.isDisabled(), { timeout: 10_000 }).toBe(false)
+      expect(await message.count()).toBe(0)
       await context.close()
     }, 60_000)
 
