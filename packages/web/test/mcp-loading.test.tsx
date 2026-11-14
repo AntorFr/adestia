@@ -207,6 +207,8 @@ describe('E-10 refetch after a write', () => {
     await waitFor(() => expect(lists).toBe(2))
     expect(screen.queryByText('Loading…')).toBeNull()
     await act(async () => { refetch.settle(res(200, SERVERS)) })
+    // The answer is in once the declaration is drawn again; read the screen after.
+    expect(await screen.findByRole('button', { name: 'Remove' })).toBeTruthy()
     expect(screen.queryByText('Loading…')).toBeNull()
   })
 
