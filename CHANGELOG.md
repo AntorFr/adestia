@@ -813,3 +813,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
 ## v0.97.13
 
 - **Browser and load-sensitive tests now wait for states, or for a delay scaled by `ADESTIA_PATIENCE`** — the tests that turned red under the load of the full suite (chat rail, MCP removal, offline banner, refused page save, charter components, screen sweep) wait for the state they need instead of fixed pauses or 5 s limits, and `scripts/suite-attestee.sh` sets `ADESTIA_PATIENCE=4` for the test step. No assertion is removed. A test-only fix: nothing changes for users.
+
+## v0.97.14
+
+- **A refused account now gets a real "access refused" page, with a button to switch account** — an OIDC account outside the authorised groups sees the refused screen (E-1), which names the account and offers **Se déconnecter**. Signing out also ends the identity provider's session (its `end_session_endpoint`, or `/auth/login?switch=1` with `prompt=login` as a fallback), so the next sign-in can use another account. The deployment must list the post-logout return URI on the provider's OIDC client (`auth.oidc.postLogoutRedirectUri`).
