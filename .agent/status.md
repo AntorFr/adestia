@@ -115,6 +115,8 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
 
 ## Pièges encore vrais
 
+- **Balayage E-26 (voyages) sous charge** : l'écran charge tous les plugins puis demande `/voyages` au serveur ; la preuve `.voyages-page .vhub-card` attendait 15 s fixes, que la suite entière (navigateurs en parallèle) peut dépasser sans que le plugin soit en défaut. Seul, l'écran se prend en 5 s ; sur un cœur chargé, 3 fois plus lent, toujours vert. Aucune course du produit retrouvée (l'échec n'a pas été reproduit ici). `bench/sweep.mjs` attend désormais max(15 s, 8 × le temps de démarrage du shell mesuré) et dit ce que la page montre si la preuve manque ; écrans, sélecteurs et captures inchangés (`rouge-adestia-pages-9-sweep-voyages-sous-charge`).
+
 - **Grammaire absente après installation** : le fork git du parseur est indispensable.
   Vérifier `node_modules/micromark-extension-directive` ; utiliser `npm ci` (CLAUDE.md).
 - **Lire les paquets d'une autre branche dans une worktree** : les liens npm peuvent
