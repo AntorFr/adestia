@@ -284,7 +284,7 @@ stops shipping Playwright.
   `bench/shots-sweep`, ignored by git). A screen table in the script lists, per `E-n`, the
   route, the gesture that opens it and the **selector that proves it is that screen**; a capture
   whose selector is absent, or that shows `.adestia-gate__card--fatal` or a loading state, fails the sweep
-  and names the screen. The sweep exits non-zero on any failure and prints a count.
+  and names the screen. The capture of one screen lives in `bench/lib/capture.mjs` (a module of its own, because `bench/sweep.mjs` runs its sweep as soon as it is imported): every wait for something to appear lasts `APPEAR_MS` (60 s), and a screen whose wait runs out is retried once in a fresh context, so a busy pod does not fail a sweep by itself. The sweep exits non-zero on any failure and prints a count.
 - **docker.** `bench/run.sh` and `bench/bench.mjs` are untouched except that the Playwright
   import falls back from `/usr/lib/node_modules` to the global root. Scenarios keep working.
 

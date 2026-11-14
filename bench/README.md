@@ -173,7 +173,7 @@ scripted engine, then captures each screen of `docs/ecrans.md` (E-1 to E-31) in
 `light` and `dark`, at 1440×900 and at a 390×844 touch viewport:
 31 × 2 × 2 = 124 files in `<out>/<skin>/<E-n>-<name>-<theme>-<desk|phone>.png`
 (`<skin>` is `default` without `--skin`; `--out` defaults to `bench/shots-sweep`,
-ignored by git). Two to four minutes, depending on the machine (about three times that on a loaded core). A screen's proof selector is awaited for max(15 s, 8 × the shell's measured boot time); the error says what the page showed instead.
+ignored by git). Two to four minutes, depending on the machine (about three times that on a loaded core). Every wait for a screen to appear (the chat shell, the phone's shell screen, the proof selector) lasts `APPEAR_MS` = 60 s (`bench/lib/capture.mjs`). A screen whose wait runs out is taken once more in a fresh context; a second timeout fails it, and the error names the missing proof selector, says what the page showed instead and that it was the second attempt.
 
 The table at the top of the script is the one place that knows a screen: its
 seed, route, the gesture that opens it and the **selector that proves it is that
