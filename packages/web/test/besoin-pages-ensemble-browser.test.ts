@@ -318,9 +318,9 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               const { context, page } = await visit(browser, instance.url, locale, theme, size, '/planif')
               const titles = ['Note at CRLF', 'Note at LF', 'Note coupée CRLF', 'Note coupée LF', 'Note mission CRLF', 'Note mission LF', 'Note CRLF valide', 'Note LF valide', 'Note CRLF trop rapide']
               // The list is drawn piecemeal under load: wait for all nine notes, not for the last one to appear.
-              await page.waitForFunction((wanted) => {
+              await page.waitForFunction((wanted: string[]) => {
                 const text = document.querySelector('.adestia-canvas__body')?.textContent ?? ''
-                return wanted.every((t) => text.includes(t))
+                return wanted.every((t: string) => text.includes(t))
               }, titles, { timeout: 15_000 })
               const all = await lines(page, '.adestia-canvas__body')
               const row = (title: string): string[] => {
