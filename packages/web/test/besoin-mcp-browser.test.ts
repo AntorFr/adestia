@@ -27,6 +27,7 @@ import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { type Instance, launch, newBrowser, open, playwright } from './charte-browser.js'
+import { patience } from './patience.js'
 
 interface Loc {
   getByRole(role: string, o?: { name?: string | RegExp }): Loc
@@ -135,7 +136,7 @@ const failure = `${canvas} .adestia-empty--state .adestia-empty__action`
 const failureBlock = `${canvas} .adestia-empty--state`
 const tiles = `${canvas} .adestia-tile`
 const bar = `${canvas} .adestia-mcp__bar`
-const T = 15_000
+const T = patience(15_000)
 const LONG = 'a'.repeat(62)
 
 describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement', () => {
@@ -145,7 +146,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
 
   beforeAll(async () => {
     browser = await newBrowser()
-  }, 60_000)
+  }, patience(60_000))
   afterAll(async () => {
     await browser?.close()
     for (const i of instances.values()) await i.stop()
@@ -202,7 +203,8 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
   const shot = async (page: P, name: string) => {
     if (!SHOTS) return
     await page.evaluate(() => document.fonts.ready)
-    await page.waitForTimeout(250)
+    // pause fixe : the picture waits for animations to settle
+    await page.waitForTimeout(patience(250))
     await page.screenshot({ path: join(SHOTS, `${name}.png`) })
   }
   const dialog = (page: P) => page.getByRole('dialog')
@@ -257,7 +259,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
             } finally {
               await context.close()
             }
-          }, 60_000)
+          }, patience(60_000))
 
   describe.each(['en', 'fr'] as Locale[])('langue %s', (locale) => {
     const w = WORDS[locale]
@@ -282,7 +284,8 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
           await openSheet(page, locale)
           await way.how(page)
           await dialog(page).waitFor({ state: 'hidden', timeout: T })
-          await page.waitForTimeout(400)
+          // pause fixe : the sheet's close animation
+          await page.waitForTimeout(patience(400))
           expect(((page as unknown as { g: Gate }).g).calls).toBe(0)
           expect(await names(base)).toContain(name)
           expect(await page.locator(`${canvas} textarea`).first().inputValue()).toBe(edited)
@@ -291,7 +294,8 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
             for (let i = 0; i < 20; i++) {
               const x = await focused(page)
               if (x.inBar) return x
-              await page.waitForTimeout(100)
+              // pause fixe : poll interval of the focus loop, which has no event to await
+              await page.waitForTimeout(patience(100))
             }
             return focused(page)
           })()
@@ -300,7 +304,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
         } finally {
           await context.close()
         }
-      }, 60_000)
+      }, patience(60_000))
 
     it('B-20 : Tab reste dans la feuille, et recharger la page l\'annule', async () => {
       const { name } = await declare(locale)
@@ -317,7 +321,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
       } finally {
         await context.close()
       }
-    }, 60_000)
+    }, patience(60_000))
 
     it('B-20 : un nom de 64 lettres se replie dans la feuille sur un téléphone, sans être tronqué ni déborder', async () => {
       const { name } = await declare(locale, LONG + locale)
@@ -338,7 +342,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
       } finally {
         await context.close()
       }
-    }, 60_000)
+    }, patience(60_000))
 
     // ── B-20 · Remove ─────────────────────────────────────────────────────────────────────────
     it('B-20 : Supprimer envoie un DELETE, la feuille se ferme aussitôt, le bouton Supprimer de E-10 est grisé en attendant, puis la liste revient sans le serveur et avec les autres', async () => {
@@ -365,7 +369,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
       } finally {
         await context.close()
       }
-    }, 60_000)
+    }, patience(60_000))
 
     it('B-20 : un DELETE en erreur 500 : feuille fermée, le message du serveur dans l\'alerte de la barre, déclaration gardée, Supprimer redemande, et une seconde confirmation retire', async () => {
       const { base, name } = await declare(locale)
@@ -393,7 +397,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
       } finally {
         await context.close()
       }
-    }, 60_000)
+    }, patience(60_000))
 
     it('B-20 : un DELETE sans réponse (serveur coupé) : feuille fermée, une alerte non vide dans la barre, serveur gardé', async () => {
       const { base, name } = await declare(locale)
@@ -411,7 +415,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
       } finally {
         await context.close()
       }
-    }, 60_000)
+    }, patience(60_000))
 
     it('B-20 : un serveur en lecture seule (déclaré dans la configuration) n\'a pas de bouton Supprimer', async () => {
       const { page, context } = await visit({ locale, route: '/settings/mcp/fichiers' })
@@ -422,7 +426,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
       } finally {
         await context.close()
       }
-    }, 60_000)
+    }, patience(60_000))
 
     // ── B-18 · E-10 loading and failure ───────────────────────────────────────────────────────
     for (const seed of ['base', 'empty'])
@@ -455,7 +459,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
         } finally {
           await context.close()
         }
-      }, 60_000)
+      }, patience(60_000))
 
     it('B-18 E-10 : un serveur ouvert attend sa déclaration : ligne de chargement, ni éditeur ni barre d\'actions ; la réponse les amène', async () => {
       const { page, context } = await visit({
@@ -481,7 +485,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
       } finally {
         await context.close()
       }
-    }, 60_000)
+    }, patience(60_000))
 
     for (const seed of ['base', 'empty'])
       it(`B-18 E-10 (${seed}) : lecture en erreur 500 : le titre, le message du serveur et ${locale === 'fr' ? 'Réessayer' : 'Retry'}, ni tuiles ni « ${w.empty} » ; Réessayer remet la ligne de chargement, refait une requête, puis la liste`, async () => {
@@ -513,7 +517,8 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
           await page.locator(loadingRow).first().waitFor({ state: 'visible', timeout: T })
           expect(await page.locator(failureBlock).count()).toBe(0)
           expect(await page.locator(`${canvas} .adestia-empty__action`).count()).toBe(0)
-          await page.waitForTimeout(400)
+          // pause fixe : the list's reveal animation before reading it
+          await page.waitForTimeout(patience(400))
           expect(g.calls).toBe(before + 1)
           g.release()
           await page.locator(`${canvas} .adestia-tile__label:text-is("${w.add}")`).first().waitFor({ state: 'visible', timeout: T })
@@ -522,7 +527,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
         } finally {
           await context.close()
         }
-      }, 60_000)
+      }, patience(60_000))
 
     it('B-18 E-10 : erreur 500 sans phrase du serveur : « request failed (500) » traduit, jamais un « fetch failed » brut', async () => {
       const { page, context } = await visit({
@@ -543,7 +548,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
       } finally {
         await context.close()
       }
-    }, 60_000)
+    }, patience(60_000))
 
     it('B-18 E-10 : serveur sans réponse : le bloc d\'échec avec Réessayer, pas de ligne de chargement ni de liste ; Réessayer ramène la liste quand le serveur répond', async () => {
       const { page, context } = await visit({
@@ -568,7 +573,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
       } finally {
         await context.close()
       }
-    }, 60_000)
+    }, patience(60_000))
 
     it('B-18 E-10 : la santé (/api/mcp/status) en attente puis en erreur n\'a ni ligne de chargement, ni message, ni Réessayer ; les tuiles restent', async () => {
       for (const mode of ['hold', 'status'] as const) {
@@ -583,7 +588,8 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
         try {
           await page.evaluate((h) => (location.hash = h), '/settings/mcp')
           await page.locator(`${canvas} .adestia-tile__label:text-is("agenda")`).first().waitFor({ state: 'visible', timeout: T })
-          await page.waitForTimeout(600)
+          // pause fixe : the tiles' entrance animation
+          await page.waitForTimeout(patience(600))
           expect(await page.locator(loadingRow).count()).toBe(0)
           expect(await page.locator(failureBlock).count()).toBe(0)
           expect(await page.getByRole('button', { name: w.retry }).count()).toBe(0)
@@ -591,7 +597,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
           await context.close()
         }
       }
-    }, 60_000)
+    }, patience(60_000))
 
     it('B-18 E-10 : après Supprimer, la relecture de la liste ne montre jamais de ligne de chargement, et si elle échoue c\'est en silence', async () => {
       for (const mode of ['hold', 'status'] as const) {
@@ -612,9 +618,11 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
           const deleted = page.waitForResponse((r) => r.request().method() === 'DELETE', { timeout: T })
           await dialog(page).getByRole('button', { name: w.remove }).click()
           await deleted
-          for (let i = 0; i < 30 && g.calls === before; i++) await page.waitForTimeout(100)
+          // pause fixe : poll interval while the fake server counts the re-read
+          for (let i = 0; i < 30 && g.calls === before; i++) await page.waitForTimeout(patience(100))
           expect(g.calls).toBe(before + 1) // the list was read again
-          await page.waitForTimeout(600)
+          // pause fixe : the list's reveal animation
+          await page.waitForTimeout(patience(600))
           expect(await page.locator(loadingRow).count()).toBe(0)
           expect(await page.locator(failureBlock).count()).toBe(0)
           expect(await page.getByRole('button', { name: w.retry }).count()).toBe(0)
@@ -623,7 +631,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
           await context.close()
         }
       }
-    }, 90_000)
+    }, patience(90_000))
 
     it('B-18 E-10 : un serveur ouvert dont le nom n\'est pas dans les déclarations (retiré ailleurs) montre la liste, sans état neuf', async () => {
       const { page, context } = await visit({ locale, route: '/settings/mcp/n-existe-pas' })
@@ -634,7 +642,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
       } finally {
         await context.close()
       }
-    }, 60_000)
+    }, patience(60_000))
   })
 
   // ── B-18 · E-10 in the four habillages, both languages, desk and phone ───────────────────────
@@ -679,5 +687,5 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
           } finally {
             await broken.context.close()
           }
-        }, 60_000)
+        }, patience(60_000))
 })
