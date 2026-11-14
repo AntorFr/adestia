@@ -172,6 +172,8 @@ try {
 
 // ── one capture ─────────────────────────────────────────────────────────────
 const THEMES = ['light', 'dark']
+const PROOF_MS = 15_000 // the floor of the wait for a screen's proof selector
+const PROOF_PER_BOOT = 8 // …and its ceiling, as a multiple of what the shell took to boot
 const VIEWPORTS = {
   desk: { viewport: { width: 1440, height: 900 } },
   phone: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
@@ -206,9 +208,15 @@ async function capture(browser, base, screen, theme, size) {
       await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
     }
     await screen.before?.(page, { base })
+    const started = Date.now()
     await page.goto(`${base}/#${screen.route ?? '/'}`, { waitUntil: 'domcontentloaded' })
     if (screen.reload) await page.reload({ waitUntil: 'domcontentloaded' })
     if (screen.shell !== 'none') await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
+    // How slow this machine is RIGHT NOW is what the shell just took to boot. A
+    // screen that waits on plugins (E-26 loads them, then asks the server for
+    // the trips) needs time in proportion to that, not a flat 15 s that a
+    // suite running browsers side by side outruns while the screen is fine.
+    const proofTimeout = Math.max(PROOF_MS, (Date.now() - started) * PROOF_PER_BOOT)
 
     if (screen.offline) await goOffline(page, context)
 
@@ -223,8 +231,12 @@ async function capture(browser, base, screen, theme, size) {
 
     await screen.open?.(page)
 
-    await page.waitForSelector(screen.proof, { state: 'visible', timeout: 15_000 }).catch(() => {
-      throw new Error(`the selector that proves the screen never appeared: ${screen.proof}`)
+    await page.waitForSelector(screen.proof, { state: 'visible', timeout: proofTimeout }).catch(async () => {
+      // Say what the page showed instead: a slow load and a broken one read the same otherwise.
+      const seen = await page
+        .evaluate(() => (document.querySelector('.adestia-canvas, main, body')?.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 100))
+        .catch(() => '?')
+      throw new Error(`the selector that proves the screen never appeared after ${Math.round(proofTimeout / 1000)} s: ${screen.proof} (page shows: "${seen}")`)
     })
     // Settle: transitions, web fonts, the second render of a view that loads.
     await page.evaluate(() => document.fonts.ready)
