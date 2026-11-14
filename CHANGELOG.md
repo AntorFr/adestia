@@ -919,6 +919,14 @@ branch and that `test:plugins` is replayed after a red vitest run.
   and waits for its signal before reading.
   Test and bench procedure only: nothing changes for users (task `rouge-adestia-pages-9`).
 
+## v0.98.0-adestia-pages.15
+
+- **The epic's version guard and a popover test no longer fail by timing** — the documentation
+  version guard no longer demands a CHANGELOG entry for each pre-release of a series and lets the
+  last title lag one pre-release behind the latest tag, and the pages test that reads the
+  settings popover waits for its rectangle to hold three images instead of a fixed 300 ms.
+  Tests only: nothing changes for users (task `rouge-adestia-pages-12`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
