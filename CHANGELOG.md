@@ -919,6 +919,14 @@ branch and that `test:plugins` is replayed after a red vitest run.
   and waits for its signal before reading.
   Test and bench procedure only: nothing changes for users (task `rouge-adestia-pages-9`).
 
+## v0.98.0-adestia-pages.15
+
+- **The block settings placement test waits for the popover to settle** — the page test that checks
+  the block settings never cover the canvas header or the banners now waits until the popover is
+  visible and has kept the same rectangle over five consecutive frames, instead of a fixed 300 ms,
+  so it no longer fails once in a while right after a cold build.
+  Test only: nothing changes for users (task `rouge-adestia-pages-14`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
