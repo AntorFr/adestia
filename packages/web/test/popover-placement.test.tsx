@@ -171,6 +171,31 @@ describe('Popover under the canvas chrome', () => {
   })
 })
 
+describe('Popover following bands that come and go after it opened', () => {
+  const settle = () => act(async () => { await Promise.resolve(); await Promise.resolve() })
+
+  it('moves below a band that appears after opening, and returns when it leaves', async () => {
+    const p = mount(false)
+    p.problems.remove()
+    rects.set(p.anchor, { top: 70, bottom: 90, left: 100 })
+    p.rerender(true)
+    // header only (bottom 60): below the anchor, 98
+    expect(top()).toBe(98)
+
+    const late = Object.assign(document.createElement('div'), { className: 'adestia-console-host' })
+    rects.set(late, { top: 60, bottom: 200 })
+    p.anchor.parentElement!.append(late)
+    await settle()
+    flush()
+    expect(top()).toBe(208) // 200 + GAP: not over the new band
+
+    late.remove()
+    await settle()
+    flush()
+    expect(top()).toBe(98)
+  })
+})
+
 describe('Popover keeping off a block (avoid)', () => {
   beforeEach(() => {
     Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {

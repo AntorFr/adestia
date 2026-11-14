@@ -38,7 +38,8 @@ export function Popover({ anchor, open, onClose, children, label, className, avo
     const box = panel.current
     if (!open || !host || !box) return
     const canvas = host.closest('.adestia-canvas')
-    const boundaries = canvas
+    // Read at each placement: a band can appear or leave after the panel opened.
+    const readBoundaries = () => canvas
       ? [...canvas.querySelectorAll<HTMLElement>('.adestia-canvas__header, .adestia-console-host, .adestia-problems, .adestia-editor__readonly')]
       : []
     const viewport = window.visualViewport
@@ -51,7 +52,7 @@ export function Popover({ anchor, open, onClose, children, label, className, avo
       const right = viewportLeft + (viewport?.width ?? window.innerWidth) - GAP
       // Only this anchor's canvas contributes chrome: a chat menu must not
       // inherit the page's bands on the other side of the split.
-      const ceiling = boundaries.reduce((edge, element) => {
+      const ceiling = readBoundaries().reduce((edge, element) => {
         const r = element.getBoundingClientRect()
         return r.width > 0 && r.height > 0 && r.bottom > viewportTop && r.top < bottom
           ? Math.max(edge, r.bottom + GAP)
@@ -108,7 +109,18 @@ export function Popover({ anchor, open, onClose, children, label, className, avo
     viewport?.addEventListener('resize', schedule)
     viewport?.addEventListener('scroll', schedule)
     const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(() => schedule())
-    for (const element of [host, box, ...boundaries]) observer?.observe(element)
+    const watched = new Set<Element>()
+    const watch = () => {
+      const current = new Set<Element>([host, box, ...readBoundaries()])
+      for (const element of watched) if (!current.has(element)) { observer?.unobserve(element); watched.delete(element) }
+      for (const element of current) if (!watched.has(element)) { observer?.observe(element); watched.add(element) }
+    }
+    watch()
+    let mutations: MutationObserver | undefined
+    if (canvas && typeof MutationObserver !== 'undefined') {
+      mutations = new MutationObserver(() => { watch(); schedule() })
+      mutations.observe(canvas, { childList: true, subtree: true })
+    }
     return () => {
       cancelAnimationFrame(frame)
       document.removeEventListener('scroll', schedule, true)
@@ -116,6 +128,7 @@ export function Popover({ anchor, open, onClose, children, label, className, avo
       viewport?.removeEventListener('resize', schedule)
       viewport?.removeEventListener('scroll', schedule)
       observer?.disconnect()
+      mutations?.disconnect()
     }
   }, [open, anchor, avoid])
 
