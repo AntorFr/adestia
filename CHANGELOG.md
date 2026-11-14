@@ -903,6 +903,14 @@ branch and that `test:plugins` is replayed after a red vitest run.
   100 polls of 200 ms, so a loaded suite no longer turns the boot into "never answered".
   Test only: nothing changes for users (task `rouge-adestia-pages-11-delai-redemarrage`).
 
+## v0.98.0-adestia-pages.13
+
+- **The epic's unstable data-form timeline test waits for signals** — the case "timeline end date
+  equal to the start date is accepted" now waits for the "Due is before start" refusal and for
+  "Apply" to come back, instead of reading right after the fill and blur. The other unstable test
+  of the correction was already fixed on the epic and is unchanged.
+  Test only: nothing changes for users (task `rouge-adestia-pages-13`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
