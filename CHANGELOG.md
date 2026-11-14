@@ -817,3 +817,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
 ## v0.97.14
 
 - **A refused account now gets a real "access refused" page, with a button to switch account** — an OIDC account outside the authorised groups sees the refused screen (E-1), which names the account and offers **Se déconnecter**. Signing out also ends the identity provider's session (its `end_session_endpoint`, or `/auth/login?switch=1` with `prompt=login` as a fallback), so the next sign-in can use another account. The deployment must list the post-logout return URI on the provider's OIDC client (`auth.oidc.postLogoutRedirectUri`).
+
+## v0.97.15
+
+- **Two load-sensitive web tests now wait for a signal instead of a fixed hold** — the settings spinner test (E-14) holds the `/api/settings` route until the test releases it, and the MCP refetch test (E-10) waits on the list count and the "Remove" button with a scaled delay. No assertion is removed. A test-only fix: nothing changes for users.
