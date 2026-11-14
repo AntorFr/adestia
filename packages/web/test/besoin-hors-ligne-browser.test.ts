@@ -395,40 +395,41 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
 
     it('tous les appels /api/ échouent, la sonde /api/health aussi : le bandeau apparaît ; la sonde repasse : il part seul, sans recharger', async () => {
       // Failure budgets, not expectations: the product answers within 3-5 s; these only bound a loaded machine.
-      const SHOWN_BUDGET = 30_000
-      const PROBES_BUDGET = 30_000
-      const GONE_BUDGET = 30_000
-      const { context, page } = await open(browser, b.url, { theme: 'light', size: 'desk', locale: 'en', route: '/' })
+      const SHOWN_BUDGET = 60_000
+      const GONE_BUDGET = 60_000
+      // Every /api/ call the page has sent and not heard back from: once the route is armed, the ones it
+      // could not catch are waited out. One of them answering late would retire the probe loop and
+      // clear the banner (serverReach: an answer means the server is there), which is the product's rule.
+      const pending = new Set<unknown>()
+      const { context, page } = await open(browser, b.url, {
+        theme: 'light',
+        size: 'desk',
+        locale: 'en',
+        route: '/',
+        before: async (p) => {
+          const ev = p as unknown as { on(e: string, f: (r: unknown) => void): void }
+          ev.on('request', (r) => { if (/\/api\//.test((r as { url(): string }).url())) pending.add(r) })
+          ev.on('response', (r) => pending.delete((r as { request(): unknown }).request()))
+          ev.on('requestfailed', (r) => pending.delete(r))
+        },
+      })
       try {
         await page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
         let healthCalls = 0
+        let askedTwice!: () => void
+        const twoProbes = new Promise<void>((resolve) => { askedTwice = resolve })
         await page.route('**/api/**', async (route) => {
           const r = route as unknown as { request(): { url(): string }; abort(c?: string): Promise<void> }
-          if (r.request().url().endsWith('/api/health')) healthCalls++
+          if (r.request().url().endsWith('/api/health') && ++healthCalls >= 2) askedTwice()
           await r.abort('failed')
         })
-        // The banner needs an observed /api/ call to fail, and a call that was already in flight when the
-        // routes were folded may still answer and retire the probe loop (the banner then leaves). So: provoke a
-        // fresh failing call (leave and re-enter the view) whenever the banner is not up, and count the probes
-        // only within one stretch of the banner being up - the proof is that one loop keeps asking.
-        const askedBy = Date.now() + SHOWN_BUDGET
-        const probesBy = Date.now() + SHOWN_BUDGET + PROBES_BUDGET
-        let shown: Seen[] = []
-        let seenUp = false
-        let turn = 0
-        while (Date.now() < probesBy) {
-          shown = await banners(page, WORDS.en)
-          if (shown.length === 1) {
-            seenUp = true
-            if (healthCalls >= 2) break
-          } else {
-            healthCalls = 0
-            if (Date.now() < askedBy || seenUp) {
-              await page.evaluate((away) => (location.hash = away ? '/' : '/settings/instructions'), turn++ % 2 === 1)
-            }
-          }
-          await new Promise((r) => setTimeout(r, 500))
-        }
+        const seen = [...pending]
+        while (seen.some((r) => pending.has(r))) await new Promise((r) => setTimeout(r, 50))
+        // One fresh failing call starts the probe loop; nothing can answer in between, so it runs until the
+        // route is lifted. The signals: the second probe went out, then the banner is up.
+        await page.evaluate(() => (location.hash = '/settings/instructions'))
+        await twoProbes
+        const shown = await until(page, WORDS.en, (s) => s.length === 1, SHOWN_BUDGET)
         expect(shown).toHaveLength(1)
         // While shown, the probe GET /api/health keeps asking (every 3 s): at least two probes.
         expect(healthCalls).toBeGreaterThanOrEqual(2)
