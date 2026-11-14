@@ -190,15 +190,24 @@ try {
     try {
       const base = await instance.url
       for (const screen of screens.filter((s) => s.seed === seed)) {
+        // A proof that never came in two tries is the screen's, not the pod's: the
+        // other three captures of it would wait twice 60 s each for the same answer.
+        let broken = false
         for (const theme of THEMES) {
           for (const size of Object.keys(VIEWPORTS)) {
             const label = `${screen.id} ${screen.name} ${theme} ${size}`
+            if (broken) {
+              failures.push(`${label} (seed ${seed}): not tried, the proof of this screen never appeared in an earlier capture`)
+              console.error(`FAIL ${label}: not tried (proof missing earlier)`)
+              continue
+            }
             try {
               await capture(browser, base, screen, theme, size)
               taken += 1
               console.log(`shot ${label}`)
             } catch (error) {
               const reason = error instanceof Error ? error.message.split('\n')[0] : String(error)
+              if (error?.appearTimeout) broken = true
               failures.push(`${label} (seed ${seed}): ${reason}`)
               console.error(`FAIL ${label}: ${reason}`)
             }
