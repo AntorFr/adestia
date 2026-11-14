@@ -211,7 +211,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). No workflow plays the suite: `scripts/suite-attestee.sh` (typecheck, lint, tests, the build and a start of the built server), declared by `tests:` in `.sdlc.yaml`, is played by `attester --publier`, which sets the `tests-complets` status (AD-preuve-1).
+  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). No workflow plays the suite: `scripts/suite-attestee.sh` (typecheck, lint, tests, the build and a start of the built server), declared by `tests:` in `.sdlc.yaml`, is played by `attester --publier`, which sets the `tests-complets` status (AD-preuve-1). The waits of the browser suites and of `bench/sweep.mjs` are scaled by one factor, `ADESTIA_PATIENCE` (an integer, 1 by default; `scripts/suite-attestee.sh` sets 4 on the vitest step): a Playwright delay goes through `patience()` of `packages/web/test/patience.ts`, never a literal, and a `waitForTimeout` that remains is a fixed pause with a `// pause fixe :` comment above it. A test that is red in the full suite and green alone measures the load, not the product.
 
 ## Decisions of adestia-qualite
 
