@@ -159,3 +159,45 @@ describe.skipIf(!built)('bench launcher, stored credential', () => {
     expect(await launched(['--engine', 'fake'], {})).toBe(true)
   }, 60_000)
 })
+
+describe.skipIf(!built)('bench launcher, --no-end-session', () => {
+  // Panne visée : l'option est refusée ou n'est pas relayée au fournisseur
+  // factice, donc le repli sans end_session_endpoint ne se joue jamais au banc.
+  afterEach(cleanTmp)
+  const announced = async (extra: string[]) => {
+    const own = await tmpDir('bench-noend-')
+    const child = spawn(process.execPath, [launch, '--engine', 'fake', '--seed', 'oidc', ...extra], {
+      stdio: ['ignore', 'pipe', 'ignore'],
+      env: { ...process.env, TMPDIR: own },
+    })
+    const exited = new Promise<number | null>((done) => child.once('exit', done))
+    try {
+      const url = await new Promise<string>((resolve, reject) => {
+        let out = ''
+        child.stdout!.on('data', (d) => {
+          out += d
+          const m = /listening on (\S+)/.exec(out)
+          if (m) resolve(m[1]!)
+        })
+        child.once('exit', () => reject(new Error('exited early')))
+      })
+      const login = await fetch(`${url}/auth/login`, { redirect: 'manual' })
+      const issuer = new URL(login.headers.get('location')!).origin
+      const previous = process.env['NODE_TLS_REJECT_UNAUTHORIZED']
+      process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0'
+      try {
+        return (await (await fetch(`${issuer}/.well-known/openid-configuration`)).json()) as Record<string, unknown>
+      } finally {
+        if (previous === undefined) delete process.env['NODE_TLS_REJECT_UNAUTHORIZED']
+        else process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = previous
+      }
+    } finally {
+      child.kill('SIGTERM')
+      await exited
+    }
+  }
+  it('announces an end_session_endpoint by default and none with the flag', async () => {
+    expect(await announced([])).toHaveProperty('end_session_endpoint')
+    expect(await announced(['--no-end-session'])).not.toHaveProperty('end_session_endpoint')
+  }, 90_000)
+})
