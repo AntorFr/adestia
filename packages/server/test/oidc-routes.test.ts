@@ -153,7 +153,8 @@ describe('logout', () => {
       },
     })
     expect(response.json()).toEqual({ signedOut: true })
-    expect(response.headers['set-cookie']).toMatch(new RegExp(`${SESSION_COOKIE}=;`))
+    // Two cookies are cleared (session and refused-account): joined for the match.
+    expect([response.headers['set-cookie']].flat().join('\n')).toMatch(new RegExp(`${SESSION_COOKIE}=;`))
   })
 
   it('accepts the button the interface actually renders', async () => {
@@ -169,8 +170,10 @@ describe('logout', () => {
       payload: '',
     })
     expect(response.statusCode).toBe(302)
-    expect(response.headers['location']).toBe('/')
-    expect(response.headers['set-cookie']).toMatch(new RegExp(`${SESSION_COOKIE}=;`))
+    // This provider cannot be reached, so no end_session_endpoint is known:
+    // the redirect is the fallback that insists on credentials (AD-acces-refuse-2).
+    expect(response.headers['location']).toBe('/auth/login?switch=1')
+    expect([response.headers['set-cookie']].flat().join('\n')).toMatch(new RegExp(`${SESSION_COOKIE}=;`))
   })
 
   it('sends a browser somewhere, and a fetch its JSON', async () => {

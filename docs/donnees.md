@@ -211,7 +211,12 @@ subject.
   whatever reaches it.
 - `auth.mode: oidc` — identity in the HMAC-signed cookie `adestia_session` (lifetime
   `sessionTtlMs`, default 12 h; secret `sessionSecret`, else random per process, so a
-  restart signs everyone out); `allowedGroups`, when set, refuses the others with 403.
+  restart signs everyone out); `allowedGroups`, when set, refuses the others: `/auth/callback`
+  gives them no session, only the short signed cookie `adestia_refused` (`displayName`,
+  `userId`, the `id_token` as logout hint; ten minutes, `httpOnly`, `sameSite: lax`), which
+  `GET /auth/refused` reads and `POST /auth/logout` clears. `auth.oidc.postLogoutRedirectUri`
+  (default: origin of `redirectUri` plus `/`; `""` sends none) is where the provider returns
+  the browser after ending its session.
 - Every signed-in identity can use every route: there is no owner/user distinction and no
   group check beyond `allowedGroups` — arming the credential, editing MCP servers, settings,
   catalogues, instructions, restarting, reading every delegation.

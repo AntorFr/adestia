@@ -74,6 +74,8 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
   /** The first start failed on the network itself (a thrown fetch), not on an HTTP status. */
   const [offline, setOffline] = useState(false)
   const [needsLogin, setNeedsLogin] = useState<'signin' | 'refused' | undefined>()
+  /** Who the refused sign-in was, when the server remembers it (`GET /auth/refused`). */
+  const [refusedName, setRefusedName] = useState<string | undefined>()
   const [pages, setPages] = useState<readonly IndexEntry[]>([])
   /**
    * The stores this instance composes — empty when it has only one, which is
@@ -116,7 +118,15 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
         if (response.status === 401) {
           // Not an error to display: it means "sign in", and showing a status
           // code instead leaves the user reading a number with no way forward.
-          if (!cancelled) setNeedsLogin('signin')
+          // Unless this browser was just refused: then the server kept who it was.
+          const who = await requestJson<{ displayName?: string }>(fetchImpl, '/auth/refused', undefined, say).catch(
+            () => undefined,
+          )
+          if (cancelled) return
+          if (who?.ok && typeof who.data?.displayName === 'string' && who.data.displayName !== '') {
+            setRefusedName(who.data.displayName)
+            setNeedsLogin('refused')
+          } else setNeedsLogin('signin')
           return
         }
         if (response.status === 403) {
@@ -279,5 +289,5 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
     return () => controller.abort()
   }, [instance, fetchImpl, onLink])
 
-  return { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready, indexed, pageChanges }
+  return { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, skin, skinScheme, loaded, ready, indexed, pageChanges }
 }
