@@ -79,7 +79,7 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
     [],
   )
 
-  const { instance, failures, fatal, offline, needsLogin, pages, stores, skin, skinScheme, loaded, ready, indexed, pageChanges } =
+  const { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, skin, skinScheme, loaded, ready, indexed, pageChanges } =
     useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, blocksRef, onTrail })
 
   /**
@@ -183,7 +183,7 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
 
   const composerButtons = composerButtonsOf(loaded, locale, { ask: askRef, compose: composeRef })
 
-  if (needsLogin === 'refused') return <RefusedGate t={t} />
+  if (needsLogin === 'refused') return <RefusedGate t={t} displayName={refusedName} />
   if (needsLogin === 'signin') return <SignInGate t={t} />
   if (fatal) return <FatalGate t={t} message={fatal} offline={offline} />
   if (!instance) return <LoadingGate t={t} />
