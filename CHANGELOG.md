@@ -927,6 +927,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   so it no longer fails once in a while right after a cold build.
   Test only: nothing changes for users (task `rouge-adestia-pages-14`).
 
+## v0.98.0-adestia-pages.16
+
+- **The epic's version guard no longer fails by timing** — the documentation version guard no longer
+  demands a CHANGELOG entry for each pre-release of a series and lets the last title lag one
+  pre-release behind the latest tag. Tests only: nothing changes for users (task
+  `rouge-adestia-pages-12`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
