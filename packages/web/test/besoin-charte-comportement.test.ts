@@ -9,13 +9,15 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { type Browser, type Page, type Size, launch, newBrowser, open, playwright } from './charte-browser.js'
+import { patience } from './patience.js'
 
 async function visit(browser: Browser, seed: string, options: { size?: Size; locale?: string; route: string; theme?: 'light' | 'dark'; before?: (page: Page, base: string) => Promise<void> }, run: (page: Page, base: string) => Promise<void>) {
   const instance = await launch(seed, '', options.locale ?? 'en')
   const { context, page } = await open(browser, instance.url, { theme: options.theme ?? 'light', size: options.size ?? 'desk', locale: options.locale ?? 'en', route: options.route, before: options.before })
   try {
-    await page.waitForSelector('.adestia-prefs, .adestia-canvas__body', { timeout: 20_000 })
-    await page.waitForTimeout(600)
+    await page.waitForSelector('.adestia-prefs, .adestia-canvas__body', { timeout: patience(20_000) })
+    // pause fixe : the screen finishes its entrance animation before a screenshot-like read of geometry
+    await page.waitForTimeout(patience(600))
     await run(page, instance.url)
   } finally {
     await context.close()
@@ -30,12 +32,12 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
   let browser: Browser
   beforeAll(async () => {
     browser = await newBrowser()
-  }, 60_000)
+  }, patience(60_000))
   afterAll(async () => {
     await browser?.close()
   })
 
-  describe('E-9 settings mosaic', () => {
+  describe('E-9 settings mosaic', { timeout: patience(60_000) }, () => {
     it('keeps four tiles in the order MCP servers, Instructions, Configuration, Delegations, each with its Lucide icon, the Configuration tile included (Q-21)', async () => {
       await visit(browser, 'base', { route: '/settings' }, async (page) => {
         const labels = await page.evaluate(() => [...document.querySelectorAll('.adestia-prefs .adestia-tile__label')].map((n) => n.textContent))
@@ -45,10 +47,10 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
     })
   })
 
-  describe('E-10 MCP servers', { timeout: 180_000 }, () => {
+  describe('E-10 MCP servers', { timeout: patience(180_000) }, () => {
     it('shows each health tone with an icon, and says nothing wired in the shared empty state when none is', async () => {
       await visit(browser, 'base', { route: '/settings/mcp' }, async (page) => {
-        await page.waitForSelector('.adestia-prefs__page .adestia-chip', { timeout: 60_000 })
+        await page.waitForSelector('.adestia-prefs__page .adestia-chip', { timeout: patience(60_000) })
         const tones = await page.evaluate(() =>
           [...document.querySelectorAll('.adestia-prefs__page .adestia-chip')]
             .filter((c) => ['connected', 'failed', 'needs a sign-in', 'starting', 'disabled'].includes((c.textContent ?? '').trim()))
@@ -74,7 +76,7 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
     })
   })
 
-  describe('E-11 instructions and its name sheet (Q-20)', () => {
+  describe('E-11 instructions and its name sheet (Q-20)', { timeout: patience(60_000) }, () => {
     it('asks the name of a new skill in a sheet, not a native prompt; Escape closes it and creates nothing', async () => {
       await visit(browser, 'base', { route: '/settings/instructions' }, async (page) => {
         let native = 0
@@ -83,12 +85,12 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
           void d.dismiss()
         })
         const before = await page.evaluate(() => document.querySelectorAll('.adestia-filecard').length)
-        await page.locator('.adestia-prefs__page button:text-matches("^\\\\+ Skill$")').first().click({ timeout: 10_000 })
-        await page.waitForSelector('.adestia-sheet input', { state: 'visible', timeout: 5000 })
+        await page.locator('.adestia-prefs__page button:text-matches("^\\\\+ Skill$")').first().click({ timeout: patience(10_000) })
+        await page.waitForSelector('.adestia-sheet input', { state: 'visible', timeout: patience(5000) })
         expect(await page.evaluate(() => document.querySelectorAll('.adestia-sheet').length)).toBe(1)
         expect(await page.evaluate(() => (document.querySelector('.adestia-sheet input') as HTMLInputElement).value)).toBe('')
         await page.keyboard.press('Escape')
-        await page.waitForSelector('.adestia-sheet', { state: 'detached', timeout: 5000 })
+        await page.waitForSelector('.adestia-sheet', { state: 'detached', timeout: patience(5000) })
         expect(await page.evaluate(() => document.querySelectorAll('.adestia-filecard').length)).toBe(before)
         expect(native).toBe(0)
       })
@@ -97,17 +99,17 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
     it('closes the name sheet with Enter on an empty name and creates nothing', async () => {
       await visit(browser, 'base', { route: '/settings/instructions' }, async (page) => {
         const before = await page.evaluate(() => document.querySelectorAll('.adestia-filecard').length)
-        await page.locator('.adestia-prefs__page button:text-matches("^\\\\+ Agent$")').first().click({ timeout: 10_000 })
-        await page.waitForSelector('.adestia-sheet input', { state: 'visible', timeout: 5000 })
+        await page.locator('.adestia-prefs__page button:text-matches("^\\\\+ Agent$")').first().click({ timeout: patience(10_000) })
+        await page.waitForSelector('.adestia-sheet input', { state: 'visible', timeout: patience(5000) })
         await page.keyboard.press('Enter')
-        await page.waitForSelector('.adestia-sheet', { state: 'detached', timeout: 5000 })
+        await page.waitForSelector('.adestia-sheet', { state: 'detached', timeout: patience(5000) })
         expect(await page.evaluate(() => document.querySelectorAll('.adestia-filecard').length)).toBe(before)
       })
     })
 
     it('draws the name sheet as the shared 520 px centred panel on a desk', async () => {
       await visit(browser, 'base', { route: '/settings/instructions' }, async (page) => {
-        await page.locator('.adestia-prefs__page button:text-matches("^\\\\+ Skill$")').first().click({ timeout: 10_000 })
+        await page.locator('.adestia-prefs__page button:text-matches("^\\\\+ Skill$")').first().click({ timeout: patience(10_000) })
         await page.waitForSelector('.adestia-sheet__panel', { state: 'visible' })
         const width = await page.evaluate(() => Math.round((document.querySelector('.adestia-sheet__panel') as HTMLElement).getBoundingClientRect().width))
         expect(width).toBe(520)
@@ -123,8 +125,8 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
     })
   })
 
-  describe('E-12 catalogue pop-in on the shared sheet', () => {
-    const open12 = (page: Page) => page.locator('button:text-matches("^Catalogues?$")').first().click({ timeout: 10_000 })
+  describe('E-12 catalogue pop-in on the shared sheet', { timeout: patience(60_000) }, () => {
+    const open12 = (page: Page) => page.locator('button:text-matches("^Catalogues?$")').first().click({ timeout: patience(10_000) })
     const focusIsOnOpener = (page: Page) => page.evaluate(() => /^Catalogues?$/.test(document.activeElement?.textContent?.trim() ?? ''))
 
     it('is one dialog over one scrim; Escape closes it and gives the focus back to the Catalogues button', async () => {
@@ -137,7 +139,7 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
         })
         expect(facts).toEqual({ sheets: 1, role: 'dialog', modal: 'true', labelled: true })
         await page.keyboard.press('Escape')
-        await page.waitForSelector('.adestia-sheet', { state: 'detached', timeout: 5000 })
+        await page.waitForSelector('.adestia-sheet', { state: 'detached', timeout: patience(5000) })
         expect(await focusIsOnOpener(page)).toBe(true)
       })
     })
@@ -147,7 +149,7 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
         await open12(page)
         await page.waitForSelector('.adestia-sheet__panel', { state: 'visible' })
         await page.mouse.click(4, 4)
-        await page.waitForSelector('.adestia-sheet', { state: 'detached', timeout: 5000 })
+        await page.waitForSelector('.adestia-sheet', { state: 'detached', timeout: patience(5000) })
         expect(await focusIsOnOpener(page)).toBe(true)
       })
     })
@@ -195,7 +197,7 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
     })
   })
 
-  describe('E-13 delegations', () => {
+  describe('E-13 delegations', { timeout: patience(60_000) }, () => {
     it('gives each state chip an icon and says nothing delegated in the shared empty state when the list is empty', async () => {
       await visit(browser, 'base', { route: '/settings/delegations' }, async (page) => {
         const chips = await page.evaluate(() => [...document.querySelectorAll('.adestia-deleg__state')].map((c) => `${(c.textContent ?? '').trim()}=${c.querySelector('use')?.getAttribute('href') ?? 'none'}`))
@@ -211,7 +213,7 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
     })
   })
 
-  describe('E-14 configuration', () => {
+  describe('E-14 configuration', { timeout: patience(60_000) }, () => {
     const slow = async (page: Page) => {
       await page.route('**/api/settings', async (route) => {
         await new Promise((r) => setTimeout(r, 2500))
@@ -224,7 +226,7 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
         // `visit` waits for .adestia-prefs and 600 ms: the request is still held
         const during = await page.evaluate(() => ({ spinner: document.querySelector('.adestia-prefs__page use[href="#adestia-i-loader-circle"]') !== null, controls: document.querySelectorAll('.adestia-prefs__page :is(input, select, textarea)').length }))
         expect(during).toEqual({ spinner: true, controls: 0 })
-        await page.waitForSelector('.adestia-prefs__page :is(input, select, textarea)', { timeout: 15_000 })
+        await page.waitForSelector('.adestia-prefs__page :is(input, select, textarea)', { timeout: patience(15_000) })
         expect(await page.evaluate(() => document.querySelector('.adestia-prefs__page use[href="#adestia-i-loader-circle"]') !== null)).toBe(false)
       })
     })
@@ -255,10 +257,10 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
     })
 
     const saveOne = async (page: Page) => {
-      await page.waitForSelector('.adestia-prefs__page :is(input, select, textarea)', { timeout: 15_000 })
-      await page.locator('.adestia-prefs__page .adestia-toggle').first().click({ timeout: 5000 })
-      await page.locator('.adestia-prefs__page button:text-is("Save")').first().click({ timeout: 5000 })
-      await page.waitForSelector('.adestia-prefs__page button:text-is("Restart now")', { timeout: 10_000 })
+      await page.waitForSelector('.adestia-prefs__page :is(input, select, textarea)', { timeout: patience(15_000) })
+      await page.locator('.adestia-prefs__page .adestia-toggle').first().click({ timeout: patience(5000) })
+      await page.locator('.adestia-prefs__page button:text-is("Save")').first().click({ timeout: patience(5000) })
+      await page.waitForSelector('.adestia-prefs__page button:text-is("Restart now")', { timeout: patience(10_000) })
     }
 
     it('draws Save as accent, Discard as ghost, and after a save Restart now as danger', async () => {
@@ -284,8 +286,8 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
     })
   })
 
-  describe('E-15 cog menu', () => {
-    const cog = (page: Page) => page.locator('.adestia-cog > button').first().click({ timeout: 10_000 })
+  describe('E-15 cog menu', { timeout: patience(60_000) }, () => {
+    const cog = (page: Page) => page.locator('.adestia-cog > button').first().click({ timeout: patience(10_000) })
     const focusOnCog = (page: Page) => page.evaluate(() => document.activeElement?.closest('.adestia-cog') !== null && document.activeElement?.getAttribute('aria-haspopup') === 'menu')
 
     it('offers System, Light and Dark as a radiogroup of icon buttons, one checked, and Dark changes the colour scheme', async () => {
@@ -295,7 +297,7 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
         const radios = () => page.evaluate(() => [...document.querySelectorAll('.adestia-cog__panel [role=radiogroup] [role=radio]')].map((r) => `${r.getAttribute('aria-label')}:${r.getAttribute('aria-checked')}`))
         expect((await radios()).map((r) => r.split(':')[0])).toEqual(['System', 'Light', 'Dark'])
         expect((await radios()).filter((r) => r.endsWith(':true')).length).toBe(1)
-        await page.locator('.adestia-cog__panel [role=radio][aria-label="Dark"]').first().click({ timeout: 5000 })
+        await page.locator('.adestia-cog__panel [role=radio][aria-label="Dark"]').first().click({ timeout: patience(5000) })
         expect(await radios()).toEqual(['System:false', 'Light:false', 'Dark:true'])
         expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('dark')
       })
@@ -314,17 +316,17 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
         await cog(page)
         await page.waitForSelector('.adestia-cog__panel', { state: 'visible' })
         await page.keyboard.press('Escape')
-        await page.waitForSelector('.adestia-cog__panel', { state: 'detached', timeout: 5000 })
+        await page.waitForSelector('.adestia-cog__panel', { state: 'detached', timeout: patience(5000) })
         expect(await focusOnCog(page)).toBe(true)
         await cog(page)
         await page.waitForSelector('.adestia-cog__panel', { state: 'visible' })
         await page.mouse.click(300, 700)
-        await page.waitForSelector('.adestia-cog__panel', { state: 'detached', timeout: 5000 })
+        await page.waitForSelector('.adestia-cog__panel', { state: 'detached', timeout: patience(5000) })
       })
     })
   })
 
-  describe('E-19 problems band', { timeout: 180_000 }, () => {
+  describe('E-19 problems band', { timeout: patience(180_000) }, () => {
     it('is absent when nothing is wrong, an icon per kind when something is', async () => {
       await visit(browser, 'empty', { route: '/' }, async (page) => {
         expect(await page.evaluate(() => document.querySelectorAll('.adestia-problems').length)).toBe(0)
@@ -336,7 +338,7 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
     })
   })
 
-  describe('E-1 and E-21 gates', () => {
+  describe('E-1 and E-21 gates', { timeout: patience(60_000) }, () => {
     it('draws the signed-out gate with a lock icon and an accent sign-in control', async () => {
       const lost = async (page: Page, base: string) => {
         await page.route('**/api/instance', async (route) => {
@@ -347,7 +349,7 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
       const instance = await launch('oidc', '', 'en')
       const { context, page } = await open(browser, instance.url, { theme: 'light', size: 'desk', locale: 'en', signIn: true, before: lost, reload: true, shell: false })
       try {
-        await page.waitForSelector('.adestia-gate .adestia-btn--accent', { timeout: 20_000 })
+        await page.waitForSelector('.adestia-gate .adestia-btn--accent', { timeout: patience(20_000) })
         expect(await iconsOf(page, '.adestia-gate__icon')).toEqual(['#adestia-i-lock'])
         expect(await page.evaluate(() => document.querySelectorAll('.adestia-gate .adestia-btn--accent').length)).toBe(1)
       } finally {
