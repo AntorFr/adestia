@@ -43,14 +43,20 @@ function Gate({
   )
 }
 
-export function RefusedGate({ t }: { readonly t: Say }) {
+export function RefusedGate({ t, displayName }: { readonly t: Say; readonly displayName?: string | undefined }) {
   return (
     <Gate icon="circle-alert" tone="danger" role="alert" title={t('Not allowed')}>
-      <p className="adestia-gate__text">
-        {t(
-          'You are signed in, but your account is not in a group this instance admits. Ask whoever runs it to add you.',
-        )}
-      </p>
+      {displayName ? (
+        <p className="adestia-gate__text">
+          {t('Signed in as %name — this account does not have access to this instance.').replace('%name', () => displayName)}
+        </p>
+      ) : (
+        <p className="adestia-gate__text">
+          {t(
+            'You are signed in, but your account is not in a group this instance admits. Ask whoever runs it to add you.',
+          )}
+        </p>
+      )}
       <form method="post" action="/auth/logout">
         <Button type="submit" variant="ghost">
           {t('Sign out')}

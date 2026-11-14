@@ -13,15 +13,19 @@ import type { FastifyInstance, FastifyRequest } from 'fastify'
 import type { Identity } from '../auth.js'
 import type { AdestiaConfig } from '../config.js'
 import {
+  COOKIE_LIMIT,
   LOGIN_COOKIE,
   LOGIN_TTL_MS,
   OidcClient,
+  REFUSED_COOKIE,
+  REFUSED_TTL_MS,
   SESSION_COOKIE,
   safeReturnTo,
   sessionSecret,
   signPayload,
   verifyPayload,
   type LoginState,
+  type RefusedPayload,
   type SessionPayload,
 } from '../oidc.js'
 
@@ -82,9 +86,11 @@ export async function registerOidc(
     }
   })
 
-  app.get<{ Querystring: { returnTo?: string } }>('/auth/login', async (request, reply) => {
+  app.get<{ Querystring: { returnTo?: string; switch?: string } }>('/auth/login', async (request, reply) => {
     try {
-      const { url, state } = await client.beginLogin(safeReturnTo(request.query.returnTo))
+      const { url, state } = await client.beginLogin(safeReturnTo(request.query.returnTo), {
+        switchAccount: request.query.switch === '1',
+      })
       return reply
         .setCookie(LOGIN_COOKIE, signPayload(state, secret), {
           httpOnly: true,
@@ -121,6 +127,35 @@ export async function registerOidc(
 
     if ('error' in outcome) return reply.code(403).send({ error: outcome.error })
 
+    // A refused account is not an error page: it leaves a short cookie saying
+    // who it was, no session, and the shell asks `GET /auth/refused`.
+    if ('refused' in outcome) {
+      const { identity, idToken } = outcome.refused
+      const refused = (hint: string | undefined): string =>
+        signPayload(
+          {
+            displayName: identity.displayName,
+            userId: identity.userId,
+            ...(hint ? { idToken: hint } : {}),
+            expiresAt: Date.now() + REFUSED_TTL_MS,
+          } satisfies RefusedPayload,
+          secret,
+        )
+      let value = refused(idToken)
+      // Past what a browser keeps the cookie would be dropped silently, and
+      // the page with it: lose the hint instead, and logout falls back.
+      if (value.length > COOKIE_LIMIT) value = refused(undefined)
+      return reply
+        .setCookie(REFUSED_COOKIE, value, {
+          httpOnly: true,
+          sameSite: 'lax',
+          secure,
+          path: '/',
+          maxAge: Math.floor(REFUSED_TTL_MS / 1000),
+        })
+        .redirect('/')
+    }
+
     // Kept for the person, not for the session: a cookie is a browser's, and
     // this outlives every browser they sign in from. A failure to store must
     // never cost them the login they just completed.
@@ -150,6 +185,13 @@ export async function registerOidc(
       .redirect(login.returnTo)
   })
 
+  app.get('/auth/refused', async (request, reply) => {
+    const raw = request.cookies[REFUSED_COOKIE]
+    const refused = raw ? verifyPayload<RefusedPayload>(raw, secret) : undefined
+    if (!refused) return reply.code(401).send({ error: 'no refused sign-in' })
+    return reply.header('cache-control', 'no-store').send({ displayName: refused.displayName })
+  })
+
   /*
    * A native form POST carries `application/x-www-form-urlencoded`, and
    * Fastify parses only JSON and plain text out of the box — so the sign-out
@@ -168,15 +210,20 @@ export async function registerOidc(
   )
 
   app.post('/auth/logout', async (request, reply) => {
+    // Read before it is cleared: it may carry the hint the provider wants.
+    const rawRefused = request.cookies[REFUSED_COOKIE]
+    const refused = rawRefused ? verifyPayload<RefusedPayload>(rawRefused, secret) : undefined
     reply.clearCookie(SESSION_COOKIE, { path: '/' })
+    reply.clearCookie(REFUSED_COOKIE, { path: '/' })
     // A browser that posted a form is sent somewhere; a fetch gets its JSON.
     // Showing `{"signedOut":true}` to somebody who clicked a button is the
     // same mistake as showing them `{"error":"not signed in"}`.
     const wantsDocument = String(request.headers.accept ?? '').includes('text/html')
-    // ⚠️ This ends ADESTIA's session, not the identity provider's. The SSO
-    // cookie outlives it, so the next visit signs them straight back in
-    // without a password. That is what a single sign-on does, and saying so
-    // in the interface is a separate piece of work from this fix.
-    return wantsDocument ? reply.redirect('/') : reply.send({ signedOut: true })
+    if (!wantsDocument) return reply.send({ signedOut: true })
+    // The provider's session too, or its SSO cookie signs the same account
+    // straight back in. Without an end_session_endpoint, the next login is
+    // told to ask for credentials instead.
+    const endSession = await client.endSessionUrl(refused?.idToken)
+    return reply.redirect(endSession ?? '/auth/login?switch=1')
   })
 }

@@ -4,6 +4,7 @@ exports[`the route table > adds the sign-in routes in oidc mode 1`] = `
 [
   "GET /auth/login",
   "GET /auth/callback",
+  "GET /auth/refused",
   "POST /auth/logout",
   "GET /api/auth/driver",
   "POST /api/auth/driver/begin",

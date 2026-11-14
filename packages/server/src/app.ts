@@ -9,6 +9,9 @@
  * file had two as well for a while, and the preamble had to be added twice.
  */
 
+import { readdir } from 'node:fs/promises'
+import { join } from 'node:path'
+
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
 import type { AskDesk, Driver, DriverDescriptor } from '@antorfr/adestia-drivers'
 
@@ -133,9 +136,24 @@ export interface AppDependencies {
 }
 
 /** The gate: every route mounted after this is behind the identity check. */
-function installIdentityGate(app: FastifyInstance, config: AdestiaConfig): void {
+function installIdentityGate(
+  app: FastifyInstance,
+  config: AdestiaConfig,
+  shellPaths: ReadonlySet<string>,
+): void {
   app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (isPublicRoute(request.url.split('?')[0] ?? request.url)) return
+    const path = request.url.split('?')[0] ?? request.url
+    if (isPublicRoute(path)) return
+    // The shell itself, under OIDC: the sign-in and refused screens ARE the
+    // shell, so it must load before there is a session. Exact paths read from
+    // the bundle at boot, GET/HEAD only; everything else stays gated.
+    if (
+      config.auth.mode === 'oidc' &&
+      (request.method === 'GET' || request.method === 'HEAD') &&
+      shellPaths.has(path)
+    ) {
+      return
+    }
 
     const outcome = resolveIdentity(
       {
@@ -172,6 +190,25 @@ function installIdentityGate(app: FastifyInstance, config: AdestiaConfig): void 
     ;(request as FastifyRequest & { identity: Identity }).identity = outcome.identity
     return undefined
   })
+}
+
+/**
+ * The URL paths of the built shell: `/`, and one per file under `webRoot`.
+ * Listed, not matched by prefix — a prefix rule is how a route ends up public
+ * by accident. Empty when there is no bundle (dev, where Vite serves it).
+ */
+async function shellPathsOf(webRoot: string | undefined): Promise<Set<string>> {
+  const paths = new Set<string>()
+  if (!webRoot) return paths
+  paths.add('/')
+  const walk = async (dir: string, prefix: string): Promise<void> => {
+    for (const entry of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
+      if (entry.isDirectory()) await walk(join(dir, entry.name), `${prefix}${entry.name}/`)
+      else if (entry.isFile()) paths.add(`${prefix}${entry.name}`)
+    }
+  }
+  await walk(webRoot, '/')
+  return paths
 }
 
 /** Memory, the background reach and the outbound servers every route below shares. */
@@ -236,7 +273,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   // user as anonymous. Hook order is the whole correctness of this file.
   app.decorateRequest('identity', null)
   await registerOidc(app, config, userTokens)
-  installIdentityGate(app, config)
+  installIdentityGate(app, config, await shellPathsOf(webRoot))
 
   const { stores, agentRoots, outboundServers, backgroundReach } = resolveShared(deps, mcpStore)
 

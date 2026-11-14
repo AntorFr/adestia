@@ -46,6 +46,12 @@ export interface OidcConfig {
    * effect at the next sign-in, never at a refresh.
    */
   readonly reboundAudience?: readonly string[] | undefined
+  /**
+   * Where the provider sends the browser back after ending its session
+   * (RP-initiated logout). Absent: `<origin of redirectUri>/`; the empty
+   * string sends none. The provider's client must list it.
+   */
+  readonly postLogoutRedirectUri?: string | undefined
 }
 
 export interface ProxyAuthConfig {
