@@ -2,7 +2,6 @@
 // screen a second time (bench/lib/capture.mjs). A stub browser stands in for
 // Playwright: the proof "appears" only from the Nth wait on, or never.
 import { writeFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { afterAll, describe, expect, it } from 'vitest'
