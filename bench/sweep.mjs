@@ -35,6 +35,10 @@ import { CONVERSATIONS } from './seed/_base.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 
+/** Every gesture wait is scaled by ADESTIA_PATIENCE (an integer, 1 by default): a loaded pod is slower, not wrong. */
+const PATIENCE = Math.max(1, Math.floor(Number(process.env.ADESTIA_PATIENCE)) || 1)
+const patient = (ms) => ms * PATIENCE
+
 // ── the table ───────────────────────────────────────────────────────────────
 /**
  * One row per screen of docs/ecrans.md.
@@ -89,15 +93,15 @@ const SCREENS = [
 // ── gestures ────────────────────────────────────────────────────────────────
 function click(selector, options = {}) {
   return async (page) => {
-    await page.locator(selector).first().click({ timeout: 10_000, ...options })
+    await page.locator(selector).first().click({ timeout: patient(10_000), ...options })
   }
 }
 
 /** Opens the page in the editor (✎), then does `gesture`. */
 function edit(selector, options = {}) {
   return async (page) => {
-    await page.locator('.adestia-editor__actions .adestia-btn').first().click({ timeout: 10_000 })
-    await page.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: 10_000 })
+    await page.locator('.adestia-editor__actions .adestia-btn').first().click({ timeout: patient(10_000) })
+    await page.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: patient(10_000) })
     await click(selector, options)(page)
   }
 }
@@ -129,14 +133,14 @@ function ask(word) {
 async function stopTurn(page) {
   const stop = page.locator('.adestia-composer__stop')
   if (await stop.count()) await stop.first().click()
-  await page.waitForSelector('.adestia-composer__stop', { state: 'detached', timeout: 10_000 }).catch(() => undefined)
+  await page.waitForSelector('.adestia-composer__stop', { state: 'detached', timeout: patient(10_000) }).catch(() => undefined)
 }
 
 /** The scan overlay: the composer's button, in the `More` fold when it is folded. */
 async function scan(page) {
   const direct = page.locator('.adestia-composer__attach[aria-label*="can" i]')
   // The plugin's button arrives after the composer: wait for it, or for the fold that holds it.
-  await page.waitForSelector('.adestia-composer__attach[aria-label*="can" i], .adestia-fold', { timeout: 10_000 })
+  await page.waitForSelector('.adestia-composer__attach[aria-label*="can" i], .adestia-fold', { timeout: patient(10_000) })
   if (await direct.count()) return direct.first().click()
   await page.locator('.adestia-fold > .adestia-composer__attach').click()
   await page.locator('.adestia-fold__item', { hasText: /scan/i }).click()
