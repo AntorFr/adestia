@@ -867,6 +867,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   `etape > guards` step no longer turns red. Documentation only: nothing changes for users
   (task `rouge-adestia-pages-5`).
 
+## v0.98.0-adestia-pages.8
+
+- **Three unstable tests wait for signals** — the offline-banner tests (B-19) and the E-11
+  tests of the epic's suite wait for the state they check instead of a fixed delay, so the
+  `etape > vitest` step no longer turns red under load. Tests only: nothing changes for
+  users (task `rouge-adestia-pages-6`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
