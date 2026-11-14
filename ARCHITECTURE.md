@@ -1259,13 +1259,14 @@ the touch path between columns (no drag needed). The settings' "Leave the parent
 favour of Move out. Moving a container moves its content. A column emptied stays (a `columns` always keeps 2 or 3 `col`); an empty
 `col` is drawn with its "Drop here" lane in editing and nothing in reading. The gallery inserts **Section** and **Columns** (two
 columns by default; `col` has no card) at the tranche-1 insertion point; when the focus is a container the block goes at its end.
-The count is set in the block's settings (E-6, as separate fields until tranche 2 redraws it): 2 → 3 adds an empty column, 3 → 2
+The count is set in the block's settings (E-6, in its own Columns group above the redrawn groups of tranche 2): 2 → 3 adds an empty column, 3 → 2
 removes the last one only when it is empty, and is otherwise refused with the reason shown — no data is deleted.
 The fold toggle (`reader/Containers.tsx`) is a React state of the reader, keyed by the section's position, initialised from
 `closed=fold`; it is never written, and is available when the page is read-only. Below 820 px the columns stack in source order.
 *Rejected*: a second keyboard path; persisting the fold per user (a stored datum the epic does not have); letting an
 emptied `col` disappear (it would change a `columns` from 3 to 2 silently).
 *Reversed if*: the fork cannot nest directives (AD-32); it can, so the tranche was built whole.
+
 ### AD-forms-1 — A `fields` entry is a list of typed columns plus a line codec
 *(tranche `adestia-pages-blocs-formulaires`, refines AD-33.)* The `fields` of a block's `gallery` entry (core table or plugin manifest) is `{ "columns": [{ "key", "kind": "text|number|date|link", "label", "required"? }], "line": "label-value-caption | label-range | label-value | table" }`. The contract accepts `link`, but no block declares it and the form draws it as a plain text field. `line` names one of four codecs written once in the shell (`editor/blockform/`), one per line format that exists today; it is not a free template, so no plugin can invent a line format the reader does not parse. `label` is a string or an `{en, fr}` pair, as in the template declarations. A plugin that declares a `fields` without a known `line` has it ignored (no **Edit data**), never an error. *Rejected*: a per-block form component (a plugin block gets no form); a format string (a second grammar). *Reversed if*: a block needs a column kind the four cannot say.
 
