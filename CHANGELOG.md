@@ -918,13 +918,6 @@ branch and that `test:plugins` is replayed after a red vitest run.
   "Apply" to come back, instead of reading right after the fill and blur. The other unstable test
   of the correction was already fixed on the epic and is unchanged.
   Test only: nothing changes for users (task `rouge-adestia-pages-13`).
-## v0.98.0-adestia-pages.7
-
-- **Sections and columns** — A page can hold foldable **Sections** and bands of two or three
-  **Columns**, added from the block gallery, and blocks move into, out of and between them
-  (drag, `Alt+←/→`, or the bar's arrows, which a phone can reach). A move that would nest too
-  deep is refused with its reason. A page without containers is written back exactly as before.
-
 ## v0.98.0-adestia-pages.14
 
 - **The epic's unstable screen sweep and CRLF page test wait for signals** — the bench sweep now
