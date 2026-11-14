@@ -22,6 +22,23 @@ import type { OidcConfig } from './config.js'
 export const LOGIN_TTL_MS = 10 * 60 * 1000
 export const SESSION_COOKIE = 'adestia_session'
 export const LOGIN_COOKIE = 'adestia_login'
+export const REFUSED_COOKIE = 'adestia_refused'
+/** Long enough to read the page and click, short enough not to linger. */
+export const REFUSED_TTL_MS = 10 * 60 * 1000
+/** What a browser keeps of one cookie; past it the id token hint is dropped. */
+export const COOKIE_LIMIT = 4000
+
+/**
+ * Who the provider authenticated and Adestia refused. Not a session: nothing
+ * reads it but `GET /auth/refused` and the sign-out.
+ */
+export interface RefusedPayload {
+  readonly displayName: string
+  readonly userId: string
+  /** The id token, so the provider can tell whose session to end. */
+  readonly idToken?: string
+  readonly expiresAt: number
+}
 
 export interface LoginState {
   readonly state: string
@@ -157,7 +174,7 @@ export class OidcClient {
     }
   }
 
-  async beginLogin(returnTo: string): Promise<{ url: string; state: LoginState }> {
+  async beginLogin(returnTo: string, options: { switchAccount?: boolean } = {}): Promise<{ url: string; state: LoginState }> {
     const configuration = await this.#discover()
     const codeVerifier = client.randomPKCECodeVerifier()
     const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier)
@@ -181,6 +198,9 @@ export class OidcClient {
       ...(this.config.reboundAudience?.length
         ? { audience: this.config.reboundAudience.join(' ') }
         : {}),
+      // Asks for credentials even where the provider's SSO cookie is alive:
+      // the way to change account when it has no end_session_endpoint.
+      ...(options.switchAccount ? { prompt: 'login' } : {}),
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
       state,
@@ -192,10 +212,38 @@ export class OidcClient {
     }
   }
 
+  /**
+   * Where to send the browser to end the PROVIDER's session (RP-initiated
+   * logout), or undefined when it advertises none or cannot be reached — the
+   * caller then falls back to a login that insists on credentials.
+   */
+  async endSessionUrl(idTokenHint?: string): Promise<string | undefined> {
+    let configuration: client.Configuration
+    try {
+      configuration = await this.#discover()
+    } catch {
+      return undefined
+    }
+    const endpoint = configuration.serverMetadata().end_session_endpoint
+    if (!endpoint) return undefined
+
+    const url = new URL(endpoint)
+    url.searchParams.set('client_id', this.config.clientId)
+    if (idTokenHint) url.searchParams.set('id_token_hint', idTokenHint)
+    const back =
+      this.config.postLogoutRedirectUri ?? `${new URL(this.config.redirectUri).origin}/`
+    if (back !== '') url.searchParams.set('post_logout_redirect_uri', back)
+    return url.href
+  }
+
   async completeLogin(
     currentUrl: URL,
     login: LoginState,
-  ): Promise<{ identity: Identity; refreshToken?: string } | { error: string }> {
+  ): Promise<
+    | { identity: Identity; refreshToken?: string }
+    | { refused: { identity: Identity; idToken?: string } }
+    | { error: string }
+  > {
     if (login.expiresAt <= Date.now()) return { error: 'that sign-in took too long; try again' }
 
     let configuration: client.Configuration
@@ -226,7 +274,9 @@ export class OidcClient {
       const identity = identityFrom({ ...idClaims, ...userInfo }, this.config)
       if (!identity) return { error: 'the identity provider returned no subject' }
       if (!isAllowed(identity, this.config)) {
-        return { error: 'your account is not in a group allowed to use this instance' }
+        return {
+          refused: { identity, ...(tokens.id_token ? { idToken: tokens.id_token } : {}) },
+        }
       }
       // Handed back rather than stored here: this module speaks OIDC and
       // knows nothing about where an instance keeps things. A provider that
