@@ -19,7 +19,6 @@
 - Histoire et décisions des chantiers clos : [CHANGELOG.md](../CHANGELOG.md).
 
 ## Étape vitest rouge de `epic/adestia-pages` à 28e089c9 (`rouge-adestia-pages-2`)
-
 Mesure `28e089c9` : l'étape `vitest` échouait sur trois tests instables sous charge, pris par `rouge-adestia-pages-1`, tests seuls, code du produit inchangé :
 
 - `besoin-hors-ligne-bords.test.ts` (B-19, 502/503/504) : seul l'appel sous test répond (une réponse tardive efface le bandeau et retire la boucle de sonde), les appels partis avant la route sont attendus, puis des signaux remplacent les délais de 10 s / 8 s ;
