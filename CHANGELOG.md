@@ -882,6 +882,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   screen and not on a module being transformed under load. Test only: nothing changes for
   users (task `rouge-adestia-pages-7`).
 
+## v0.98.0-adestia-pages.10
+
+- **The epic's unstable MCP test is green again** — the "refetch after Save never shows
+  loading" case of the MCP editor tests waits for the declaration to fill the editor, then
+  for **Save** to be active, before it clicks. Test only: nothing changes for users (task
+  `rouge-adestia-pages-8`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
