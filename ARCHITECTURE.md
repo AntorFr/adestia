@@ -816,7 +816,8 @@ band above the page (problems band E-19, skin console). The right behaviour, rea
 of `docs/ecrans.md` ("stay inside the viewport"): the panel never covers the header or the bands
 above the page; it keeps clear of them by taking the *bottom edge of the canvas header* as its
 top limit, and follows its anchor on scroll and resize (`scroll` captured, `resize`), closing
-nothing. The cause is **confirmed by a bench scenario at 1440×900 before the fix** (a page with a
+nothing. The canvas bands are read again at each placement, and the canvas is watched for
+added or removed children, so a band mounted after the panel opened is avoided too. The cause is **confirmed by a bench scenario at 1440×900 before the fix** (a page with a
 block near the top, E-19 band present, the popover opened): if the overlap is another one
 (the console band, the read-only banner), the same rule — the panel stays below every element the
 canvas draws above the page — covers it, and the cause found is written in the task. If nothing
