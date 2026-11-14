@@ -34,6 +34,13 @@ import { CONVERSATIONS } from './seed/_base.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 
+/** Every per-screen wait is scaled by ADESTIA_PATIENCE (an integer, 1 by default): a loaded pod is slower, not wrong. */
+const PATIENCE = Math.max(1, Math.floor(Number(process.env.ADESTIA_PATIENCE)) || 1)
+const patient = (ms) => ms * PATIENCE
+
+/** The proof selector never appeared: the one failure a second try may cure. */
+class ProofMissing extends Error {}
+
 // ── the table ───────────────────────────────────────────────────────────────
 /**
  * One row per screen of docs/ecrans.md.
@@ -88,15 +95,15 @@ const SCREENS = [
 // ── gestures ────────────────────────────────────────────────────────────────
 function click(selector, options = {}) {
   return async (page) => {
-    await page.locator(selector).first().click({ timeout: 10_000, ...options })
+    await page.locator(selector).first().click({ timeout: patient(10_000), ...options })
   }
 }
 
 /** Opens the page in the editor (✎), then does `gesture`. */
 function edit(selector, options = {}) {
   return async (page) => {
-    await page.locator('.adestia-editor__actions .adestia-btn').first().click({ timeout: 10_000 })
-    await page.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: 10_000 })
+    await page.locator('.adestia-editor__actions .adestia-btn').first().click({ timeout: patient(10_000) })
+    await page.waitForSelector('.adestia-editor__surface .ProseMirror', { timeout: patient(10_000) })
     await click(selector, options)(page)
   }
 }
@@ -128,14 +135,14 @@ function ask(word) {
 async function stopTurn(page) {
   const stop = page.locator('.adestia-composer__stop')
   if (await stop.count()) await stop.first().click()
-  await page.waitForSelector('.adestia-composer__stop', { state: 'detached', timeout: 10_000 }).catch(() => undefined)
+  await page.waitForSelector('.adestia-composer__stop', { state: 'detached', timeout: patient(10_000) }).catch(() => undefined)
 }
 
 /** The scan overlay: the composer's button, in the `More` fold when it is folded. */
 async function scan(page) {
   const direct = page.locator('.adestia-composer__attach[aria-label*="can" i]')
   // The plugin's button arrives after the composer: wait for it, or for the fold that holds it.
-  await page.waitForSelector('.adestia-composer__attach[aria-label*="can" i], .adestia-fold', { timeout: 10_000 })
+  await page.waitForSelector('.adestia-composer__attach[aria-label*="can" i], .adestia-fold', { timeout: patient(10_000) })
   if (await direct.count()) return direct.first().click()
   await page.locator('.adestia-fold > .adestia-composer__attach').click()
   await page.locator('.adestia-fold__item', { hasText: /scan/i }).click()
@@ -203,12 +210,12 @@ async function capture(browser, base, screen, theme, size) {
 
     if (screen.signedIn) {
       await page.goto(`${base}/auth/login?returnTo=%2F`, { waitUntil: 'domcontentloaded' })
-      await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
+      await page.waitForSelector('.adestia-chat', { timeout: patient(20_000) })
     }
     await screen.before?.(page, { base })
     await page.goto(`${base}/#${screen.route ?? '/'}`, { waitUntil: 'domcontentloaded' })
     if (screen.reload) await page.reload({ waitUntil: 'domcontentloaded' })
-    if (screen.shell !== 'none') await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
+    if (screen.shell !== 'none') await page.waitForSelector('.adestia-chat', { timeout: patient(20_000) })
 
     if (screen.offline) await goOffline(page, context)
 
@@ -218,13 +225,13 @@ async function capture(browser, base, screen, theme, size) {
       if ((await page.locator('.adestia-shell').getAttribute('data-screen')) !== want && want === 'canvas') {
         await page.locator('.adestia-chat__header').getByRole('button', { name: /^(Open apps|Ouvrir les apps)$/ }).click()
       }
-      await page.waitForSelector(`.adestia-shell[data-screen="${want}"]`, { timeout: 10_000 })
+      await page.waitForSelector(`.adestia-shell[data-screen="${want}"]`, { timeout: patient(10_000) })
     }
 
     await screen.open?.(page)
 
-    await page.waitForSelector(screen.proof, { state: 'visible', timeout: 15_000 }).catch(() => {
-      throw new Error(`the selector that proves the screen never appeared: ${screen.proof}`)
+    await page.waitForSelector(screen.proof, { state: 'visible', timeout: patient(15_000) }).catch(() => {
+      throw new ProofMissing(`the selector that proves the screen never appeared: ${screen.proof}`)
     })
     // Settle: transitions, web fonts, the second render of a view that loads.
     await page.evaluate(() => document.fonts.ready)
@@ -256,10 +263,10 @@ async function goOffline(page, context) {
       return entries.flat().length >= 5
     },
     undefined,
-    { timeout: 20_000 },
+    { timeout: patient(20_000) },
   )
   await page.reload({ waitUntil: 'domcontentloaded' })
-  await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
+  await page.waitForSelector('.adestia-chat', { timeout: patient(20_000) })
   await context.setOffline(true)
   await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => undefined)
 }
@@ -278,14 +285,28 @@ try {
     try {
       const base = await instance.url
       for (const screen of screens.filter((s) => s.seed === seed)) {
+        // A proof selector missing twice is the screen's fault, not the load's: the other variants would wait as long for the same answer.
+        let proofGone = false
         for (const theme of THEMES) {
           for (const size of Object.keys(VIEWPORTS)) {
             const label = `${screen.id} ${screen.name} ${theme} ${size}`
+            if (proofGone) {
+              failures.push(`${label} (seed ${seed}): not tried, the selector that proves the screen never appeared: ${screen.proof}`)
+              console.error(`FAIL ${label}: not tried, the proof selector is already missing`)
+              continue
+            }
             try {
-              await capture(browser, base, screen, theme, size)
+              try {
+                await capture(browser, base, screen, theme, size)
+              } catch (error) {
+                if (!(error instanceof ProofMissing)) throw error
+                console.error(`retry ${label}: ${error.message}`)
+                await capture(browser, base, screen, theme, size)
+              }
               taken += 1
               console.log(`shot ${label}`)
             } catch (error) {
+              if (error instanceof ProofMissing) proofGone = true
               const reason = error instanceof Error ? error.message.split('\n')[0] : String(error)
               failures.push(`${label} (seed ${seed}): ${reason}`)
               console.error(`FAIL ${label}: ${reason}`)

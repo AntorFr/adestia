@@ -5,11 +5,17 @@
  */
 
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { usePage, type PageChanges } from '../src/app/usePage.js'
 
 afterEach(cleanup)
+
+// `usePage` loads the editor module beside the page and answers only when both
+// are in. The first import of that heavy module is cold and outlasts the
+// default `waitFor` window, so the first test read `page` before any render
+// held it. The signal is the module being loaded: wait for it, once, here.
+beforeAll(async () => { await import('../src/editor/milkdown.js') }, 60_000)
 
 type Call = { url: string; ok: (status: number, body: unknown) => void; cut: () => void }
 

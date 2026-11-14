@@ -20,13 +20,14 @@ import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { type Browser, type Page, newBrowser, open, playwright } from './charte-browser.js'
+import { patience } from './patience.js'
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const SHOTS = process.env.HORS_LIGNE_SHOTS
 const WORDS = { en: 'The server is not responding', fr: 'Le serveur ne répond pas' } as const
 type Locale = keyof typeof WORDS
-const WAIT_SHOWN = 10_000 // docs: at once if the link refuses, within 5 s if it hangs
-const WAIT_GONE = 8_000 // docs: within 3 s of the server answering
+const WAIT_SHOWN = patience(10_000) // docs: at once if the link refuses, within 5 s if it hangs
+const WAIT_GONE = patience(8_000) // docs: within 3 s of the server answering
 
 /** A bench instance that can be stopped and started again on the same address. */
 class Bench {
@@ -136,7 +137,7 @@ async function showCanvas(page: Page): Promise<void> {
     const open = [...document.querySelectorAll<HTMLElement>('.adestia-chat__header button')].find((x) => /^(Open apps|Ouvrir les apps)$/.test(x.getAttribute('aria-label') ?? ''))
     open?.click()
   })
-  await page.waitForSelector('.adestia-shell[data-screen="canvas"]', { timeout: 10_000 })
+  await page.waitForSelector('.adestia-shell[data-screen="canvas"]', { timeout: patience(10_000) })
 }
 
 /** Polls the page until `ok` holds for the banners seen; the proof of the state, not a delay. */
@@ -157,7 +158,7 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
 
   beforeAll(async () => {
     browser = await newBrowser()
-  }, 60_000)
+  }, patience(60_000))
   afterAll(async () => {
     await browser?.close()
     for (const b of benches) await b.dispose()
@@ -172,7 +173,8 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
   const shot = async (page: Page, name: string) => {
     if (!SHOTS) return
     await page.evaluate(() => document.fonts.ready)
-    await page.waitForTimeout(250)
+    // pause fixe : the picture waits for animations to settle
+    await page.waitForTimeout(patience(250))
     await page.screenshot({ path: join(SHOTS, `${name}.png`) })
   }
 
@@ -190,9 +192,9 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
         const b = await bench('skippy', locale)
         const { context, page } = await open(browser, b.url, { theme: 'light', size: 'desk', locale, route: screen.route })
         try {
-          await page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
+          await page.waitForSelector('.adestia-canvas__body', { timeout: patience(20_000) })
           // The screen has drawn its data before the server goes: its own read must not be the one that fails.
-          const drawn = Date.now() + 20_000
+          const drawn = Date.now() + patience(20_000)
           const pattern = screen.shown
           while (Date.now() < drawn && !pattern.test(await page.evaluate(() => document.querySelector('.adestia-canvas__body')?.textContent ?? ''))) await new Promise((r) => setTimeout(r, 100))
           // At rest: no banner, nothing drawn.
@@ -231,7 +233,7 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
           await context.close()
           await b.dispose()
         }
-      }, 120_000)
+      }, patience(120_000))
     })
   })
 
@@ -248,7 +250,7 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
       const b = await bench(skin, locale)
       const { context, page } = await open(browser, b.url, { theme, size, locale, route: '/settings/config' })
       try {
-        await page.waitForSelector('.adestia-config__bar', { timeout: 20_000 })
+        await page.waitForSelector('.adestia-config__bar', { timeout: patience(20_000) })
         if (size === 'phone') await showCanvas(page)
         await page.evaluate(() => document.querySelector('.adestia-config__bar')?.scrollIntoView({ block: 'end', inline: 'nearest' }))
         await b.stop()
@@ -270,7 +272,7 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
         await context.close()
         await b.dispose()
       }
-    }, 120_000)
+    }, patience(120_000))
   })
 
   // ── phone, chat shown: above the rail's header ──────────────────────────────────────────────
@@ -278,7 +280,7 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
     const b = await bench('skippy', 'fr')
     const { context, page } = await open(browser, b.url, { theme: 'light', size: 'phone', locale: 'fr', shell: false })
     try {
-      await page.waitForSelector('.adestia-chat__header', { timeout: 20_000 })
+      await page.waitForSelector('.adestia-chat__header', { timeout: patience(20_000) })
       expect(await banners(page, WORDS.fr)).toHaveLength(0)
       await b.stop()
       const shown = await until(page, WORDS.fr, (s) => s.length === 1, WAIT_SHOWN)
@@ -298,7 +300,7 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
       await context.close()
       await b.dispose()
     }
-  }, 120_000)
+  }, patience(120_000))
 
   // ── 320 px : the fr text wraps, never truncates, and sits above Problems ───────────────────
   it('320 px en français : le texte n\'est pas tronqué, sort de sa place sans la dépasser, au-dessus de « Problèmes »', async () => {
@@ -307,9 +309,9 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
     const page = await context.newPage()
     try {
       await page.goto(`${b.url}/#/`, { waitUntil: 'domcontentloaded' })
-      await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
+      await page.waitForSelector('.adestia-chat', { timeout: patience(20_000) })
       await showCanvas(page)
-      await page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
+      await page.waitForSelector('.adestia-canvas__body', { timeout: patience(20_000) })
       await b.stop()
       const shown = await until(page, WORDS.fr, (s) => s.length === 1, WAIT_SHOWN)
       expect(shown).toHaveLength(1)
@@ -324,7 +326,7 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
       await context.close()
       await b.dispose()
     }
-  }, 120_000)
+  }, patience(120_000))
 
   // ── « Coming back… » (E-14) ────────────────────────────────────────────────────────────────
   describe.each([
@@ -338,7 +340,7 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
       try {
         // The bench cannot restart itself: the request is answered "restarting", then the instance is really gone.
         await page.route('**/api/restart', (route) => route.fulfill({ status: 202, contentType: 'application/json', body: '{"restarting":true}' }))
-        await page.waitForSelector('.adestia-config__bar', { timeout: 20_000 })
+        await page.waitForSelector('.adestia-config__bar', { timeout: patience(20_000) })
         await page.evaluate(() => {
           const input = document.querySelector<HTMLInputElement>('input[type="number"][max="16"]')
           if (!input) throw new Error('no Simultaneous turns field')
@@ -350,7 +352,7 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
           const save = [...document.querySelectorAll('button')].find((x) => /^(Save|Enregistrer)$/.test(x.textContent?.trim() ?? ''))
           save?.click()
         })
-        await page.waitForSelector('.adestia-config__restart-bar', { timeout: 15_000 })
+        await page.waitForSelector('.adestia-config__restart-bar', { timeout: patience(15_000) })
         expect(await banners(page, words)).toHaveLength(0)
         await b.stop()
         await page.evaluate(() => {
@@ -383,7 +385,7 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
         await context.close()
         await b.dispose()
       }
-    }, 120_000)
+    }, patience(120_000))
   })
 
   // ── the probe and the exclusions, against a living server whose answers are bent ───────────
@@ -391,16 +393,16 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
     let b: Bench
     beforeAll(async () => {
       b = await bench('skippy', 'en')
-    }, 60_000)
+    }, patience(60_000))
 
     it('tous les appels /api/ échouent, la sonde /api/health aussi : le bandeau apparaît ; la sonde repasse : il part seul, sans recharger', async () => {
       // Failure budgets, not expectations: the product answers within 3-5 s; these only bound a loaded machine.
-      const SHOWN_BUDGET = 30_000
-      const PROBES_BUDGET = 30_000
-      const GONE_BUDGET = 30_000
+      const SHOWN_BUDGET = patience(30_000)
+      const PROBES_BUDGET = patience(30_000)
+      const GONE_BUDGET = patience(30_000)
       const { context, page } = await open(browser, b.url, { theme: 'light', size: 'desk', locale: 'en', route: '/' })
       try {
-        await page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
+        await page.waitForSelector('.adestia-canvas__body', { timeout: patience(20_000) })
         let healthCalls = 0
         await page.route('**/api/**', async (route) => {
           const r = route as unknown as { request(): { url(): string }; abort(c?: string): Promise<void> }
@@ -437,12 +439,12 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
       } finally {
         await context.close()
       }
-    }, 150_000)
+    }, patience(150_000))
 
     it('un appel unique qui échoue alors que le serveur répond : aucun bandeau', async () => {
       const { context, page } = await open(browser, b.url, { theme: 'light', size: 'desk', locale: 'en', route: '/' })
       try {
-        await page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
+        await page.waitForSelector('.adestia-canvas__body', { timeout: patience(20_000) })
         let cut = false
         await page.route('**/api/instructions', async (route) => {
           cut = true
@@ -452,12 +454,13 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
         await until(page, WORDS.en, () => cut, WAIT_SHOWN)
         expect(cut).toBe(true)
         // Longer than a probe's whole cycle (5 s hang + margin): still nothing.
-        await page.waitForTimeout(7_000)
+        // pause fixe : negative wait: longer than a probe's whole cycle, the banner must still not appear
+        await page.waitForTimeout(patience(7_000))
         expect(await banners(page, WORDS.en)).toHaveLength(0)
       } finally {
         await context.close()
       }
-    }, 90_000)
+    }, patience(90_000))
 
     it.each([
       [401, 'sign-in'],
@@ -466,7 +469,7 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
     ])('une réponse %i (%s) est une réponse du serveur : aucun bandeau', async (status) => {
       const { context, page } = await open(browser, b.url, { theme: 'light', size: 'desk', locale: 'en', route: '/' })
       try {
-        await page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
+        await page.waitForSelector('.adestia-canvas__body', { timeout: patience(20_000) })
         let answered = false
         await page.route('**/api/instructions', async (route) => {
           answered = true
@@ -475,12 +478,13 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
         await page.evaluate(() => (location.hash = '/settings/instructions'))
         await until(page, WORDS.en, () => answered, WAIT_SHOWN)
         expect(answered).toBe(true)
-        await page.waitForTimeout(5_000)
+        // pause fixe : negative wait: the banner must stay away for a whole probe cycle
+        await page.waitForTimeout(patience(5_000))
         expect(await banners(page, WORDS.en)).toHaveLength(0)
       } finally {
         await context.close()
       }
-    }, 90_000)
+    }, patience(90_000))
 
     it('sous la porte fatale E-1 (premier chargement sans serveur), le bandeau n\'est jamais dessiné', async () => {
       const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'en-US', ignoreHTTPSErrors: true })
@@ -490,14 +494,15 @@ describe.skipIf(!playwright)('B-19 · le bandeau « le serveur ne répond pas »
           await (route as unknown as { abort(c?: string): Promise<void> }).abort('failed')
         })
         await page.goto(`${b.url}/#/`, { waitUntil: 'domcontentloaded' })
-        await page.waitForSelector('.adestia-gate, [role="alert"]', { timeout: 20_000 })
-        await page.waitForTimeout(6_000)
+        await page.waitForSelector('.adestia-gate, [role="alert"]', { timeout: patience(20_000) })
+        // pause fixe : negative wait: the banner must stay away for a whole probe cycle
+        await page.waitForTimeout(patience(6_000))
         expect(await banners(page, WORDS.en)).toHaveLength(0)
         expect(await page.evaluate(() => document.body.textContent ?? '')).toContain('Adestia could not start')
         await shot(page, 'skippy-en-E-1-fatale')
       } finally {
         await context.close()
       }
-    }, 90_000)
+    }, patience(90_000))
   })
 })

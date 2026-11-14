@@ -13,6 +13,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { type Size, type Theme, VIEWPORTS, inspect, launch, newBrowser, playwright } from './charte-browser.js'
+import { patience } from './patience.js'
 
 const SHOTS = process.env.CHAT_SHOTS
 const SKINS = ['skippy', 'alfred', 'nestor', 'dobby']
@@ -38,8 +39,9 @@ async function visit(browser: BrowserOf, base: string, o: { theme?: Theme; size?
     { theme: o.theme ?? 'light', tabs: o.tabs, extra: o.seedStorage ?? {} },
   )
   await page.goto(`${base}/#/`, { waitUntil: 'domcontentloaded' })
-  await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
-  await page.waitForTimeout(500)
+  await page.waitForSelector('.adestia-chat', { timeout: patience(20_000) })
+  // pause fixe : the chat's entrance animation settles before the first read
+  await page.waitForTimeout(patience(500))
   return { context, page }
 }
 
@@ -165,7 +167,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
   let browser: BrowserOf
   beforeAll(async () => {
     browser = await newBrowser()
-  }, 60_000)
+  }, patience(60_000))
   afterAll(async () => {
     await browser?.close()
   })
@@ -188,17 +190,19 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
             const shown = await page.evaluate(() => document.querySelector('.adestia-chat')?.getBoundingClientRect().width ?? 0)
             if (shown < 200) throw new Error('the chat is not visible on the phone')
           }
-          await page.locator('.adestia-sign').first().waitFor({ timeout: 15_000 })
+          await page.locator('.adestia-sign').first().waitFor({ timeout: patience(15_000) })
           for (const word of ['fini', 'outil', 'erreur', 'signature']) {
             await say(page, word)
-            await page.locator('.adestia-chat').getByText(word, { exact: true }).last().waitFor({ timeout: 15_000 })
-            await page.waitForTimeout(1200)
+            await page.locator('.adestia-chat').getByText(word, { exact: true }).last().waitFor({ timeout: patience(15_000) })
+            // pause fixe : the bubble's reveal animation, so the next word is not typed into a moving thread
+            await page.waitForTimeout(patience(1200))
           }
           await say(page, 'permission durable')
-          await page.locator('.adestia-ask').waitFor({ timeout: 15_000 })
+          await page.locator('.adestia-ask').waitFor({ timeout: patience(15_000) })
           for (const toggle of await page.locator('.adestia-trace__toggle').all()) await toggle.click()
           await page.evaluate(() => document.fonts.ready.then(() => undefined))
-          await page.waitForTimeout(500)
+          // pause fixe : the trace panels finish unfolding before the picture
+          await page.waitForTimeout(patience(500))
           const state = async (label: string, roots: string) => {
             const finding = await page.evaluate(inspect, { root: roots, lang: '', skip: '' })
             const extra: Extra = await page.evaluate(scan, { roots })
@@ -219,13 +223,15 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
           await state('thread', '.adestia-chat')
           // E-18: the sheet
           await page.locator('.adestia-sign__go').first().click()
-          await page.locator('.adestia-sheet').waitFor({ timeout: 10_000 })
-          await page.waitForTimeout(500)
+          await page.locator('.adestia-sheet').waitFor({ timeout: patience(10_000) })
+          // pause fixe : the sheet's slide-in animation
+          await page.waitForTimeout(patience(500))
           await state('sheet', '.adestia-sheet')
           await page.keyboard.press('Escape')
           // the list, then the held bubble
           await page.getByRole('button', { name: /^(Conversations)$/ }).click()
-          await page.waitForTimeout(400)
+          // pause fixe : the list's slide-in animation
+          await page.waitForTimeout(patience(400))
           await state('list', '.adestia-chat')
         } finally {
           await context.close()
@@ -244,7 +250,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       beforeAll(async () => {
         en = await survey(skin, 'en', ALL)
         fr = await survey(skin, 'fr', FEW)
-      }, 900_000)
+      }, patience(900_000))
 
       it('draws no native grey control in the rail, the question or the sheet, light and dark, desk and phone', () => {
         expect(en.flatMap((r) => r.native.map((n) => `${r.where}: ${n}`))).toEqual([])
@@ -289,7 +295,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
     let instance: Awaited<ReturnType<typeof launch>>
     beforeAll(async () => {
       instance = await launch('chat-rail', 'skippy', 'en')
-    }, 60_000)
+    }, patience(60_000))
     afterAll(async () => {
       await instance?.stop()
     })
@@ -300,7 +306,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       const { context, page } = await fresh()
       try {
         await say(page, 'fini')
-        await page.locator('.adestia-chat').getByText('Rien ne manque pour samedi.').waitFor({ timeout: 15_000 })
+        await page.locator('.adestia-chat').getByText('Rien ne manque pour samedi.').waitFor({ timeout: patience(15_000) })
         const text: string = await page.locator('.adestia-chat__conversation').innerText()
         expect(text.replace(/\s+/g, ' ')).toContain('Voici la liste des courses de la semaine. Rien ne manque pour samedi.')
         expect(await page.locator('.adestia-tab').count()).toBe(1)
@@ -316,7 +322,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       try {
         await say(page, 'outil')
         const toggle = page.locator('.adestia-trace__toggle').first()
-        await toggle.waitFor({ timeout: 15_000 })
+        await toggle.waitFor({ timeout: patience(15_000) })
         expect((await toggle.innerText()).trim()).toBe('2 tool calls')
         expect(await toggle.getAttribute('aria-expanded')).toBe('false')
         expect(await page.locator('.adestia-trace__item').count()).toBe(0)
@@ -338,7 +344,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       try {
         await say(page, 'signature')
         const toggle = page.locator('.adestia-trace__toggle').first()
-        await toggle.waitFor({ timeout: 15_000 })
+        await toggle.waitFor({ timeout: patience(15_000) })
         expect((await toggle.innerText()).trim()).toBe('1 tool call')
       } finally {
         await context.close()
@@ -350,7 +356,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       try {
         await say(page, 'erreur')
         const alert = page.locator('.adestia-chat [role=alert]').first()
-        await alert.waitFor({ timeout: 15_000 })
+        await alert.waitFor({ timeout: patience(15_000) })
         expect(await alert.innerText()).toContain('The engine stopped: rate limit reached, try again later.')
         expect(await page.locator('.adestia-chat__conversation').innerText()).toContain('Je commence')
         expect(await alert.locator('use').count()).toBeGreaterThan(0)
@@ -365,29 +371,30 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         await say(page, 'en cours')
         const chat = page.locator('.adestia-chat')
         const stop = chat.getByRole('button', { name: 'Stop', exact: true })
-        await stop.waitFor({ timeout: 15_000 })
+        await stop.waitFor({ timeout: patience(15_000) })
         expect(await chat.getByRole('button', { name: 'Send', exact: true }).count()).toBe(0)
         await say(page, 'bonjour pendant ce temps')
-        await chat.locator('.adestia-bubble__text', { hasText: 'bonjour pendant ce temps' }).first().waitFor({ timeout: 10_000 })
-        await chat.locator('.adestia-bubble--held').waitFor({ timeout: 10_000 })
+        await chat.locator('.adestia-bubble__text', { hasText: 'bonjour pendant ce temps' }).first().waitFor({ timeout: patience(10_000) })
+        await chat.locator('.adestia-bubble--held').waitFor({ timeout: patience(10_000) })
         expect(await chat.locator('.adestia-bubble--held').count()).toBe(1)
         await shot(page, 'p2-held')
         await stop.click()
-        await chat.getByRole('button', { name: 'Stop', exact: true }).waitFor({ state: 'detached', timeout: 15_000 }).catch(() => undefined)
-        await page.waitForTimeout(1500)
+        await chat.getByRole('button', { name: 'Stop', exact: true }).waitFor({ state: 'detached', timeout: patience(15_000) }).catch(() => undefined)
+        // pause fixe : negative wait: nothing is expected to change after Stop, there is no signal to await
+        await page.waitForTimeout(patience(1500))
         // the held message was merged and sent as a turn of its own (answered by the echo), then it ends
-        await stop.waitFor({ state: 'hidden', timeout: 15_000 }).catch(() => undefined)
+        await stop.waitFor({ state: 'hidden', timeout: patience(15_000) }).catch(() => undefined)
       } finally {
         await context.close()
       }
-    }, 30_000)
+    }, patience(30_000))
 
     it('shows the context pill once a turn has reported its weight', async () => {
       const { context, page } = await fresh()
       try {
         expect(await page.locator('.adestia-pill').count()).toBe(0)
         await say(page, 'long contexte')
-        await page.locator('.adestia-pill').waitFor({ timeout: 15_000 })
+        await page.locator('.adestia-pill').waitFor({ timeout: patience(15_000) })
         expect((await page.locator('.adestia-pill').getAttribute('title'))?.length ?? 0).toBeGreaterThan(0)
         expect((await page.locator('.adestia-pill').innerText()).trim()).toMatch(/150/)
       } finally {
@@ -428,7 +435,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         expect(gone.length).toBeGreaterThan(0)
         await archive.click()
         await expect
-          .poll(() => items.count(), { timeout: 15_000, message: 'the archived entry is still in the list' })
+          .poll(() => items.count(), { timeout: patience(15_000), message: 'the archived entry is still in the list' })
           .toBe(before - 1)
         const remaining = await items.allInnerTexts()
         expect(remaining.some((t: string) => t.includes(gone) && t.trim() === gone)).toBe(false)
@@ -439,14 +446,14 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         expect(await items.count()).toBe(before - 1)
         // plus: a new draft, empty thread, empty field
         await say(page, 'fini')
-        await page.locator('.adestia-chat').getByText('Rien ne manque pour samedi.').waitFor({ timeout: 15_000 })
+        await page.locator('.adestia-chat').getByText('Rien ne manque pour samedi.').waitFor({ timeout: patience(15_000) })
         await page.getByRole('button', { name: 'New conversation', exact: true }).click()
         await expect.poll(() => page.locator('.adestia-bubble').count(), { message: 'the new draft still shows the old thread' }).toBe(0)
         expect(await page.locator('.adestia-chat textarea').inputValue()).toBe('')
       } finally {
         await context.close()
       }
-    }, 180_000)
+    }, patience(180_000))
 
     it('marks an unread conversation with a dot that is not colour alone, and reading clears it', async () => {
       const { context, page } = await fresh()
@@ -472,7 +479,8 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         const unread = page.locator('.adestia-conversations__item', { has: page.locator('.adestia-dot[aria-label="Unread"]') }).first()
         const title = ((await unread.innerText()) ?? '').trim()
         await unread.click()
-        await page.waitForTimeout(600)
+        // pause fixe : the opened conversation's scroll settles
+        await page.waitForTimeout(patience(600))
         await page.getByRole('button', { name: 'Conversations', exact: true }).click().catch(() => undefined)
         const same = page.locator('.adestia-conversations__item', { hasText: title }).first()
         await same.waitFor()
@@ -486,15 +494,15 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       const { context, page } = await fresh()
       try {
         await say(page, 'fini')
-        await page.locator('.adestia-chat').getByText('Rien ne manque pour samedi.').waitFor({ timeout: 15_000 })
+        await page.locator('.adestia-chat').getByText('Rien ne manque pour samedi.').waitFor({ timeout: patience(15_000) })
         await page.getByRole('button', { name: 'New conversation', exact: true }).click()
         await say(page, 'outil')
-        await page.locator('.adestia-trace__toggle').first().waitFor({ timeout: 15_000 })
+        await page.locator('.adestia-trace__toggle').first().waitFor({ timeout: patience(15_000) })
         const titles = () => page.locator('.adestia-tab__title').allInnerTexts()
         const stored = () =>
           page.evaluate(() => JSON.parse(localStorage.getItem('adestia.tabs') ?? '{}').open?.length ?? 0)
-        await expect.poll(titles, { message: 'les deux onglets ne sont pas ouverts', timeout: 15_000 }).toEqual(['fini', 'outil'])
-        await expect.poll(stored, { message: 'adestia.tabs ne garde pas les deux onglets', timeout: 15_000 }).toBe(2)
+        await expect.poll(titles, { message: 'les deux onglets ne sont pas ouverts', timeout: patience(15_000) }).toEqual(['fini', 'outil'])
+        await expect.poll(stored, { message: 'adestia.tabs ne garde pas les deux onglets', timeout: patience(15_000) }).toBe(2)
         // the native drag is replayed only while the order has not followed it
         await expect
           .poll(
@@ -505,14 +513,14 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
               }
               return titles()
             },
-            { message: "l'ordre n'a pas suivi le glisser", timeout: 15_000 },
+            { message: "l'ordre n'a pas suivi le glisser", timeout: patience(15_000) },
           )
           .toEqual(['outil', 'fini'])
         expect(await stored()).toBe(2)
         const close = page.getByRole('button', { name: /^Close tab/ }).first()
         expect(await close.locator('use').getAttribute('href')).toBe('#adestia-i-x')
         await close.click()
-        await expect.poll(titles, { message: "l'onglet n'est pas fermé", timeout: 15_000 }).toEqual(['fini'])
+        await expect.poll(titles, { message: "l'onglet n'est pas fermé", timeout: patience(15_000) }).toEqual(['fini'])
         // closed, not archived: the conversation is still in the list
         await page.getByRole('button', { name: 'Conversations', exact: true }).click()
         await page.locator('.adestia-conversations__item', { hasText: 'outil' }).first().waitFor()
@@ -525,7 +533,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       const { context, page } = await fresh({ size: 'phone' })
       try {
         await say(page, 'fini')
-        await page.locator('.adestia-chat').getByText('Rien ne manque pour samedi.').waitFor({ timeout: 15_000 })
+        await page.locator('.adestia-chat').getByText('Rien ne manque pour samedi.').waitFor({ timeout: patience(15_000) })
         expect(await page.locator('.adestia-tabs:visible').count()).toBe(0)
         await page.getByRole('button', { name: 'Conversations', exact: true }).click()
         const list = page.locator('.adestia-conversations')
@@ -543,8 +551,9 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       try {
         await page.setViewportSize({ width: 360, height: 800 })
         await say(page, 'long contexte')
-        await page.locator('.adestia-pill').waitFor({ timeout: 15_000 })
-        await page.waitForTimeout(500)
+        await page.locator('.adestia-pill').waitFor({ timeout: patience(15_000) })
+        // pause fixe : the pill's width animation settles before measuring it
+        await page.waitForTimeout(patience(500))
         const extra: Extra = await page.evaluate(scan, { roots: '.adestia-chat' })
         expect(extra.headerOverflow).toEqual([])
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
@@ -560,8 +569,9 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         try {
           await page.setViewportSize({ width, height: 800 })
           await say(page, 'long contexte')
-          await page.locator('.adestia-pill').waitFor({ timeout: 15_000 })
-          await page.waitForTimeout(500)
+          await page.locator('.adestia-pill').waitFor({ timeout: patience(15_000) })
+          // pause fixe : the pill's width animation settles before measuring it
+          await page.waitForTimeout(patience(500))
           const m = await page.evaluate(() => {
             const box = (el: Element) => el.getBoundingClientRect()
             const header = document.querySelector('.adestia-chat__header') as HTMLElement
@@ -597,13 +607,13 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
           await context.close()
         }
       }
-    }, 60_000)
+    }, patience(60_000))
 
     it('pads a bubble holding only an error as evenly above as below', async () => {
       const { context, page } = await fresh()
       try {
         await say(page, 'fini')
-        await page.locator('.adestia-chat').getByText('Rien ne manque pour samedi.').waitFor({ timeout: 15_000 })
+        await page.locator('.adestia-chat').getByText('Rien ne manque pour samedi.').waitFor({ timeout: patience(15_000) })
         const m = await page.evaluate(() => {
           const thread = document.querySelector('.adestia-chat__conversation') as HTMLElement
           const bubble = document.createElement('article')
@@ -625,12 +635,13 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       try {
         await page.locator('.adestia-composer input[type=file]').setInputFiles({ name: 'plan.txt', mimeType: 'text/plain', buffer: Buffer.from('plan') })
         const chip = page.locator('.adestia-composer').getByText('plan.txt').first()
-        await chip.waitFor({ timeout: 10_000 })
+        await chip.waitFor({ timeout: patience(10_000) })
         const remove = page.getByRole('button', { name: 'Remove plan.txt' })
         expect(await remove.count()).toBe(1)
         expect(await remove.locator('use').getAttribute('href')).toBe('#adestia-i-x')
         await remove.click()
-        await page.waitForTimeout(400)
+        // pause fixe : the chip's removal animation
+        await page.waitForTimeout(patience(400))
         expect(await page.locator('.adestia-composer').getByText('plan.txt').count()).toBe(0)
       } finally {
         await context.close()
@@ -644,14 +655,14 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       const { context, page } = await visit(browser, instance.url, {})
       try {
         await page.getByRole('button', { name: 'Conversations', exact: true }).click()
-        await page.getByText('No conversation yet.', { exact: true }).waitFor({ timeout: 10_000 })
+        await page.getByText('No conversation yet.', { exact: true }).waitFor({ timeout: patience(10_000) })
         expect(await page.locator('.adestia-empty').count()).toBeGreaterThan(0)
         await shot(page, 'p2-empty-list')
       } finally {
         await context.close()
         await instance.stop()
       }
-    }, 60_000)
+    }, patience(60_000))
   })
 
   // ── P-2 step 5, E-17: the question; P-3, E-18: the signature ─────────────────
@@ -659,7 +670,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
     let instance: Awaited<ReturnType<typeof launch>>
     beforeAll(async () => {
       instance = await launch('chat-permission', 'skippy', 'en')
-    }, 60_000)
+    }, patience(60_000))
     afterAll(async () => {
       await instance?.stop()
     })
@@ -667,7 +678,8 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
     /** The fake engine holds a question until the turn is stopped; leave the thread idle for the next test. */
     const release = async (page: any) => {
       await page.request.post(`${instance.url}/api/turn/stop`, { data: { conversation: THREAD } })
-      await page.waitForTimeout(500)
+      // pause fixe : the stop has no visible signal; the engine releases the held question after it
+      await page.waitForTimeout(patience(500))
     }
 
     it('asks with three answers when the engine offered a lasting rule, blocks the composer, and frees it after an answer', async () => {
@@ -675,18 +687,19 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       try {
         await say(page, 'permission durable')
         const ask = page.getByRole('alertdialog', { name: 'Permission required' })
-        await ask.waitFor({ timeout: 15_000 })
+        await ask.waitFor({ timeout: patience(15_000) })
         expect(await ask.getByRole('button').allInnerTexts()).toEqual(['Refuse', 'Just this once', 'Always'])
         expect(await ask.locator('use').first().getAttribute('href')).toBe('#adestia-i-triangle-alert')
         // the composer stays blocked: a message typed now is not sent
         await say(page, 'bloqué')
-        await page.waitForTimeout(800)
+        // pause fixe : negative wait: a blocked composer sends nothing, there is no event to await
+        await page.waitForTimeout(patience(800))
         expect(await page.locator('.adestia-bubble--user', { hasText: 'bloqué' }).count()).toBe(0)
         await shot(page, 'p2-ask')
         const posted = page.waitForRequest((r: any) => r.url().includes('/api/permission') && r.method() === 'POST')
         await ask.getByRole('button', { name: 'Just this once', exact: true }).click()
         await posted
-        await ask.waitFor({ state: 'hidden', timeout: 10_000 })
+        await ask.waitFor({ state: 'hidden', timeout: patience(10_000) })
       } finally {
         await release(page)
         await context.close()
@@ -698,7 +711,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       try {
         await say(page, 'permission once')
         const ask = page.getByRole('alertdialog', { name: 'Permission required' })
-        await ask.waitFor({ timeout: 15_000 })
+        await ask.waitFor({ timeout: patience(15_000) })
         expect(await ask.getByRole('button').allInnerTexts()).toEqual(['Refuse', 'Just this once'])
         expect(await ask.getByText('No lasting rule', { exact: false }).count()).toBe(1)
       } finally {
@@ -712,12 +725,12 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       try {
         await say(page, 'permission durable')
         const ask = page.getByRole('alertdialog', { name: 'Permission required' })
-        await ask.waitFor({ timeout: 15_000 })
+        await ask.waitFor({ timeout: patience(15_000) })
         const posted = page.waitForRequest((r: any) => r.url().includes('/api/permission') && r.method() === 'POST')
         await ask.getByRole('button', { name: 'Refuse', exact: true }).click()
         const body = (await posted).postData() ?? ''
         expect(body.toLowerCase()).toMatch(/den|refus|deny|false/)
-        await ask.waitFor({ state: 'hidden', timeout: 10_000 })
+        await ask.waitFor({ state: 'hidden', timeout: patience(10_000) })
       } finally {
         await release(page)
         await context.close()
@@ -729,7 +742,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       try {
         await page.evaluate(() => localStorage.setItem('adestia.signatures', JSON.stringify({ signed: 'signed', denied: 'denied' })))
         await page.reload({ waitUntil: 'domcontentloaded' })
-        await page.locator('.adestia-sign').first().waitFor({ timeout: 15_000 })
+        await page.locator('.adestia-sign').first().waitFor({ timeout: patience(15_000) })
         for (const [state, icon] of [['pending', 'pen-line'], ['signed', 'check'], ['denied', 'x'], ['expired', 'clock']] as const) {
           const card = page.locator(`.adestia-sign--${state}`).first()
           expect(await card.count(), state).toBe(1)
@@ -748,10 +761,10 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       const { context, page } = await fresh()
       try {
         const opener = page.getByRole('button', { name: 'Sign', exact: true }).first()
-        await opener.waitFor({ timeout: 15_000 })
+        await opener.waitFor({ timeout: patience(15_000) })
         await opener.click()
         const dialog = page.getByRole('dialog').first()
-        await dialog.waitFor({ timeout: 10_000 })
+        await dialog.waitFor({ timeout: patience(10_000) })
         expect(await page.locator('.adestia-sheet').count()).toBe(1)
         expect(await page.locator('.adestia-sheet').evaluate((n: Element) => getComputedStyle(n).backgroundColor)).not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/)
         expect(await dialog.getByRole('link', { name: 'Open in a tab' }).count()).toBe(1)
@@ -763,7 +776,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         expect(await dialog.locator('use[href="#adestia-i-external-link"]').count()).toBe(1)
         await shot(page, 'p3-sheet')
         await page.keyboard.press('Escape')
-        await dialog.waitFor({ state: 'hidden', timeout: 10_000 })
+        await dialog.waitFor({ state: 'hidden', timeout: patience(10_000) })
         expect(await opener.evaluate((n: Element) => n === document.activeElement)).toBe(true)
       } finally {
         await context.close()
@@ -775,9 +788,9 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       try {
         await page.getByRole('button', { name: 'Sign', exact: true }).first().click()
         const dialog = page.getByRole('dialog').first()
-        await dialog.waitFor({ timeout: 10_000 })
+        await dialog.waitFor({ timeout: patience(10_000) })
         await dialog.getByRole('button', { name: /^Close/ }).click()
-        await dialog.waitFor({ state: 'hidden', timeout: 10_000 })
+        await dialog.waitFor({ state: 'hidden', timeout: patience(10_000) })
       } finally {
         await context.close()
       }
@@ -789,7 +802,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       try {
         await page.getByRole('button', { name: 'Sign', exact: true }).first().click()
         const dialog = page.getByRole('dialog').first()
-        await dialog.waitFor({ timeout: 10_000 })
+        await dialog.waitFor({ timeout: patience(10_000) })
         const box = await dialog.boundingBox()
         expect(Math.abs(box.y + box.height - 844)).toBeLessThan(2)
         expect(box.width).toBeGreaterThan(300)
@@ -797,7 +810,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         await context.close()
         await instance2.stop()
       }
-    }, 60_000)
+    }, patience(60_000))
 
     it('without embed, Sign opens a tab and the card then offers "I signed it"', async () => {
       const { context, page } = await fresh()
@@ -809,12 +822,12 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
         })
         await page.reload({ waitUntil: 'domcontentloaded' })
         const opener = page.getByRole('button', { name: 'Sign', exact: true }).first()
-        await opener.waitFor({ timeout: 15_000 })
+        await opener.waitFor({ timeout: patience(15_000) })
         const popup = page.waitForEvent('popup')
         await opener.click()
         const tab = await popup
         await tab.close()
-        await page.getByRole('button', { name: 'I signed it', exact: true }).first().waitFor({ timeout: 10_000 })
+        await page.getByRole('button', { name: 'I signed it', exact: true }).first().waitFor({ timeout: patience(10_000) })
         expect(await page.getByRole('dialog').count()).toBe(0)
       } finally {
         await context.close()

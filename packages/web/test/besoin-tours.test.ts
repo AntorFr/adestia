@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url'
 import { afterAll, describe, expect, it } from 'vitest'
 
 import { SHOTS, newBrowser, playwright } from './charte-browser.js'
+import { patience } from './patience.js'
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const LABEL = { en: 'Simultaneous turns', fr: 'Tours simultanés' } as const
@@ -80,7 +81,7 @@ async function screen(url: string, locale: 'en' | 'fr') {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: locale === 'fr' ? 'fr-FR' : 'en-US' })
   const page = await context.newPage()
   await page.goto(`${url}/#/settings/config`, { waitUntil: 'domcontentloaded' })
-  await page.waitForSelector(`text=${LABEL[locale]}`, { timeout: 20_000 })
+  await page.waitForSelector(`text=${LABEL[locale]}`, { timeout: patience(20_000) })
   return { browser, page: page as unknown as PW }
 }
 
@@ -105,7 +106,7 @@ interface PW {
 
 async function enter(page: PW, locale: 'en' | 'fr', value: string) {
   await page.locator('input[type=number]').last().fill(value)
-  const saved = page.waitForResponse((r) => r.url().endsWith('/api/settings') && r.request().method() === 'PUT', { timeout: 15_000 })
+  const saved = page.waitForResponse((r) => r.url().endsWith('/api/settings') && r.request().method() === 'PUT', { timeout: patience(15_000) })
   await page.getByRole('button', { name: SAVE[locale] }).click()
   return (await saved).status()
 }
@@ -118,7 +119,7 @@ describe.skipIf(!playwright)('B-21 — the owner sets the simultaneous turns (E-
     const { browser, page } = await screen(inst.url, 'en')
     expect(await fieldText(page)).toContain(MARK.en)
     expect(await enter(page, 'en', '5')).toBe(200)
-    await page.getByText('Restart now').waitFor({ timeout: 10_000 })
+    await page.getByText('Restart now').waitFor({ timeout: patience(10_000) })
     expect(await page.getByText('Saved, and waiting for a restart', { exact: false }).isVisible()).toBe(true)
     if (SHOTS) await page.screenshot({ path: join(SHOTS, 'tours-en-5.png') })
     expect(await maxInFile(inst.config)).toBe('5')
@@ -127,20 +128,20 @@ describe.skipIf(!playwright)('B-21 — the owner sets the simultaneous turns (E-
     await inst.stop()
     expect(await restartedMax(inst.config)).toBe(5)
     await browser.close()
-  }, 120_000)
+  }, patience(120_000))
 
   it('owner saves 5 in French: same outcome, French words', async () => {
     const inst = await bootBench('fr')
     const { browser, page } = await screen(inst.url, 'fr')
     expect(await fieldText(page)).toContain(MARK.fr)
     expect(await enter(page, 'fr', '5')).toBe(200)
-    await page.getByText('Redémarrer', { exact: true }).waitFor({ timeout: 10_000 })
+    await page.getByText('Redémarrer', { exact: true }).waitFor({ timeout: patience(10_000) })
     if (SHOTS) await page.screenshot({ path: join(SHOTS, 'tours-fr-5.png') })
     expect(await maxInFile(inst.config)).toBe('5')
     await inst.stop()
     expect(await restartedMax(inst.config)).toBe(5)
     await browser.close()
-  }, 120_000)
+  }, patience(120_000))
 
   it('the two bounds, 1 and 16, are accepted and written', async () => {
     const inst = await bootBench('en')
@@ -151,7 +152,7 @@ describe.skipIf(!playwright)('B-21 — the owner sets the simultaneous turns (E-
     expect(await maxInFile(inst.config)).toBe('1')
     await browser.close()
     await inst.stop()
-  }, 120_000)
+  }, patience(120_000))
 
   it.each([
     ['17', 'must be at most 16'],
@@ -163,22 +164,22 @@ describe.skipIf(!playwright)('B-21 — the owner sets the simultaneous turns (E-
     const status = await enter(page, 'en', value)
     expect(status).toBeGreaterThanOrEqual(400)
     expect(status).toBeLessThan(500)
-    await page.getByText(words).waitFor({ timeout: 10_000 })
+    await page.getByText(words).waitFor({ timeout: patience(10_000) })
     if (SHOTS) await page.screenshot({ path: join(SHOTS, `tours-en-refus-${value}.png`) })
     expect(await readFile(inst.config, 'utf8')).toBe(before)
     expect(await page.getByText('Restart now').count()).toBe(0)
     await browser.close()
     await inst.stop()
-  }, 120_000)
+  }, patience(120_000))
 
   it('17 is refused in French as well, the field showing an error', async () => {
     const inst = await bootBench('fr')
     const before = await readFile(inst.config, 'utf8')
     const { browser, page } = await screen(inst.url, 'fr')
     expect(await enter(page, 'fr', '17')).toBeGreaterThanOrEqual(400)
-    await page.getByText('must be at most 16').waitFor({ timeout: 10_000 })
+    await page.getByText('must be at most 16').waitFor({ timeout: patience(10_000) })
     expect(await readFile(inst.config, 'utf8')).toBe(before)
     await browser.close()
     await inst.stop()
-  }, 120_000)
+  }, patience(120_000))
 })
