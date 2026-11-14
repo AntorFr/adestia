@@ -285,9 +285,16 @@ try {
     try {
       const base = await instance.url
       for (const screen of screens.filter((s) => s.seed === seed)) {
+        // A proof selector missing twice is the screen's fault, not the load's: the other variants would wait as long for the same answer.
+        let proofGone = false
         for (const theme of THEMES) {
           for (const size of Object.keys(VIEWPORTS)) {
             const label = `${screen.id} ${screen.name} ${theme} ${size}`
+            if (proofGone) {
+              failures.push(`${label} (seed ${seed}): not tried, the selector that proves the screen never appeared: ${screen.proof}`)
+              console.error(`FAIL ${label}: not tried, the proof selector is already missing`)
+              continue
+            }
             try {
               try {
                 await capture(browser, base, screen, theme, size)
@@ -299,6 +306,7 @@ try {
               taken += 1
               console.log(`shot ${label}`)
             } catch (error) {
+              if (error instanceof ProofMissing) proofGone = true
               const reason = error instanceof Error ? error.message.split('\n')[0] : String(error)
               failures.push(`${label} (seed ${seed}): ${reason}`)
               console.error(`FAIL ${label}: ${reason}`)
