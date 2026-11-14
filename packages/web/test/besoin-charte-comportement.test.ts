@@ -26,7 +26,9 @@ async function visit(browser: Browser, seed: string, options: { size?: Size; loc
 const iconsOf = (page: Page, selector: string) =>
   page.evaluate((s: string) => [...document.querySelectorAll(s)].map((el) => el.querySelector('use')?.getAttribute('href') ?? null), selector)
 
-describe.skipIf(!playwright)('charter — behaviour of the shared components on the settings and entry screens', () => {
+// Each visit boots an instance: under the whole browser suite that exceeds the 5 s default and, on a loaded
+// pod, the 30 s of the attested run too; the budget is the file's, not a test's.
+describe.skipIf(!playwright)('charter — behaviour of the shared components on the settings and entry screens', { timeout: 120_000 }, () => {
   let browser: Browser
   beforeAll(async () => {
     browser = await newBrowser()
@@ -116,6 +118,8 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
 
     it('marks a delivered file read-only with the lock icon', async () => {
       await visit(browser, 'base', { route: '/settings/instructions' }, async (page) => {
+        // The cards load after the shell: wait for the badges themselves, not for a fixed delay.
+        await page.waitForSelector('.adestia-filecard__badge', { timeout: 20_000 })
         const marks = await page.evaluate(() => [...document.querySelectorAll('.adestia-filecard__badge')].map((b) => `${(b.textContent ?? '').trim()}=${b.querySelector('use')?.getAttribute('href')}`))
         expect(marks.length).toBeGreaterThan(0)
         expect([...new Set(marks)]).toEqual(['delivered=#adestia-i-lock'])
