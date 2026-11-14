@@ -896,6 +896,21 @@ branch and that `test:plugins` is replayed after a red vitest run.
   10 to 20 s, so the "skin dobby" case no longer expires when the whole suite loads the machine.
   Test only: nothing changes for users (task `rouge-adestia-pages-10-delais-survey`).
 
+## v0.98.0-adestia-pages.12
+
+- **The epic's unstable restart test waits by a deadline, not a poll count** — the helper of the
+  "owner saves 5" tests that waits for the restarted instance now waits up to 90 s instead of
+  100 polls of 200 ms, so a loaded suite no longer turns the boot into "never answered".
+  Test only: nothing changes for users (task `rouge-adestia-pages-11-delai-redemarrage`).
+
+## v0.98.0-adestia-pages.13
+
+- **The epic's unstable data-form timeline test waits for signals** — the case "timeline end date
+  equal to the start date is accepted" now waits for the "Due is before start" refusal and for
+  "Apply" to come back, instead of reading right after the fill and blur. The other unstable test
+  of the correction was already fixed on the epic and is unchanged.
+  Test only: nothing changes for users (task `rouge-adestia-pages-13`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
