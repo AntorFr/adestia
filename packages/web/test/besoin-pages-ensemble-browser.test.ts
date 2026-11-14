@@ -232,7 +232,36 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               await page.locator('[data-block="callout"]').hover({ timeout: 3_000 }).catch(() => undefined) // a touch screen has no hover
               await page.getByRole('button', { name: w.block }).first().click()
               await page.waitForSelector('.adestia-popover', { timeout: 10_000 })
-              await page.waitForTimeout(300) // the panel measures itself once mounted: a visual settle before reading its geometry
+              // The popover places itself in steps (hidden at 0,0, then placed, then re-placed as the form fills and fonts
+              // arrive): wait for the signal that it is settled — visible, and the same rectangle on 5 consecutive frames.
+              await page.waitForFunction(
+                () =>
+                  new Promise<boolean>((resolve) => {
+                    const el = document.querySelector('.adestia-popover')
+                    if (!el) return resolve(false)
+                    const key = () => {
+                      const r = el.getBoundingClientRect()
+                      return `${r.top}|${r.left}|${r.width}|${r.height}`
+                    }
+                    let last = ''
+                    let same = 0
+                    const frame = () => {
+                      if (!el.isConnected || getComputedStyle(el).visibility === 'hidden') {
+                        same = 0
+                        last = ''
+                        return resolve(false)
+                      }
+                      const k = key()
+                      same = k === last ? same + 1 : 0
+                      last = k
+                      if (same >= 5) return resolve(true)
+                      requestAnimationFrame(frame)
+                    }
+                    requestAnimationFrame(frame)
+                  }),
+                undefined,
+                { timeout: 20_000 },
+              )
               const g = (await page.evaluate(() => {
                 const rect = (e: Element) => {
                   const r = e.getBoundingClientRect()
