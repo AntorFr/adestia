@@ -173,7 +173,7 @@ scripted engine, then captures each screen of `docs/ecrans.md` (E-1 to E-31) in
 `light` and `dark`, at 1440×900 and at a 390×844 touch viewport:
 31 × 2 × 2 = 124 files in `<out>/<skin>/<E-n>-<name>-<theme>-<desk|phone>.png`
 (`<skin>` is `default` without `--skin`; `--out` defaults to `bench/shots-sweep`,
-ignored by git). Two to four minutes, depending on the machine (about three times that on a loaded core). A screen's proof selector is awaited for max(15 s, 8 × the shell's measured boot time); the error says what the page showed instead.
+ignored by git). Two to four minutes, depending on the machine (about three times that on a loaded core). Every wait for the chat shell, the phone's shell screen or the proof selector lasts `APPEAR_MS` = 60 s (`bench/lib/capture.mjs`). A capture whose wait ran out is taken once more in a fresh context; only that timeout is retried (a loading or fatal screen, a capture file under 500 bytes or a timeout inside a gesture or in `page.goto` fails at once). A second timeout fails it: the error names the selector that never appeared, adds the first 100 characters of what the page showed and says it was the second attempt; the screen's remaining captures are then printed `FAIL … not tried (proof missing earlier)` (also when it was the chat shell or the phone's shell screen that never appeared, not a proof selector) and counted as failures, so a broken screen costs up to 2 × 60 s and up to four failures. The sweep needs the build (`npm run build`, so `packages/server/dist` exists).
 
 The table at the top of the script is the one place that knows a screen: its
 seed, route, the gesture that opens it and the **selector that proves it is that

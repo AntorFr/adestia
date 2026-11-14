@@ -23,9 +23,10 @@
  * route, the gesture that opens it, and the selector that proves it is THAT
  * screen and not another. A new screen of docs/ecrans.md is a new row.
  */
-import { mkdir, stat } from 'node:fs/promises'
+import { mkdir } from 'node:fs/promises'
 import { loadPlaywright } from './lib/playwright.mjs'
 import { launch } from './lib/instance.mjs'
+import { captureWithRetry, VIEWPORTS } from './lib/capture.mjs'
 import { dirname, join, resolve } from 'node:path'
 import { argv, exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -170,111 +171,10 @@ try {
   fail(`${error.message} — it comes with the environment, not with the repository`, 1)
 }
 
-// ── one capture ─────────────────────────────────────────────────────────────
+// ── one capture (bench/lib/capture.mjs) ─────────────────────────────────────
 const THEMES = ['light', 'dark']
-const PROOF_MS = 15_000 // the floor of the wait for a screen's proof selector
-const PROOF_PER_BOOT = 8 // …and its ceiling, as a multiple of what the shell took to boot
-const VIEWPORTS = {
-  desk: { viewport: { width: 1440, height: 900 } },
-  phone: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 },
-}
-
-async function capture(browser, base, screen, theme, size) {
-  const context = await browser.newContext({
-    ...VIEWPORTS[size],
-    colorScheme: theme,
-    locale: options.locale ?? 'en-US',
-    ignoreHTTPSErrors: true,
-    permissions: ['camera'],
-  })
-  const page = await context.newPage()
-  try {
-    // Explicit theme, so a skin that declares its own scheme does not decide for us.
-    const tabs = screen.chat ? JSON.stringify({ open: [CONVERSATIONS[screen.chat]], active: CONVERSATIONS[screen.chat] }) : undefined
-    await page.addInitScript(
-      ([themeName, tabState]) => {
-        try {
-          localStorage.setItem('adestia.theme', themeName)
-          if (tabState) localStorage.setItem('adestia.tabs', tabState)
-        } catch {
-          // storage refused: the visit still renders
-        }
-      },
-      [theme, tabs],
-    )
-
-    if (screen.signedIn) {
-      await page.goto(`${base}/auth/login?returnTo=%2F`, { waitUntil: 'domcontentloaded' })
-      await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
-    }
-    await screen.before?.(page, { base })
-    const started = Date.now()
-    await page.goto(`${base}/#${screen.route ?? '/'}`, { waitUntil: 'domcontentloaded' })
-    if (screen.reload) await page.reload({ waitUntil: 'domcontentloaded' })
-    if (screen.shell !== 'none') await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
-    // How slow this machine is RIGHT NOW is what the shell just took to boot. A
-    // screen that waits on plugins (E-26 loads them, then asks the server for
-    // the trips) needs time in proportion to that, not a flat 15 s that a
-    // suite running browsers side by side outruns while the screen is fine.
-    const proofTimeout = Math.max(PROOF_MS, (Date.now() - started) * PROOF_PER_BOOT)
-
-    if (screen.offline) await goOffline(page, context)
-
-    // The phone shows one of two screens; the picture must show the screen's own.
-    if (size === 'phone' && screen.shell !== 'none') {
-      const want = screen.shell ?? 'canvas'
-      if ((await page.locator('.adestia-shell').getAttribute('data-screen')) !== want && want === 'canvas') {
-        await page.locator('.adestia-chat__header').getByRole('button', { name: /^(Open apps|Ouvrir les apps)$/ }).click()
-      }
-      await page.waitForSelector(`.adestia-shell[data-screen="${want}"]`, { timeout: 10_000 })
-    }
-
-    await screen.open?.(page)
-
-    await page.waitForSelector(screen.proof, { state: 'visible', timeout: proofTimeout }).catch(async () => {
-      // Say what the page showed instead: a slow load and a broken one read the same otherwise.
-      const seen = await page
-        .evaluate(() => (document.querySelector('.adestia-canvas, main, body')?.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 100))
-        .catch(() => '?')
-      throw new Error(`the selector that proves the screen never appeared after ${Math.round(proofTimeout / 1000)} s: ${screen.proof} (page shows: "${seen}")`)
-    })
-    // Settle: transitions, web fonts, the second render of a view that loads.
-    await page.evaluate(() => document.fonts.ready)
-    await page.waitForTimeout(700)
-
-    if (await page.locator('.adestia-gate__card--loading').count()) throw new Error('a loading screen is shown (.adestia-gate__card--loading)')
-    if (!screen.fatalOk && (await page.locator('.adestia-gate__card--fatal').count())) {
-      const said = (await page.locator('.adestia-gate__card--fatal').first().innerText()).replace(/\s+/g, ' ').slice(0, 160)
-      throw new Error(`an error screen is shown (.adestia-gate__card--fatal): ${said}`)
-    }
-
-    const file = join(outDir, `${screen.id}-${screen.name}-${theme}-${size}.png`)
-    await page.screenshot({ path: file })
-    if ((await stat(file)).size < 500) throw new Error(`the capture is empty (${file})`)
-    await screen.after?.(page)
-    return file
-  } finally {
-    await context.close()
-  }
-}
-
-/** E-21: let the service worker cache the shell, cut the network, reload. */
-async function goOffline(page, context) {
-  await page.evaluate(() => navigator.serviceWorker.ready)
-  await page.waitForFunction(
-    async () => {
-      const names = await caches.keys()
-      const entries = await Promise.all(names.map((name) => caches.open(name).then((cache) => cache.keys())))
-      return entries.flat().length >= 5
-    },
-    undefined,
-    { timeout: 20_000 },
-  )
-  await page.reload({ waitUntil: 'domcontentloaded' })
-  await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
-  await context.setOffline(true)
-  await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => undefined)
-}
+const capture = (browser, base, screen, theme, size) =>
+  captureWithRetry(browser, base, screen, theme, size, { outDir, locale: options.locale, conversations: CONVERSATIONS })
 
 // ── the sweep ───────────────────────────────────────────────────────────────
 await mkdir(outDir, { recursive: true })
@@ -290,15 +190,24 @@ try {
     try {
       const base = await instance.url
       for (const screen of screens.filter((s) => s.seed === seed)) {
+        // A proof that never came in two tries is the screen's, not the pod's: the
+        // other three captures of it would wait twice 60 s each for the same answer.
+        let broken = false
         for (const theme of THEMES) {
           for (const size of Object.keys(VIEWPORTS)) {
             const label = `${screen.id} ${screen.name} ${theme} ${size}`
+            if (broken) {
+              failures.push(`${label} (seed ${seed}): not tried, the proof of this screen never appeared in an earlier capture`)
+              console.error(`FAIL ${label}: not tried (proof missing earlier)`)
+              continue
+            }
             try {
               await capture(browser, base, screen, theme, size)
               taken += 1
               console.log(`shot ${label}`)
             } catch (error) {
               const reason = error instanceof Error ? error.message.split('\n')[0] : String(error)
+              if (error?.appearTimeout) broken = true
               failures.push(`${label} (seed ${seed}): ${reason}`)
               console.error(`FAIL ${label}: ${reason}`)
             }

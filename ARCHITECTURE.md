@@ -46,8 +46,8 @@ Outside `packages/`:
   `page-author`, `persona-author`, `schedule-author`, `collections`), delivered to the agent.
 - `bench/` — screenshot bench: `run.sh` builds the image and drives Chromium in docker,
   `bench.mjs` and `scenarios/`; `live-codex.sh` boots a real Codex engine. Without docker:
-  `launch.mjs` (fake or real engine), `fake-engine.mjs`, `seed/`, `oidc-stub.mjs` and `sweep.mjs`
-  (see the AD-2 and AD-3 detail below).
+  `launch.mjs` (fake or real engine), `fake-engine.mjs`, `seed/`, `oidc-stub.mjs`, `sweep.mjs` and its
+  `lib/capture.mjs` (see the AD-2 and AD-3 detail below).
 - `spikes/` — validation record (editor, concurrency, copilot-cli, codex-cli, esm-runtime,
   shell-tools-transport); not linted, not shipped.
 
@@ -284,7 +284,7 @@ stops shipping Playwright.
   `bench/shots-sweep`, ignored by git). A screen table in the script lists, per `E-n`, the
   route, the gesture that opens it and the **selector that proves it is that screen**; a capture
   whose selector is absent, or that shows `.adestia-gate__card--fatal` or a loading state, fails the sweep
-  and names the screen. The sweep exits non-zero on any failure and prints a count.
+  and names the screen. The capture of one screen lives in `bench/lib/capture.mjs` (a module of its own, because `bench/sweep.mjs` runs its sweep as soon as it is imported): every wait for the chat shell, the phone's shell screen or the screen's proof selector lasts `APPEAR_MS` (60 s), and a capture whose wait ran out is retried once in a fresh context, so a busy pod does not fail a sweep by itself. Only that timeout is retried: a loading or fatal screen, a capture file under 500 bytes, or a timeout in a gesture's own wait (editor, composer, click, service-worker cache, `page.goto`) fails at once. After a second timeout the screen's remaining captures are not tried and are counted as failures (`FAIL … not tried`). The sweep exits non-zero on any failure and prints a count.
 - **docker.** `bench/run.sh` and `bench/bench.mjs` are untouched except that the Playwright
   import falls back from `/usr/lib/node_modules` to the global root. Scenarios keep working.
 
