@@ -57,8 +57,28 @@ async function bootBench(locale: string) {
  */
 const RESTART_DEADLINE_MS = 90_000
 
-/** Boot of the bench, screen (20 s), entry (15 s) and "Restart now" (10 s) come before the deadline: 90 + ~45 s, with margin. */
-const RESTART_TEST_TIMEOUT_MS = 180_000
+/**
+ * How long each browser wait (screen, saved response, restart button, refusal
+ * message) may take. Same reasoning as RESTART_DEADLINE_MS: the whole suite plays
+ * on a loaded machine, and each wait returns as soon as the element appears, so a
+ * wide deadline costs nothing when everything is fast.
+ */
+const BROWSER_DEADLINE_MS = 60_000
+
+/** Three browser waits (screen, saved response, restart button) of 60 s, the 90 s restart, and 60 s for the bench boot and margin: 3 × 60 + 90 + 60 = 330 s. */
+const RESTART_TEST_TIMEOUT_MS = 330_000
+
+/** The other tests: bench boot plus up to four 60 s waits (two of them entries), 300 s. */
+const BROWSER_TEST_TIMEOUT_MS = 300_000
+
+/** Names the step that ran out, so a red on load says which wait expired. */
+async function within<T>(step: string, wait: Promise<T>): Promise<T> {
+  try {
+    return await wait
+  } catch (e) {
+    throw new Error(`waiting for ${step} ran out (${BROWSER_DEADLINE_MS / 1000} s): ${e instanceof Error ? e.message : String(e)}`)
+  }
+}
 
 /** The restart: the plain binary booted on the file the screen wrote. */
 async function restartedMax(configPath: string): Promise<number> {
@@ -91,7 +111,7 @@ async function screen(url: string, locale: 'en' | 'fr') {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: locale === 'fr' ? 'fr-FR' : 'en-US' })
   const page = await context.newPage()
   await page.goto(`${url}/#/settings/config`, { waitUntil: 'domcontentloaded' })
-  await page.waitForSelector(`text=${LABEL[locale]}`, { timeout: 20_000 })
+  await within('the settings screen', page.waitForSelector(`text=${LABEL[locale]}`, { timeout: BROWSER_DEADLINE_MS }))
   return { browser, page: page as unknown as PW }
 }
 
@@ -116,9 +136,9 @@ interface PW {
 
 async function enter(page: PW, locale: 'en' | 'fr', value: string) {
   await page.locator('input[type=number]').last().fill(value)
-  const saved = page.waitForResponse((r) => r.url().endsWith('/api/settings') && r.request().method() === 'PUT', { timeout: 15_000 })
+  const saved = page.waitForResponse((r) => r.url().endsWith('/api/settings') && r.request().method() === 'PUT', { timeout: BROWSER_DEADLINE_MS })
   await page.getByRole('button', { name: SAVE[locale] }).click()
-  return (await saved).status()
+  return (await within('the settings save (PUT /api/settings)', saved)).status()
 }
 
 const fieldText = (page: PW) => page.locator('.adestia-config__field').last().innerText()
@@ -129,7 +149,7 @@ describe.skipIf(!playwright)('B-21 — the owner sets the simultaneous turns (E-
     const { browser, page } = await screen(inst.url, 'en')
     expect(await fieldText(page)).toContain(MARK.en)
     expect(await enter(page, 'en', '5')).toBe(200)
-    await page.getByText('Restart now').waitFor({ timeout: 10_000 })
+    await within('the restart button', page.getByText('Restart now').waitFor({ timeout: BROWSER_DEADLINE_MS }))
     expect(await page.getByText('Saved, and waiting for a restart', { exact: false }).isVisible()).toBe(true)
     if (SHOTS) await page.screenshot({ path: join(SHOTS, 'tours-en-5.png') })
     expect(await maxInFile(inst.config)).toBe('5')
@@ -145,7 +165,7 @@ describe.skipIf(!playwright)('B-21 — the owner sets the simultaneous turns (E-
     const { browser, page } = await screen(inst.url, 'fr')
     expect(await fieldText(page)).toContain(MARK.fr)
     expect(await enter(page, 'fr', '5')).toBe(200)
-    await page.getByText('Redémarrer', { exact: true }).waitFor({ timeout: 10_000 })
+    await within('the restart button', page.getByText('Redémarrer', { exact: true }).waitFor({ timeout: BROWSER_DEADLINE_MS }))
     if (SHOTS) await page.screenshot({ path: join(SHOTS, 'tours-fr-5.png') })
     expect(await maxInFile(inst.config)).toBe('5')
     await inst.stop()
@@ -162,7 +182,7 @@ describe.skipIf(!playwright)('B-21 — the owner sets the simultaneous turns (E-
     expect(await maxInFile(inst.config)).toBe('1')
     await browser.close()
     await inst.stop()
-  }, 120_000)
+  }, BROWSER_TEST_TIMEOUT_MS)
 
   it.each([
     ['17', 'must be at most 16'],
@@ -174,22 +194,22 @@ describe.skipIf(!playwright)('B-21 — the owner sets the simultaneous turns (E-
     const status = await enter(page, 'en', value)
     expect(status).toBeGreaterThanOrEqual(400)
     expect(status).toBeLessThan(500)
-    await page.getByText(words).waitFor({ timeout: 10_000 })
+    await within('the refusal message', page.getByText(words).waitFor({ timeout: BROWSER_DEADLINE_MS }))
     if (SHOTS) await page.screenshot({ path: join(SHOTS, `tours-en-refus-${value}.png`) })
     expect(await readFile(inst.config, 'utf8')).toBe(before)
     expect(await page.getByText('Restart now').count()).toBe(0)
     await browser.close()
     await inst.stop()
-  }, 120_000)
+  }, BROWSER_TEST_TIMEOUT_MS)
 
   it('17 is refused in French as well, the field showing an error', async () => {
     const inst = await bootBench('fr')
     const before = await readFile(inst.config, 'utf8')
     const { browser, page } = await screen(inst.url, 'fr')
     expect(await enter(page, 'fr', '17')).toBeGreaterThanOrEqual(400)
-    await page.getByText('must be at most 16').waitFor({ timeout: 10_000 })
+    await within('the refusal message', page.getByText('must be at most 16').waitFor({ timeout: BROWSER_DEADLINE_MS }))
     expect(await readFile(inst.config, 'utf8')).toBe(before)
     await browser.close()
     await inst.stop()
-  }, 120_000)
+  }, BROWSER_TEST_TIMEOUT_MS)
 })
