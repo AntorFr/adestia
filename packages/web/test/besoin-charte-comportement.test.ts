@@ -218,21 +218,33 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
   })
 
   describe('E-14 configuration', { timeout: patience(60_000) }, () => {
-    const slow = async (page: Page) => {
-      await page.route('**/api/settings', async (route) => {
-        await new Promise((r) => setTimeout(r, 2500))
-        await route.continue()
-      })
+    // The settings request is held by a barrier the test lifts once it has looked at the spinner: no delay to outrun.
+    const gate = () => {
+      let lift!: () => void
+      const lifted = new Promise<void>((resolve) => { lift = resolve })
+      const slow = async (page: Page) => {
+        await page.route('**/api/settings', async (route) => {
+          await lifted
+          await route.continue()
+        })
+      }
+      return { lift, slow }
     }
 
     it('shows a spinner row before the form while the settings load (Q-23), then the form', async () => {
-      await visit(browser, 'config-writable', { route: '/settings/config', before: slow }, async (page) => {
+      const { lift, slow } = gate()
+      try {
+        await visit(browser, 'config-writable', { route: '/settings/config', before: slow }, async (page) => {
         // `visit` waits for .adestia-prefs and 600 ms: the request is still held
         const during = await page.evaluate(() => ({ spinner: document.querySelector('.adestia-prefs__page use[href="#adestia-i-loader-circle"]') !== null, controls: document.querySelectorAll('.adestia-prefs__page :is(input, select, textarea)').length }))
         expect(during).toEqual({ spinner: true, controls: 0 })
+        lift()
         await page.waitForSelector('.adestia-prefs__page :is(input, select, textarea)', { timeout: patience(15_000) })
         expect(await page.evaluate(() => document.querySelector('.adestia-prefs__page use[href="#adestia-i-loader-circle"]') !== null)).toBe(false)
-      })
+        })
+      } finally {
+        lift() // never leave the page hanging when the test fails before the assertion
+      }
     })
 
     const tileColour = (page: Page) =>
