@@ -809,3 +809,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
   `/rapport-tests.json`, the report that `attester` writes at the repository root, next to
   `.suite-attestee/` and `resultats.xml`, so `git status` stays clean after an attestation. A
   test checks it. Nothing changes for users.
+
+## v0.97.13
+
+- **Browser and load-sensitive tests now wait for states, or for a delay scaled by `ADESTIA_PATIENCE`** — the tests that turned red under the load of the full suite (chat rail, MCP removal, offline banner, refused page save, charter components, screen sweep) wait for the state they need instead of fixed pauses or 5 s limits, and `scripts/suite-attestee.sh` sets `ADESTIA_PATIENCE=4` for the test step. No assertion is removed. A test-only fix: nothing changes for users.
