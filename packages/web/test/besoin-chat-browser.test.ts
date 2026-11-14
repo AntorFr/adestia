@@ -18,6 +18,13 @@ const SHOTS = process.env.CHAT_SHOTS
 const SKINS = ['skippy', 'alfred', 'nestor', 'dobby']
 const THREAD = '00000000-0000-4000-8000-000000000100' // the seeded « Seeded decisions » thread (chat-permission)
 
+/**
+ * Longest wait for a screen of the bench to draw (chat, signature, words of the thread, question, sheet).
+ * The whole suite plays other browsers in parallel on the same pod, so a render that takes 1 s alone can
+ * take far longer under load; a wait is still over the moment the element shows, only the ceiling is wide.
+ */
+const RENDER_WAIT = 45_000
+
 type BrowserOf = Awaited<ReturnType<typeof newBrowser>>
 
 async function visit(browser: BrowserOf, base: string, o: { theme?: Theme; size?: Size; locale?: string; tabs?: string; seedStorage?: Record<string, string> }) {
@@ -38,7 +45,7 @@ async function visit(browser: BrowserOf, base: string, o: { theme?: Theme; size?
     { theme: o.theme ?? 'light', tabs: o.tabs, extra: o.seedStorage ?? {} },
   )
   await page.goto(`${base}/#/`, { waitUntil: 'domcontentloaded' })
-  await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
+  await page.waitForSelector('.adestia-chat', { timeout: RENDER_WAIT })
   await page.waitForTimeout(500)
   return { context, page }
 }
@@ -188,14 +195,14 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
             const shown = await page.evaluate(() => document.querySelector('.adestia-chat')?.getBoundingClientRect().width ?? 0)
             if (shown < 200) throw new Error('the chat is not visible on the phone')
           }
-          await page.locator('.adestia-sign').first().waitFor({ timeout: 15_000 })
+          await page.locator('.adestia-sign').first().waitFor({ timeout: RENDER_WAIT })
           for (const word of ['fini', 'outil', 'erreur', 'signature']) {
             await say(page, word)
-            await page.locator('.adestia-chat').getByText(word, { exact: true }).last().waitFor({ timeout: 15_000 })
+            await page.locator('.adestia-chat').getByText(word, { exact: true }).last().waitFor({ timeout: RENDER_WAIT })
             await page.waitForTimeout(1200)
           }
           await say(page, 'permission durable')
-          await page.locator('.adestia-ask').waitFor({ timeout: 15_000 })
+          await page.locator('.adestia-ask').waitFor({ timeout: RENDER_WAIT })
           for (const toggle of await page.locator('.adestia-trace__toggle').all()) await toggle.click()
           await page.evaluate(() => document.fonts.ready.then(() => undefined))
           await page.waitForTimeout(500)
@@ -219,7 +226,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
           await state('thread', '.adestia-chat')
           // E-18: the sheet
           await page.locator('.adestia-sign__go').first().click()
-          await page.locator('.adestia-sheet').waitFor({ timeout: 10_000 })
+          await page.locator('.adestia-sheet').waitFor({ timeout: RENDER_WAIT })
           await page.waitForTimeout(500)
           await state('sheet', '.adestia-sheet')
           await page.keyboard.press('Escape')
@@ -244,7 +251,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       beforeAll(async () => {
         en = await survey(skin, 'en', ALL)
         fr = await survey(skin, 'fr', FEW)
-      }, 900_000)
+      }, 2_400_000) // 6 screens × 8 waits at RENDER_WAIT each, the worst case, fits
 
       it('draws no native grey control in the rail, the question or the sheet, light and dark, desk and phone', () => {
         expect(en.flatMap((r) => r.native.map((n) => `${r.where}: ${n}`))).toEqual([])
@@ -519,7 +526,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       } finally {
         await context.close()
       }
-    })
+    }, 180_000)
 
     it('has no tabs on a phone: the list is the only navigation and it is full width', async () => {
       const { context, page } = await fresh({ size: 'phone' })

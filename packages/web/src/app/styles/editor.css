@@ -589,12 +589,17 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
 .adestia-blockgallery__list { overflow: auto; padding: 0 var(--space-3) var(--space-3); }
 .adestia-blockgallery__group-title { margin: var(--space-3) 0 var(--space-1); font-size: var(--text-xs); font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
 .adestia-blockgallery__cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-2); }
-.adestia-blockcard {
-  display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; padding: var(--space-2);
-  text-align: left; font: inherit; color: var(--text); background: var(--surface);
-  border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer;
+.adestia-blockcell {
+  display: flex; flex-direction: column; min-width: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
 }
-.adestia-blockcard:hover, .adestia-blockcard--active { border-color: var(--accent); }
+.adestia-blockcell:hover, .adestia-blockcell--active, .adestia-blockcell:focus-within { border-color: var(--accent); }
+.adestia-blockcell__views { padding: 0 var(--space-2) var(--space-2); }
+.adestia-blockcard {
+  display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; padding: var(--space-2); flex: 1 1 auto;
+  text-align: left; font: inherit; color: var(--text); background: transparent;
+  border: 0; border-radius: var(--radius-sm); cursor: pointer;
+}
 .adestia-blockcard:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .adestia-blockcard__image { width: 100%; height: 64px; object-fit: contain; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
 .adestia-blockcard__name, .adestia-blockcard__line { overflow-wrap: anywhere; }
@@ -602,3 +607,76 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
 .adestia-blockcard__line { font-size: var(--text-xs); color: var(--text-muted); }
 .adestia-blockgallery__empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); padding: var(--space-5) var(--space-3); text-align: center; }
 .adestia-blockgallery__hint { color: var(--text-muted); font-size: var(--text-sm); }
+
+/* The data form (E-35): a row per entry, one control per column, in the shared sheet. */
+.adestia-blockset__foot {
+  display: flex;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+.adestia-blockform__body { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.adestia-blockform__rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.adestia-blockform__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.adestia-blockform__row:focus-within { border-color: var(--accent-text); }
+.adestia-blockform__cells { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: var(--space-2); min-width: 0; }
+.adestia-blockform__cells .adestia-field { margin: 0; min-width: 0; position: relative; }
+.adestia-blockform__acts { display: flex; gap: var(--space-1); }
+.adestia-blockform__head { display: none; }
+/* Desk: one aligned grid, the column names once above it (the mock-up's rows); the phone keeps each field's own label. */
+@media (min-width: 641px) {
+  .adestia-blockform { --blockform-acts: 7.5rem; width: min(52rem, calc(100vw - 2 * var(--space-4))); }
+  .adestia-blockform__head {
+    display: grid;
+    grid-template-columns: var(--grid) var(--blockform-acts);
+    gap: var(--space-2);
+    padding: 0 calc(var(--space-2) + 1px);
+    margin-bottom: calc(var(--space-2) * -1);
+    font: 600 var(--text-xs) var(--font-mono);
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+  .adestia-blockform__rows:not(.adestia-blockform__rows--table) > .adestia-blockform__row {
+    grid-template-columns: minmax(0, 1fr) var(--blockform-acts);
+  }
+  .adestia-blockform__rows:not(.adestia-blockform__rows--table) .adestia-blockform__cells {
+    grid-template-columns: var(--grid);
+  }
+  .adestia-blockform__rows:not(.adestia-blockform__rows--table) .adestia-field__label {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+}
+.adestia-blockform__down svg { transform: rotate(180deg); } /* the charte list has one arrow */
+.adestia-blockform__rows--table { overflow-x: auto; }
+.adestia-blockform__rows--table .adestia-blockform__cells { grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); }
+.adestia-blockform__cols { display: flex; gap: var(--space-1); flex-wrap: wrap; }
+.adestia-blockform__add { display: flex; gap: var(--space-2); }
+.adestia-blockform__writes { margin: 0; color: var(--text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
+.adestia-blockform__writes code { font-family: var(--font-mono); }
+.adestia-blockform__raw { width: 100%; min-height: 12rem; font-family: var(--font-mono); }
+.adestia-blockform__stale { margin: 0; color: var(--danger-text); font-size: var(--text-sm); }
+.adestia-blockform__kept {
+  padding: var(--space-2);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: var(--text-xs);
+}
+.adestia-blockform__kept h3 { margin: 0 0 var(--space-1); font: 600 var(--text-xs) var(--font); }
+.adestia-blockform__kept ul { margin: 0; padding-left: var(--space-3); }
+.adestia-blockform__kept code { font-family: var(--font-mono); overflow-wrap: anywhere; white-space: pre-wrap; }
+
+/* E-6: the help line under a segmented control sits as under any field. */
+.adestia-blockset .adestia-field > .adestia-segmented { align-self: flex-start; max-width: 100%; }
+.adestia-blockset .adestia-field > .adestia-segmented--image { align-self: stretch; }

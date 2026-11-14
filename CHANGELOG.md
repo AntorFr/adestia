@@ -803,13 +803,121 @@ branch and that `test:plugins` is replayed after a red vitest run.
   suite. Five distinct timeouts name what never happened. No assertion is removed. A
   test-only fix: nothing changes for users.
 
+## v0.97.12
+
+- **The attestation report no longer dirties the working copy** — `.gitignore` now ignores
+  `/rapport-tests.json`, the report that `attester` writes at the repository root, next to
+  `.suite-attestee/` and `resultats.xml`, so `git status` stays clean after an attestation. A
+  test checks it. Nothing changes for users.
+
+## v0.98.0-adestia-pages.1
+
+- **The red vitest step of `epic/adestia-pages` is traced to three flaky tests** — the
+  `vitest` step that was red at 28e089c9 is attributed to three tests that fail only under
+  the load of the full suite, each already owned by its own correction. The finding is
+  recorded in `.agent/status.md`, along with the name of the epic's working branch. No code
+  and no test changed: nothing changes for users.
+
+## v0.98.0-adestia-pages.2
+
+- **The pages slice 1 is in: block gallery, move without the mouse** — the editor bar's
+  **Add block** opens a searchable sheet of block cards (plugins declare a `gallery` record
+  per block), a block moves with **Move up** / **Move down**, `Alt+↑/↓` or a long press then
+  a drag, a block chosen in the gallery lands with a default body, and a failed save reads
+  "Not saved" with **Retry**. The same entries stay under "Unreleased" until the epic enters
+  `main`.
+
+## v0.98.0-adestia-pages.3
+
+- **Three unstable tests of the pages slice wait for their state** — the 502/503/504 banner
+  case and the refused-save test (two instances) wait for what they judge instead of a fixed
+  pause, so they no longer turn red under the load of the full suite (task
+  `rouge-adestia-pages-1`). No code of the product changed: nothing changes for users.
+
+## v0.98.0-adestia-pages.4
+
+- **Two load-sensitive tests get a deadline that holds on a busy machine** — the tests of
+  `usePage` following the feed (30 s per test, 15 s per `waitFor`) and the P-2 tabs test of
+  the chat (180 s). Assertions and product code are unchanged: nothing changes for users.
+
+## v0.98.0-adestia-pages.5
+
+- **The epic's red tests are green again** — the CHANGELOG guard (B-5) finds an entry for every
+  pre-release tag and `.agent/status.md` cites the current one; the `etape > guards` step and
+  the refused-save test (Nestor, English) no longer turn red. Documentation only: nothing
+  changes for users (task `rouge-adestia-pages-3`).
+
+## v0.98.0-adestia-pages.6
+
+- **Core blocks redrawn** — `figures` reads as tiles or as one line (`view=inline`), and a
+  percentage figure draws a bar named for screen readers. An unknown `view` reads as the
+  block's default instead of an error.
+- **Block settings grouped** — the settings of a block are grouped (Look, Content, Layout,
+  Title and icon), labelled and helped in `en` or `fr`; a block's variants are drawn as small
+  pictures and a choice applies at once, in one undo step. The window sits beside its block so
+  the choice stays in view, and undo and redo reach the editor from it.
+- **Data form** — **Edit data** (with a **Raw** switch) fills in `figures`, `timeline`, `list`,
+  `table`, cards and any block whose manifest declares `fields`; **Apply** is one change.
+  The block gallery shows variants and opens the form after a data block is inserted.
+
+## v0.98.0-adestia-pages.7
+
+- **The epic's red tests are green again** — the CHANGELOG guard (B-5) finds an entry for the
+  `v0.98.0-adestia-pages.6` pre-release and `.agent/status.md` cites the current one; the
+  `etape > guards` step no longer turns red. Documentation only: nothing changes for users
+  (task `rouge-adestia-pages-5`).
+
+## v0.98.0-adestia-pages.8
+
+- **The epic's unstable browser tests are green again** — the "all /api/ calls fail" banner
+  case drains the calls in flight, provokes one failing call and waits for the second probe
+  instead of re-provoking in a loop; the lock-icon test waits for its badges; the charter
+  behaviour file gets a file-wide budget. Tests only: nothing changes for users (task
+  rouge-adestia-pages-6).
+
+## v0.98.0-adestia-pages.9
+
+- **The epic's red shell test is green again** — the "renders missing at 1440px unchanged"
+  case of the shell markup tests now imports the editor before it runs, so its wait is on the
+  screen and not on a module being transformed under load. Test only: nothing changes for
+  users (task `rouge-adestia-pages-7`).
+
+## v0.98.0-adestia-pages.10
+
+- **The epic's unstable MCP test is green again** — the "refetch after Save never shows
+  loading" case of the MCP editor tests waits for the declaration to fill the editor, then
+  for **Save** to be active, before it clicks. Test only: nothing changes for users (task
+  `rouge-adestia-pages-8`).
+
+## v0.98.0-adestia-pages.11
+
+- **The epic's unstable chat-skin test waits longer for its renders** — the render waits of
+  the chat matrix tests (`visit`, `survey`) all go through one named ceiling of 45 s instead of
+  10 to 20 s, so the "skin dobby" case no longer expires when the whole suite loads the machine.
+  Test only: nothing changes for users (task `rouge-adestia-pages-10-delais-survey`).
+
+## v0.98.0-adestia-pages.12
+
+- **The epic's unstable restart test waits by a deadline, not a poll count** — the helper of the
+  "owner saves 5" tests that waits for the restarted instance now waits up to 90 s instead of
+  100 polls of 200 ms, so a loaded suite no longer turns the boot into "never answered".
+  Test only: nothing changes for users (task `rouge-adestia-pages-11-delai-redemarrage`).
+
+## v0.98.0-adestia-pages.13
+
+- **The epic's unstable data-form timeline test waits for signals** — the case "timeline end date
+  equal to the start date is accepted" now waits for the "Due is before start" refusal and for
+  "Apply" to come back, instead of reading right after the fill and blur. The other unstable test
+  of the correction was already fixed on the epic and is unchanged.
+  Test only: nothing changes for users (task `rouge-adestia-pages-13`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
   read-only page) opens a sheet of cards, grouped and searchable, for every core block and
   every enabled plugin's; the `/` menu keeps its blocks and ends with "Browse", which opens
   the same sheet. Arrows and Enter choose by keyboard. The block lands after the block that
-  holds the selection, at the end of the page when none does. Its form and variants come later.
+  holds the selection, at the end of the page when none does. Its variants and the form of a data block came with the next slice (below).
 - **Move a block without the mouse** — In editing, a block moves with **Move up** / **Move down**
   on its bar (44 px on a phone), `Alt+↑/↓`, or a long press then a drag on a touch screen; a live
   region says "Moved to position 3 of 7". A block chosen in the gallery lands with a default body,
@@ -817,3 +925,21 @@ branch and that `test:plugins` is replayed after a red vitest run.
 - **Gallery contract for plugins** — A plugin manifest may carry a `gallery` record per block
   (`name`, `line`, `image`, `group`) so its block shows by name and line, not by identifier;
   `project-management` declares `timeline` and `subproject`. A disabled plugin's blocks are absent.
+- **Core blocks redrawn, `figures` gets `view`** — `figures` reads as tiles (default) or as one
+  line (`view=inline`); a tile whose figure is a percentage draws a bar named for screen readers
+  (`role="meter"`, 0–100, the label as its name) with nothing written for it. `list` keeps
+  `rows`, `cards`, `chips`. The default of a variant is never written unless the user chose it.
+  Blocks of `project-management` are not redrawn yet.
+- **Block settings redrawn** — The settings of a block are grouped *Look* (a block with several
+  `view`s, such as `figures` or `list`, shows them as small pictures), *Content*, *Layout* (width
+  as ⅓ ½ ⅔ Full, then « Show a box » Yes/No) and *Title and icon*, with a label and one line of
+  help in `en` or `fr`; only a plugin block's attribute shows its identifier. A variant or width
+  applies at once, in one undo step; a default is written only when chosen. Foreign attributes
+  sit last under « Other attributes », and the heading is absent when there are none.
+- **Data form for blocks** — **Edit data** at the foot of a block's settings opens a form for its
+  lines (`figures`, `list`, `table`, and any block whose manifest declares `fields`): one row per
+  entry, a field per column, **Move up** / **Move down** and `Alt+↑/↓`, **Remove row**, **Add**, the
+  line that will be written, and **Raw**. A bad value is refused under its field and **Apply** waits.
+  **Apply** is one change (one undo step); **Cancel**, ✕, Escape and the scrim drop it. A row left
+  alone is written back byte for byte, and a line the form cannot read stays where it was, listed
+  under "Kept as written". In `en` and `fr`.
