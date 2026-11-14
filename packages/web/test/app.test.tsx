@@ -782,7 +782,7 @@ describe('a page that will not load', () => {
     await waitFor(() => expect(screen.getByText('There is no page at this address.')).toBeTruthy(), { timeout: 20_000 })
     // Verbatim, because the address is the one thing that lets somebody see
     // their own typo — or an agent's.
-    expect(screen.getByText('sante/dietetique/reperes-proteines.md')).toBeTruthy()
+    expect(await screen.findByText('sante/dietetique/reperes-proteines.md')).toBeTruthy()
   }, 30_000)
 
   it('offers the folder above, which is where you look next', async () => {

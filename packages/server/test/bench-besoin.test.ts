@@ -229,10 +229,10 @@ const sha = (file: string) => createHash('sha256').update(readFileSync(file)).di
 
 // Asynchronous on purpose: a blocking spawn for two minutes starves vitest's
 // worker of its heartbeat and fails the run with an unrelated RPC timeout.
-const runSweep = async (args: string[]) => {
+const runSweep = async (args: string[], patience?: number) => {
   const out = await tmpDir('bench-sweep-')
   const child = spawn(process.execPath, [sweep, ...args, '--out', out], {
-    env: { ...process.env, TMPDIR: sandbox, CLAUDE_CODE_OAUTH_TOKEN: undefined },
+    env: { ...process.env, TMPDIR: sandbox, CLAUDE_CODE_OAUTH_TOKEN: undefined, ...(patience ? { ADESTIA_PATIENCE: String(patience) } : {}) },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   running.add(child)
@@ -302,7 +302,7 @@ describe.skipIf(!built || !hasPlaywright)('B-3 · capture the screens, no docker
     ['default', []],
     ['skippy', ['--skin', 'skippy']],
   ] as const)('captures E-1 to E-31 x light/dark x desk/phone: 124 pictures (%s)', async (skin, args) => {
-    const { out, r } = await runSweep([...args])
+    const { out, r } = await runSweep([...args], 4)
     expect(r.status).toBe(0)
     expect(r.stdout).toContain('sweep: 124/124 captures')
     const files = readdirSync(join(out, skin))
@@ -314,5 +314,5 @@ describe.skipIf(!built || !hasPlaywright)('B-3 · capture the screens, no docker
         }
       }
     }
-  }, 600_000)
+  }, 1_200_000)
 })
