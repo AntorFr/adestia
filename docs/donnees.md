@@ -273,7 +273,7 @@ No entity is added. A Page stays one markdown file. Three things change in its *
 none in the frontmatter:
 
 - **Containers** (AD-32): `section` and `columns`/`col` join the closed vocabulary; they hold blocks and
-  nest by fence length. A page without them is identical to today's.
+  nest by fence length (a container's fence is longer than its children's). The validator keeps their text and reports `container-depth`, `columns-count`, `columns-content` and `col-outside-columns`. `closed=fold` is the section's only attribute of its own; the reader's fold toggle is never written. A page without them is identical to today's.
 - **Display variants** (AD-35): a new value of `view` on existing blocks, and only that; an
   unknown value falls back to the block's default view, never to an error.
 - **Block data** keeps its line formats (AD-33); the forms read and write them.

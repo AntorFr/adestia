@@ -910,6 +910,12 @@ branch and that `test:plugins` is replayed after a red vitest run.
   "Apply" to come back, instead of reading right after the fill and blur. The other unstable test
   of the correction was already fixed on the epic and is unchanged.
   Test only: nothing changes for users (task `rouge-adestia-pages-13`).
+## v0.98.0-adestia-pages.7
+
+- **Sections and columns** — A page can hold foldable **Sections** and bands of two or three
+  **Columns**, added from the block gallery, and blocks move into, out of and between them
+  (drag, `Alt+←/→`, or the bar's arrows, which a phone can reach). A move that would nest too
+  deep is refused with its reason. A page without containers is written back exactly as before.
 
 ## Unreleased
 
@@ -925,6 +931,19 @@ branch and that `test:plugins` is replayed after a red vitest run.
 - **Gallery contract for plugins** — A plugin manifest may carry a `gallery` record per block
   (`name`, `line`, `image`, `group`) so its block shows by name and line, not by identifier;
   `project-management` declares `timeline` and `subproject`. A disabled plugin's blocks are absent.
+- **Sections and columns** — A page can hold a **Section** (a title, an optional icon, foldable; `closed=fold`
+  starts it folded) and a band of **Columns** (two or three, stacked in file order under 820 px), added from the
+  gallery and drawn in reading and editing; the fold is a reader's toggle, local to the screen and never written,
+  also on a read-only page; the band's settings choose 2 or 3 columns. Written as `:::section`, `::::columns` around
+  `:::col`; a section in a section or a column, or a band of other than two or three columns, is reported and its text
+  kept. A page without containers is written back exactly as before (a corpus of the bench's pages pins it). The gallery
+  card for `:::row` is now **Line break**, since **Columns** is the band.
+- **Move a block into, out of and between columns and sections** — `Alt+→` takes a block into the
+  section or column band that immediately follows it, `Alt+←` out to just after its container; the grip's
+  drag and the bar's four arrows (up, down, out, in; the arrows at a column's edge cross to the next
+  column, so a phone needs no drag) end in the same move. Moving a container moves what it holds. A
+  drop that breaks the depth rule (a section in a section or a column) keeps its line, marked, with the
+  reason beside it and in the live region, and writes nothing.
 - **Core blocks redrawn, `figures` gets `view`** — `figures` reads as tiles (default) or as one
   line (`view=inline`); a tile whose figure is a percentage draws a bar named for screen readers
   (`role="meter"`, 0–100, the label as its name) with nothing written for it. `list` keeps

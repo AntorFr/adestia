@@ -26,9 +26,13 @@ import {
   wrapInBlockTypeCommand,
 } from '@milkdown/kit/preset/commonmark'
 
+import { NodeSelection } from '@milkdown/kit/prose/state'
+
 import type { IconName } from '../app/icons.js'
 import { openSettingsOnNextBlock } from './blockview.js'
+import { CONTAINERS, freshContainer } from './containers.js'
 import { iconMarkup } from './dom-icon.js'
+import { insertionPos } from './insertionPoint.js'
 import { editorBlocks, pmId } from './vocabulary.js'
 
 /** Crepe's builder, named through the config that receives it. */
@@ -55,6 +59,8 @@ const ICONS: Readonly<Record<string, IconName>> = {
   table: 'table',
   list: 'list',
   row: 'corner-down-left',
+  section: 'chevron-down',
+  columns: 'panel-right-open',
 }
 
 /** What "Browse" says to the editor bar: open the gallery. */
@@ -73,9 +79,14 @@ const FALLBACK: IconName = 'sparkles'
  *
  * `app` stays out: the core's own table says nothing draws it, and offering a
  * block that renders as a notice is a dead end in a menu.
+ *
+ * `col` stays out too: a `col` set down outside `columns` is a
+ * `col-outside-columns` diagnostic, not a block — a column exists only in a band.
  */
+const NOT_INSERTABLE = new Set(['app', 'col'])
+
 function insertable(spec: BlockSpec): boolean {
-  return spec.name !== 'app'
+  return !NOT_INSERTABLE.has(spec.name)
 }
 
 /**
@@ -117,6 +128,20 @@ export function buildBlockMenu(builder: MenuBuilder, t: (key: string) => string 
         if (!nodeType) return
 
         const commands = ctx.get(commandsCtx)
+        if (CONTAINERS.has(spec.name)) {
+          // A container is built whole (a band comes with its columns) and set
+          // down where the gallery would put it, in place of the `/` typed.
+          commands.call(clearTextInCurrentBlockCommand.key)
+          const view = ctx.get(editorViewCtx)
+          const node = freshContainer(view.state.schema, spec.name)
+          if (!node) return
+          const { doc, selection } = view.state
+          const at = insertionPos(doc, { from: selection.from, to: selection.to, depth: selection.$from.depth }, spec.name)
+          const tr = view.state.tr.insert(at, node)
+          tr.setSelection(NodeSelection.create(tr.doc, at))
+          view.dispatch(tr.scrollIntoView())
+          return
+        }
         // The block about to exist opens its settings: it asks for what it
         // needs instead of appearing bare.
         openSettingsOnNextBlock()

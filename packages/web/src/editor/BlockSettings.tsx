@@ -20,6 +20,7 @@ import { type BlockSpec } from '@antorfr/adestia-content'
 
 import { Icon } from '../app/Icon.js'
 import { Button, Popover, Segmented } from '../app/ui/index.js'
+import { COLUMN_CHOICES } from './containers.js'
 import { FieldRow } from './FieldRow.js'
 import { VariantImage } from './VariantImage.js'
 
@@ -72,6 +73,14 @@ const VALUE_WORDS: Readonly<Record<string, string>> = {
   show: 'show',
 }
 
+/** A `columns` band's column count, set by the choice on the strip (B-28). */
+export interface ColumnsControl {
+  readonly count: number
+  /** False when the last column holds blocks: going back would delete them. */
+  readonly canShrink: boolean
+  readonly onChange: (count: number) => void
+}
+
 export interface BlockSettingsProps {
   /** The block's name, as written after `:::`. */
   readonly name: string
@@ -92,6 +101,8 @@ export interface BlockSettingsProps {
   /** The block itself: the window keeps off it so the effect of a choice stays in sight. */
   readonly avoid?: RefObject<HTMLElement | null>
   readonly onChange: (next: Record<string, string>) => void
+  /** Given for a `columns` band only. */
+  readonly columns?: ColumnsControl | undefined
   readonly onClose: () => void
   /** Opens the data form (E-35); absent for a block that declares no `fields`. */
   readonly onEditData?: (() => void) | undefined
@@ -107,6 +118,7 @@ export function BlockSettings({
   anchor,
   avoid,
   onChange,
+  columns,
   onClose,
   onEditData,
   t = (key) => key,
@@ -163,6 +175,37 @@ export function BlockSettings({
 
       {(about ?? spec?.description) && (
         <p className="adestia-blockset__about">{about ?? spec?.description}</p>
+      )}
+
+      {columns && (
+        <fieldset className="adestia-blockset__group">
+          <legend>{t('Columns')}</legend>
+          <div className="adestia-blockset__choice" role="group" aria-label={t('Number of columns')}>
+            {COLUMN_CHOICES.map((count) => {
+              // Going back to two is refused while the third holds something: no data is deleted.
+              const refused = count < columns.count && !columns.canShrink
+              return (
+                <Button
+                  key={count}
+                  small
+                  variant={count === columns.count ? 'accent' : 'neutral'}
+                  aria-pressed={count === columns.count}
+                  disabled={refused}
+                  aria-describedby={refused ? 'adestia-columns-why' : undefined}
+                  onClick={() => count !== columns.count && columns.onChange(count)}
+                >
+                  {count}
+                </Button>
+              )
+            })}
+          </div>
+          {columns.count > COLUMN_CHOICES[0] && !columns.canShrink && (
+            <p className="adestia-blockset__missing" id="adestia-columns-why">
+              <Icon name="circle-alert" />
+              {t('The last column holds blocks: empty it first. Nothing is deleted.')}
+            </p>
+          )}
+        </fieldset>
       )}
 
       {look?.values &&

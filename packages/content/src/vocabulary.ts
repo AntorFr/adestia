@@ -31,6 +31,13 @@ export type BlockContent =
    * two forms draw differently is two renderings wearing one word.
    */
   | 'optional'
+  /**
+   * Holds other BLOCKS, not prose (AD-32): a `section` holds blocks and
+   * columns, `columns` holds `col`, a `col` holds blocks. Written with a longer
+   * fence than its children. The validator judges what each may hold by its
+   * parent chain, not by this shape alone.
+   */
+  | 'container'
 
 export interface AttributeSpec {
   readonly required?: boolean
@@ -156,6 +163,34 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     name: 'row',
     content: 'empty',
     description: 'A line break between blocks that share lines: the next block starts a new line.',
+    attributes: {},
+  },
+  /**
+   * ── Containers (AD-32) ─────────────────────────────────────────────────────
+   * Depth is bounded: a section holds blocks and columns, a column holds
+   * blocks, never a section or columns, and a section never holds a section.
+   * `title` and `ico` are RESERVED, so the section's own are not declared here;
+   * `closed=fold` is its saved initial state (the reader's toggle is local).
+   * `w` inside a `col` is ignored at render time but stays in the file.
+   */
+  section: {
+    name: 'section',
+    content: 'container',
+    description: 'A titled stretch of the page that holds blocks and columns, and can start folded.',
+    attributes: {
+      closed: { values: ['fold'] },
+    },
+  },
+  columns: {
+    name: 'columns',
+    content: 'container',
+    description: 'A band of two or three columns side by side; holds `col` blocks only.',
+    attributes: {},
+  },
+  col: {
+    name: 'col',
+    content: 'container',
+    description: 'One column of a `columns` band; holds blocks, never a section or columns.',
     attributes: {},
   },
   gallery: {
