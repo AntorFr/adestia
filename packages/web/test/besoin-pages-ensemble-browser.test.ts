@@ -233,25 +233,27 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               await page.getByRole('button', { name: w.block }).first().click()
               await page.waitForSelector('.adestia-popover', { timeout: 10_000 })
               // The popover places itself in steps (hidden at 0,0, then placed, then re-placed as the form fills and fonts
-              // arrive): wait for the signal that it is settled — visible, and the same rectangle on 5 consecutive frames.
+              // arrive), and a band can appear or change height under load, which re-places the popover a frame later:
+              // wait for the signal that the WHOLE set is settled — popover visible, and the rectangles of the popover, the
+              // canvas header and every band, and the number of bands, identical on 5 consecutive frames.
               await page.waitForFunction(
                 () =>
                   new Promise<boolean>((resolve) => {
-                    const el = document.querySelector('.adestia-popover')
-                    if (!el) return resolve(false)
-                    const key = () => {
-                      const r = el.getBoundingClientRect()
+                    const box = (e: Element) => {
+                      const r = e.getBoundingClientRect()
                       return `${r.top}|${r.left}|${r.width}|${r.height}`
+                    }
+                    const key = (el: Element) => {
+                      const header = document.querySelector('.adestia-canvas__header')
+                      const bands = [...document.querySelectorAll('.adestia-problems')]
+                      return [box(el), header ? box(header) : 'no-header', String(bands.length), ...bands.map(box)].join('#')
                     }
                     let last = ''
                     let same = 0
                     const frame = () => {
-                      if (!el.isConnected || getComputedStyle(el).visibility === 'hidden') {
-                        same = 0
-                        last = ''
-                        return resolve(false)
-                      }
-                      const k = key()
+                      const el = document.querySelector('.adestia-popover')
+                      if (!el || !el.isConnected || getComputedStyle(el).visibility === 'hidden') return resolve(false)
+                      const k = key(el)
                       same = k === last ? same + 1 : 0
                       last = k
                       if (same >= 5) return resolve(true)
