@@ -136,8 +136,7 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
 - **Ancien contenu non converti** : `content{view=cards}` et les anciens filtres
   `checklist{view=…}` n'agissent plus ; ne pas relancer une migration close le 20/09.
 
-- **Garde de version** : tag stable sans entrée, titre non cité par `status.md` ou en avance de deux, restent
-  refusés ; une préversion `vX.Y.Z-serie.N` sans entrée ne l'est plus (l'entrée courait contre la fusion du tag).
+- **Garde de version** : tag stable sans entrée, titre non cité par `status.md` ou en avance de deux, restent refusés ; une préversion `vX.Y.Z-serie.N` sans entrée ne l'est plus (l'entrée courait contre la fusion du tag).
 
 ## Où regarder
 - [README.md](../README.md) et [CLAUDE.md](../CLAUDE.md) : lancer, tester, conventions.
