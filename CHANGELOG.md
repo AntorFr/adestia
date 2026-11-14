@@ -869,6 +869,14 @@ branch and that `test:plugins` is replayed after a red vitest run.
 
 ## v0.98.0-adestia-pages.8
 
+- **The epic's unstable browser tests are green again** — the "all /api/ calls fail" banner
+  case drains the calls in flight, provokes one failing call and waits for the second probe
+  instead of re-provoking in a loop; the lock-icon test waits for its badges; the charter
+  behaviour file gets a file-wide budget. Tests only: nothing changes for users (task
+  rouge-adestia-pages-6).
+
+## v0.98.0-adestia-pages.9
+
 - **The epic's red shell test is green again** — the "renders missing at 1440px unchanged"
   case of the shell markup tests now imports the editor before it runs, so its wait is on the
   screen and not on a module being transformed under load. Test only: nothing changes for
