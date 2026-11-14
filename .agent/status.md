@@ -6,12 +6,6 @@
   `adestia-ajouts` ; ses préversions `v0.97.0-adestia-ajouts.1` à `.12` sont posées sur sa branche) ; le tag précédent
   dans `main` était `v0.96.1` (correctif de la garde `besoin-pages-statique`, fusion de `adestia-correctif-garde-changelog`), avant lui `v0.96.0` (l'epic `adestia-correctifs`).
 - Branche de travail : `feature/adestia-pages-structure` (tranche 3 d'`adestia-pages`, sections et colonnes, voir la section ci-dessous ; pas encore livrée dans `epic/adestia-pages` : pas de tag tant que la phase merge n'a pas fusionné). Les branches `rouge-adestia-pages-*` précédentes sont au CHANGELOG.
-  (chargement et Réessayer du chat, E-16 ; marque de contexte perdu de Claude, AD-28 ; recette : `node bench/scenarios/chat-ajouts.mjs`).
-  Livré avant elle sur l'epic : chargement et Réessayer des plugins Atelier et Parcours, E-25 et E-28, AD-29 ; le bandeau hors ligne E-32, AD-27 (`node bench/scenarios/hors-ligne.mjs`) ; la page ouverte suit l'agent, AD-21 (`node bench/scenarios/page-suivie.mjs`) ;
-  chargement et Réessayer des écrans, AD-29 (`node bench/scenarios/chargements.mjs`) ; E-10 (chargement, Réessayer) et la confirmation E-33 avant de retirer un serveur MCP, AD-31 (aucun scénario de `bench/scenarios/`
-  ne les couvre ; après `npm run build`, ouvrir à la main `#/settings/mcp/<nom>` sur `node bench/launch.mjs --engine fake`).
-  Précédemment : les tranches des epics `adestia-correctifs` (`v0.96.0`) et `adestia-qualite` (`v0.95.0`) sont au
-  [CHANGELOG](../CHANGELOG.md), avec leurs restes dans Défauts connus ci-dessous.
 - Déploiement actuel des instances Alfred, Skippy et Nestor : **non attesté ici**. La dernière
   mention commune dans l'ancien état est v0.81.0 le 30/09 ; v0.87.2 est dite
   déployée le 15/10 sans détail par instance déployée. Cela ne prouve pas leur version actuelle.
@@ -20,11 +14,11 @@
 ## Tranche 3 d'`adestia-pages` : sections et colonnes (`feature/adestia-pages-structure`)
 Construit : `section`, `columns`, `col` imbriqués par la clôture (AD-32), lus (repli local jamais écrit, empilés sous 820 px), édités
 (galerie, choix 2/3 dans les réglages) et déplacés dans, hors et entre conteneurs (AD-structure-1). Corpus de B-31 :
-`packages/content/test/fixtures/corpus/`, 175 pages ; ses `.out` épinglent la réécriture de `main` (71 non canoniques), ses `.html` le DOM du
-lecteur ; `CORPUS_WRITE=1` ne les régénère que si une page doit changer, et il faut le dire. Pièges : la carte de `:::row` s'appelle
+`packages/content/test/fixtures/corpus/`, 200 pages (`.md`, 200 `.html`) ; 79 `.out` épinglent la réécriture de `main` pour les pages non canoniques, ses `.html` le DOM du
+lecteur ; `CORPUS_WRITE=1` ne les régénère que si une page doit changer, et le commit le dit. Voir une page à colonnes : `node bench/launch.mjs --engine fake --seed pages`, puis ajouter Section ou Colonnes depuis la galerie (`/`). Pièges : la carte de `:::row` s'appelle
 « Line break » ; le code dit `range` là où l'AD disait `bounds` ; une insertion écrit des paragraphes vides, normalisés à la relecture ;
 `adestia-section`/`adestia-fold` existent déjà, d'où `adestia-block-section` ; à 1280 px la raison d'un refus est tronquée à droite (la zone live
-la dit en entier) ; ni `fr`, ni sombre, ni téléphone regardés pour l'édition. E-6 reste en champs séparés (tranche 2).
+la dit en entier) ; ni `fr`, ni sombre, ni téléphone regardés pour l'édition.
 
 ## Défauts connus
 
