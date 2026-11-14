@@ -93,7 +93,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 
 | E-n | Name | Route or where it opens | Component file(s) | What it is for | Journeys |
 |---|---|---|---|---|---|
-| E-1 | Gates | instead of the shell, before `/api/instance` answers or when it refuses | `app/Gates.tsx` (`RefusedGate`, `SignInGate`, `FatalGate`, `LoadingGate`), `useInstance.ts` | Say why the shell is not there: loading, sign in (OIDC 401), not allowed (403), could not start | P-1 |
+| E-1 | Gates | instead of the shell, before `/api/instance` answers or when it refuses | `app/Gates.tsx` (`RefusedGate`, `SignInGate`, `FatalGate`, `LoadingGate`), `useInstance.ts` | Say why the shell is not there: loading, sign in (OIDC 401), not allowed (an OIDC account in no allowed group, shown with its name), could not start | P-1 |
 | E-2 | Home | `#/` | `app/Home.tsx`, `Brief.tsx`, `Domains.tsx`, `Tile.tsx`, `useReorder.ts`, `SkinSlot.tsx` (hero), `styles/home.css`, `tiles.css` | Greeting and "ask" button (focuses the composer), the agent's brief (« À la une »), the Domains mosaic (plugin tiles, folder tiles, the Settings tile), Arrange mode | P-4, P-11 |
 | E-3 | Section | `#/section/<folder>` | `app/Section.tsx`, `sections.ts`, `styles/home.css` | A folder: header, stores, sub-rooms (`Inside`), searchable and facetable page cards, `Finished` archive | P-4 |
 | E-4 | Page (reader and editor) | `#/page/<path>` | `editor/Editor.tsx`, `useAutosave.ts`, `SaveStatus.tsx`, `Reader.tsx`, `reader/`, `milkdown.ts`, `toolbar.ts`, `slash.ts`, `blockview.tsx`, `frontmatterview.tsx`, `Attachments.tsx`, `usePage.ts`, `styles/editor.css`, `reader.css`, `crepe.css` | Read a page (rendered blocks, wikilinks, attachments strip); the `pencil` control opens the Milkdown editor with toolbar, slash menu, block bars; autosave; `Done` | P-5, P-6 |
@@ -169,7 +169,7 @@ columns are the same except where the instance's configuration decides what exis
 
 | E-n | Has today | Lacks |
 |---|---|---|
-| E-1 | loading (`LoadingGate`: spinner and "Loading…"), sign-in, refused, fatal; four cards with an icon each, every string through `t()` | — |
+| E-1 | loading (`LoadingGate`: spinner and "Loading…"), sign-in, refused (names the account: « Connecté en tant que <name> — ce compte n'a pas accès à cette instance », button **Sign out** / « Se déconnecter »), fatal; four cards with an icon each, every string through `t()`; no new component (`Gate`, `Button`), no new token, both themes, desk and phone | — |
 | E-2 | loading (`.adestia-loading`, spinner and translated Loading…), normal, shared empty state (after ready), with/without brief, with/without hero, Arrange mode | — |
 | E-3 | normal, shared empty/no-match states ("This section holds nothing yet." / "Nothing matches."), facet chips, finished archive, multi-store marks, loading (the shared row while the shell's index has not answered, no Retry) | — |
 | E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=`, loading while the page is fetched (`Loading` only when no page is held, page to page keeps the first on screen), fetch-failed shows E-8 with Retry, reading refreshed in place when the agent rewrites the file, E-8 when it deletes or moves it, editing: the banner "The page changed." with **Reload** (the typed text is never replaced; the user's own save raises none; a watch that is off moves nothing) | an empty-page state |

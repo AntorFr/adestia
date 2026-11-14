@@ -1238,6 +1238,49 @@ its report names that commit and the ruleset id, and if the token cannot, it is 
 on a pushed head that contains `origin/main`, and replaces its mentions of CI; `docs/parcours.md`
 P-15 step 2 and the Tests line of *Cross-cutting* follow.
 
+## Decisions of adestia-acces-refuse
+
+An OIDC account that is in no allowed group used to meet a bare JSON 403 at `/auth/callback`, and
+signing out left the identity provider's SSO cookie alive. Two decisions fix both; the server
+stays stateless (two signed cookies, no session table).
+
+### AD-acces-refuse-1 — A refused login leaves a short signed `adestia_refused` cookie, and the shell asks who it was
+
+`/auth/callback`, when `isAllowed` fails, no longer answers `403 {"error": …}` to a browser. It
+sets `adestia_refused` (signed like the session cookie, `path: /`, `httpOnly`, `sameSite: lax`,
+`secure` as for the session, ten-minute ceiling) carrying `displayName`, `userId` and the `id_token`
+(the logout hint), clears the login cookie, sets no session, and redirects to `/`. The shell then
+gets 401 from `/api/instance` as for any anonymous caller; on a 401 it asks the new
+`GET /auth/refused`, which answers `{ displayName }` from that cookie (200) or 401 without it.
+With an answer, E-1 shows the refused gate naming the account; without, the sign-in gate as
+today. Other callback failures (no sign-in in progress, provider down, expired login) keep their
+JSON answers: they are not a refused account. A cookie that is forged, expired or absent is just
+absent. *Rejected:* a server-rendered HTML page (outside the charte and the `t()` locales);
+a session for the refused account that `/api/instance` answers 403 on (a refused account would
+hold a session cookie the whole instance must then remember to distrust). *Reversed if:* the id
+token pushes the cookie past the 4 KB a browser keeps; then the hint is dropped and logout falls
+back as AD-acces-refuse-2 describes.
+
+### AD-acces-refuse-2 — `POST /auth/logout` also ends the provider's session
+
+`POST /auth/logout` clears `adestia_session` and `adestia_refused`. For a document request
+(`Accept: text/html`) under OIDC it then asks the discovered provider for its
+`end_session_endpoint` and redirects there (RP-initiated logout), with `client_id`,
+`id_token_hint` when the refused cookie carries one, and `post_logout_redirect_uri`
+(`auth.oidc.postLogoutRedirectUri`, default `<origin of redirectUri>/`; the empty string sends
+none). The session cookie does not keep the id token (it is already near the size limit with
+groups), so a signed-in sign-out sends `client_id` alone. Back at `/`, a visitor with no session
+meets the sign-in gate, and **Sign in** reaches the provider's login screen. When the provider
+advertises no `end_session_endpoint`, or discovery fails, the redirect goes to `/auth/login?switch=1`,
+which adds `prompt=login` to the authorization request so the provider asks for credentials even
+with its SSO cookie; the fetch form (`Accept` other) still answers `{signedOut: true}`. The route
+is the one the cog menu's **Sign out** (E-15) already posts to, so an authorised account signs out
+of the provider too: the same mechanism, not a second one. `OidcClient` gains
+`endSessionUrl(hint?)` next to `beginLogin`. *Needs from the deployment, not from this repo:* the
+provider's client lists the post-logout redirect URI; this tranche changes no provider
+configuration. *Rejected:* clearing the session only and relying on `prompt=login` always (a
+provider that ignores `prompt` reconnects the same account silently).
+
 ## Refactoring targets
 
 Each target: what, where, why it costs, the tranche that owns it, and its outcome
