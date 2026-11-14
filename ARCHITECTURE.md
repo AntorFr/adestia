@@ -1258,7 +1258,7 @@ JSON answers: they are not a refused account. A cookie that is forged, expired o
 absent. *Rejected:* a server-rendered HTML page (outside the charte and the `t()` locales);
 a session for the refused account that `/api/instance` answers 403 on (a refused account would
 hold a session cookie the whole instance must then remember to distrust). *Reversed if:* the id
-token pushes the cookie past the 4 KB a browser keeps; then the hint is dropped and logout falls
+token pushes the cookie past 4000 characters (`COOKIE_LIMIT`, under the 4 KB a browser keeps); then the hint is dropped and logout falls
 back as AD-acces-refuse-2 describes.
 
 ### AD-acces-refuse-2 — `POST /auth/logout` also ends the provider's session
