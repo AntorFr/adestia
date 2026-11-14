@@ -4,7 +4,7 @@
  * and Home before they were split by lifetime; the split must not move them.
  */
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
 import { App } from '../src/app/App.js'
 
@@ -43,6 +43,11 @@ const fetchImpl = ((url: string) => {
   if (u.startsWith('/api/pages/')) return Promise.resolve(json({}, 404))
   return Promise.resolve(json({ entries: PAGES, conversations: [] }))
 }) as unknown as typeof fetch
+
+// The first case that opens a page pays for importing the editor; pay it here, not inside a waitFor.
+beforeAll(async () => {
+  await import('../src/editor/milkdown.js')
+}, 60_000)
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
