@@ -253,9 +253,9 @@ export function Editor(props: EditorProps) {
   useEffect(() => {
     if (!editing) setGallery(false)
   }, [editing])
-  const choose = (name: string) => {
+  const choose = (name: string, view?: string) => {
     setGallery(false)
-    insertFromGallery(host.current, name)
+    insertFromGallery(host.current, name, view)
   }
 
   /*

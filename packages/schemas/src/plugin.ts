@@ -91,8 +91,10 @@ export type PluginGalleryText = string | { readonly en: string; readonly fr?: st
  *
  * Keyed by block name in `PluginManifest.gallery`; `blocks` stays the path of
  * the rendering module and `vocabulary` the grammar, so nothing is renamed.
- * `fields` and `view` are accepted and carried but not read yet: the block
- * form and the variants extend this contract later.
+ * `fields` (the typed columns of the block's lines, AD-forms-1) and `view` (its
+ * variants, AD-35) are read when well formed and dropped, never refused, when
+ * not: a `fields` naming a line format the shell has no codec for simply gives
+ * no form.
  */
 export interface PluginGalleryEntry {
   /** What the card is called. */
@@ -103,10 +105,37 @@ export interface PluginGalleryEntry {
   readonly image: string
   /** `Text`, `Data`, `Layout`, `Project`, or the plugin's own name. */
   readonly group: string
-  /** The block's form — not read yet. */
-  readonly fields?: unknown
-  /** The block's variants — not read yet. */
-  readonly view?: unknown
+  /** The block's form: its columns and the line format they are written in. */
+  readonly fields?: PluginGalleryFields
+  /** The block's variants: the closed set of values of its `view` attribute. */
+  readonly view?: PluginGalleryView
+}
+
+/** The four line formats that exist, one codec each in the shell (AD-forms-1). */
+export const GALLERY_LINE_FORMATS = ['label-value-caption', 'label-range', 'label-value', 'table'] as const
+export type PluginGalleryLine = (typeof GALLERY_LINE_FORMATS)[number]
+
+export const GALLERY_COLUMN_KINDS = ['text', 'number', 'date', 'link'] as const
+type PluginGalleryColumnKind = (typeof GALLERY_COLUMN_KINDS)[number]
+
+export interface PluginGalleryColumn {
+  readonly key: string
+  readonly kind: PluginGalleryColumnKind
+  readonly label: PluginGalleryText
+  readonly required?: boolean
+}
+
+export interface PluginGalleryFields {
+  /** Empty for `table`, whose columns are the ones the written table has. */
+  readonly columns: readonly PluginGalleryColumn[]
+  readonly line: PluginGalleryLine
+}
+
+export interface PluginGalleryView {
+  /** The variants; at least two. */
+  readonly values: readonly string[]
+  /** The value that is never written without the user choosing it. */
+  readonly default: string
 }
 
 /**

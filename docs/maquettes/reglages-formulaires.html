@@ -3,10 +3,10 @@
 <p class="lead">Left: the settings popover, redrawn: grouped, labelled in the user's language, variants as pictures, effect live on the block behind. Right: <b>Edit data</b> opens the form in the shared sheet; the lines stay one click away (<b>Raw</b>). Today the popover lists attribute names and the data is typed as markdown.</p>
 <div class="show wide" data-sets="desk-light desk-dark" data-tpl="a"></div>
 <template id="a"><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-<div><div class="bl card sel" style="margin-top:14px"><div class="bar"><button class="on"><i data-i="set"></i></button><button><i data-i="pen"></i>Edit data</button></div><div class="figs tiles"><div class="fig"><span>Progress</span><b>62 %</b><div class="meter"><i style="width:62%"></i></div></div><div class="fig"><span>Open</span><b>14</b></div></div></div>
+<div><div class="bl card sel" style="margin-top:14px"><div class="bar"><button class="on"><i data-i="set"></i></button></div><div class="figs tiles"><div class="fig"><span>Progress</span><b>62 %</b><div class="meter"><i style="width:62%"></i></div></div><div class="fig"><span>Open</span><b>14</b></div></div></div>
 <div class="pop"><h4><i data-i="set"></i>Figures</h4>
 <div class="fld"><label>Title</label><div class="in">Key numbers</div></div>
-<div class="fld"><label>Look</label><div class="var"><div class="on"><div class="th cd"><i style="background:var(--accent-quiet)"></i><i style="background:var(--accent-quiet)"></i></div>Tiles</div><div><div class="th"><i></i></div>Inline</div><div><div class="th"><i class="a" style="background:var(--accent)"></i><i></i></div>Meter</div></div></div>
+<div class="fld"><label>Look</label><div class="var"><div class="on"><div class="th cd"><i style="background:var(--accent-quiet)"></i><i style="background:var(--accent-quiet)"></i></div>Tiles</div><div><div class="th"><i></i></div>Inline</div></div></div>
 <div class="fld"><label>Width</label><div class="seg"><span>⅓</span><span>½</span><span>⅔</span><span class="on">Full</span></div></div>
 <div class="fld"><label>Show a box</label><div class="seg"><span class="on">Yes</span><span>No</span></div><small>A border and a raised background around the block.</small></div>
 <div style="display:flex;gap:8px"><button class="btn sec"><i data-i="pen"></i>Edit data</button><button class="btn dng"><i data-i="trash"></i>Remove block</button></div></div></div>
@@ -19,11 +19,10 @@
 <button class="btn sec"><i data-i="plus"></i>Add a figure</button>
 <div style="display:flex;justify-content:space-between;margin-top:18px;align-items:center"><span class="faint" style="font-size:12px">Writes: <span class="mono">- Late: 3</span></span><span style="display:flex;gap:8px"><button class="btn sec">Cancel</button><button class="btn pri"><i data-i="check"></i>Apply</button></span></div></div></div>
 </div></template>
-<h2>Other typed forms — timeline row (dates), list row (status), table (cells)</h2>
+<h2>Other typed forms — timeline row (dates), list row, table (cells)</h2>
 <div class="show" data-sets="desk-light desk-dark phone-light phone-dark" data-tpl="b"></div>
 <template id="b"><div class="sheet"><div class="sh2"><i data-i="tl"></i>Planning — phases</div><div class="sb2">
 <div class="fld"><label>Phase</label><div class="in">Works</div></div>
-<div style="display:flex;gap:8px"><div class="fld" style="flex:1"><label>Starts</label><div class="in">1 Mar 2026</div></div><div class="fld" style="flex:1"><label>Ends</label><div class="in">30 Apr 2026</div></div></div>
-<div class="fld"><label>Status</label><div class="seg"><span>Planned</span><span class="on">Under way</span><span>Done</span></div></div>
-<button class="btn sec"><i data-i="plus"></i>Add a phase</button></div></div></template>
+<div style="display:flex;gap:8px"><div class="fld" style="flex:1"><label>Starts</label><div class="in">1 Mar 2026</div></div><div class="fld" style="flex:1"><label>Due</label><div class="in">30 Apr 2026</div></div></div>
+<button class="btn sec"><i data-i="plus"></i>Add</button></div></div></template>
 </div><script src="maquette.js"></script>

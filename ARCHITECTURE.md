@@ -1,13 +1,13 @@
 # Adestia — architecture
 
-> Product documentation. On a feature branch of `adestia-pages` (AD-32 to AD-36) it adds that tranche on top of `epic/adestia-pages`; only what a tranche built is built (tranche 1: AD-34 and AD-36 for the page root, and the gallery; tranche 3: sections and columns, AD-32, and the move into, out of and between them, AD-structure-1). "Gallery" means the block gallery sheet (E-34) and the `gallery` key of a plugin manifest, never the `:::gallery` image block. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
+> Product documentation. On a feature branch of `adestia-pages` (AD-32 to AD-36) it adds that tranche on top of `epic/adestia-pages`; only what a tranche built is built (tranche 1: AD-34 and AD-36 for the page root, and the gallery; tranche 2: AD-33 and AD-35, block variants, settings and data forms; tranche 3: sections and columns, AD-32, and the move into, out of and between them, AD-structure-1). "Gallery" means the block gallery sheet (E-34) and the `gallery` key of a plugin manifest, never the `:::gallery` image block. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
 > `main`, exactly what is built. On a feature branch of `adestia-correctifs` (e.g. the chat tranche, AD-23) it adds that tranche on top of `epic/adestia-correctifs`; nothing is in `main` until the epic merges. An epic is a group of features delivered together; a tranche is one of them. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
 > (journeys, `docs/parcours.md`), `E-n` (screens, `docs/ecrans.md`), `AD-n` (decisions,
 > this file), `R-n` (refactoring targets, this file).
 >
 > Written by the epic `adestia-qualite` (2026-10-15), a quality pass that changes **no
 > behaviour**. Decisions taken BEFORE this epic live in `DESIGN.md` › Decision log, which is
-> not renumbered; `AD-n` starts at `AD-1` with this epic. The epic `adestia-correctifs` (AD-15 onward) then repairs the defects this pass listed and does change behaviour, each repair named in the CHANGELOG; `AD-21` is taken by the epic `adestia-ajouts`, hence the gap before AD-22. The map below is the code as first
+> not renumbered; `AD-n` starts at `AD-1` with this epic. The epic `adestia-correctifs` (AD-15 onward) then repairs the defects this pass listed and does change behaviour, each repair named in the CHANGELOG; `AD-21` is taken by the epic `adestia-ajouts`, and sits further down the file, after AD-22. The map below is the code as first
 > documented at the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated for the completed charter, pages, chat, plugins, tests and server tranches; the repository's later tags (`git tag`) mark releases, not this map.
 
 ## Overview
@@ -46,8 +46,8 @@ Outside `packages/`:
   `page-author`, `persona-author`, `schedule-author`, `collections`), delivered to the agent.
 - `bench/` — screenshot bench: `run.sh` builds the image and drives Chromium in docker,
   `bench.mjs` and `scenarios/`; `live-codex.sh` boots a real Codex engine. Without docker:
-  `launch.mjs` (fake or real engine), `fake-engine.mjs`, `seed/`, `oidc-stub.mjs` and `sweep.mjs`
-  (see the AD-2 and AD-3 detail below).
+  `launch.mjs` (fake or real engine), `fake-engine.mjs`, `seed/`, `oidc-stub.mjs`, `sweep.mjs` and its
+  `lib/capture.mjs` (see the AD-2 and AD-3 detail below).
 - `spikes/` — validation record (editor, concurrency, copilot-cli, codex-cli, esm-runtime,
   shell-tools-transport); not linted, not shipped.
 
@@ -215,7 +215,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). No workflow plays the suite: `scripts/suite-attestee.sh` (typecheck, lint, tests, the build and a start of the built server), declared by `tests:` in `.sdlc.yaml`, is played by `attester --publier`, which sets the `tests-complets` status (AD-preuve-1).
+  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). No workflow plays the suite: `scripts/suite-attestee.sh` (typecheck, lint, tests, the build and a start of the built server), declared by `tests:` in `.sdlc.yaml`, is played by `attester --publier`, which sets the `tests-complets` status (AD-preuve-1). The waits of `bench/sweep.mjs` (but for one 700 ms settling pause) and of seven browser suites (`besoin-charte-comportement`, `besoin-chat-browser`, `besoin-pages-ensemble-browser`, `besoin-mcp-browser`, `besoin-hors-ligne-bords`, `besoin-hors-ligne-browser`, `besoin-tours`) are scaled by one factor, `ADESTIA_PATIENCE` (an integer, 1 by default; `scripts/suite-attestee.sh` sets 4 on the vitest step): in those suites a Playwright delay goes through `patience()` of `packages/web/test/patience.ts`, never a literal, and a `waitForTimeout` that remains is a pause (it is scaled too, `waitForTimeout(patience(250))`) with a `// pause fixe : <reason>` comment above it, saying it is not a wait for a signal. A value that is not an integer of at least 1 reads as 1. The other browser suites and helpers (among them `besoin-pages-browser`, `ensemble-hors-ligne-browser`, `besoin-charte-browser`, `besoin-chat-narrow-browser`, `besoin-chargements-browser`, `besoin-hors-ligne-flux` and the helper `charte-browser.ts`; the list is not exhaustive) still use literal delays; a new browser test follows the rule. A test that is red in the full suite and green alone measures the load, not the product.
 
 ## Decisions of adestia-qualite
 
@@ -286,7 +286,7 @@ stops shipping Playwright.
   `bench/shots-sweep`, ignored by git). A screen table in the script lists, per `E-n`, the
   route, the gesture that opens it and the **selector that proves it is that screen**; a capture
   whose selector is absent, or that shows `.adestia-gate__card--fatal` or a loading state, fails the sweep
-  and names the screen. The sweep exits non-zero on any failure and prints a count.
+  and names the screen. The capture of one screen lives in `bench/lib/capture.mjs` (a module of its own, because `bench/sweep.mjs` runs its sweep as soon as it is imported): every wait for the chat shell, the phone's shell screen or the screen's proof selector lasts `APPEAR_MS` (60 s), and a capture whose wait ran out is retried once in a fresh context, so a busy pod does not fail a sweep by itself. Only that timeout is retried: a loading or fatal screen, a capture file under 500 bytes, or a timeout in a gesture's own wait (editor, composer, click, service-worker cache, `page.goto`) fails at once. After a second timeout the screen's remaining captures are not tried and are counted as failures (`FAIL … not tried`). The sweep exits non-zero on any failure and prints a count.
 - **docker.** `bench/run.sh` and `bench/bench.mjs` are untouched except that the Playwright
   import falls back from `/usr/lib/node_modules` to the global root. Scenarios keep working.
 
@@ -378,7 +378,7 @@ regression test `bench/tests/doc-besoin.test.mjs` checks relative Markdown link 
 (excluding package tests, nested spike documents and skills) and collects `var(--x` uses in CSS
 under `packages/web/src` and `plugins/*/web`, subtracts definitions in CSS, skins and
 scripts, and reports any remainder. Run it with
-`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5 (B-5: the last CHANGELOG title is the latest git tag or the next version of the same series, `status.md` cites that title, and no existing tag lacks its entry — only tags merged into HEAD (`git tag --list 'v*' --merged HEAD`) count, so the tags of an epic not yet merged do not turn `main` red; the rule is the pure `checkVersions` of `bench/tests/lib/doc-version.mjs`, pinned by `doc-version.test.mjs`, and `scripts/suite-attestee.sh` fetches tags when the clean checkout has none). Skin declarations
+`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5 (B-5: after a stable tag the last CHANGELOG title is that tag or its next version; after a series pre-release `vX.Y.Z-serie.K` it is `vX.Y.Z-serie.J` with `J <= K+1` (it may lag, one ahead at most) or `vX.Y.Z`; `status.md` cites that title, and no existing *stable* tag lacks its entry (a pre-release owes none: its entry races the merge that lays the tag) — only tags merged into HEAD (`git tag --list 'v*' --merged HEAD`) count, so the tags of an epic not yet merged do not turn `main` red; the rule is the pure `checkVersions` of `bench/tests/lib/doc-version.mjs`, pinned by `doc-version.test.mjs`, and `scripts/suite-attestee.sh` fetches tags when the clean checkout has none). Skin declarations
 and JS/TSX inline parameters count as definitions outside those stylesheets;
 this does not mean the CSS-only difference is empty.
 
@@ -1236,7 +1236,7 @@ phone's text selection on the bench — then the buttons are the touch path and 
 of **enabled** plugins only (the loader already reads only those: a disabled plugin has no record to list). The `/` menu
 (`slash.ts`) keeps its list and gains "Browse" as its last item; both insert through the one position model: after the focused block, end of
 the page when none, end of the container when the focus is a container (tranche 3). `packages/schemas/src/plugin.ts` validates `gallery`
-(`name`, `line`, `image`, `group`; `fields` and `view` optional and not read yet), and a plugin block with no record shows its identifier.
+(`name`, `line`, `image`, `group`; `fields` and `view` optional, read by the shell as AD-forms-1 and AD-35 say), and a plugin block with no record shows its identifier.
 The gallery is a sheet (`.adestia-sheet*`, bottom sheet on a phone) like the other sheets of the shell; no new component family.
 *Rejected*: deriving the cards from the `/` menu labels (no image, no line, no group).
 
@@ -1265,6 +1265,14 @@ The fold toggle (`reader/Containers.tsx`) is a React state of the reader, keyed 
 *Rejected*: a second keyboard path; persisting the fold per user (a stored datum the epic does not have); letting an
 emptied `col` disappear (it would change a `columns` from 3 to 2 silently).
 *Reversed if*: the fork cannot nest directives (AD-32); it can, so the tranche was built whole.
+### AD-forms-1 — A `fields` entry is a list of typed columns plus a line codec
+*(tranche `adestia-pages-blocs-formulaires`, refines AD-33.)* The `fields` of a block's `gallery` entry (core table or plugin manifest) is `{ "columns": [{ "key", "kind": "text|number|date|link", "label", "required"? }], "line": "label-value-caption | label-range | label-value | table" }`. The contract accepts `link`, but no block declares it and the form draws it as a plain text field. `line` names one of four codecs written once in the shell (`editor/blockform/`), one per line format that exists today; it is not a free template, so no plugin can invent a line format the reader does not parse. `label` is a string or an `{en, fr}` pair, as in the template declarations. A plugin that declares a `fields` without a known `line` has it ignored (no **Edit data**), never an error. *Rejected*: a per-block form component (a plugin block gets no form); a format string (a second grammar). *Reversed if*: a block needs a column kind the four cannot say.
+
+### AD-forms-2 — The form edits rows; lines it cannot read ride along
+A codec reads the block's lines into `rows` and `kept` (a line it cannot read, with its index). Writing returns the lines with each kept line at its index and the rows around it, so a round trip of an unedited block is byte-identical and a hand-written line is never dropped. **Raw** edits the same lines directly, with the page's own bullet (`-`: the editor's serializer spells `*`), and an empty **Raw** is written as one empty bullet, since the server refuses a block with no body. The round trip (`lines → rows → lines`) is tested per codec against fixtures written by hand in the format of before the epic.
+
+### AD-forms-3 — Apply is one document change
+**Apply** and each variant or width choice in E-6 go through `blockview.tsx` (`write` for E-6, `applyLines` for the form): one transaction, one undo step, written by the editor's normal save. The form holds its state in the sheet until Apply; E-6 writes at once. No server route is added.
 
 ## Decisions of adestia-preuve-tests
 

@@ -7,7 +7,7 @@
  * identifier: an unlisted block would be one nobody could insert.
  */
 
-import type { PluginGalleryText } from '@antorfr/adestia-schemas'
+import type { PluginGalleryFields, PluginGalleryText, PluginGalleryView } from '@antorfr/adestia-schemas'
 
 import { CORE_GALLERY, type Locale } from './galleryTable.js'
 
@@ -17,7 +17,17 @@ export interface GalleryPlugin {
   readonly base: string
   readonly blockNames?: readonly string[] | undefined
   readonly gallery?: Readonly<
-    Record<string, { name: PluginGalleryText; line: PluginGalleryText; image: string; group: string }>
+    Record<
+      string,
+      {
+        name: PluginGalleryText
+        line: PluginGalleryText
+        image: string
+        group: string
+        fields?: PluginGalleryFields | undefined
+        view?: PluginGalleryView | undefined
+      }
+    >
   > | undefined
   /** The plugin's own translations of its English sentences. */
   readonly words?: Readonly<Record<string, string>> | undefined
@@ -33,6 +43,10 @@ export interface GalleryCard {
   readonly group: string
   /** `core` or the plugin's id. */
   readonly source: string
+  /** Its variants, when it has several. */
+  readonly view?: PluginGalleryView
+  /** Its form columns and line codec, when it declares them. */
+  readonly fields?: PluginGalleryFields
 }
 
 function say(text: PluginGalleryText, locale: Locale, words?: GalleryPlugin['words']): string {
@@ -56,6 +70,8 @@ export function galleryCards(plugins: readonly GalleryPlugin[], locale: Locale):
       image: card.image,
       group: card.group[locale],
       source: 'core',
+      ...(card.view ? { view: card.view } : {}),
+      ...(card.fields ? { fields: card.fields } : {}),
     })
   }
   for (const plugin of plugins) {
@@ -75,6 +91,8 @@ export function galleryCards(plugins: readonly GalleryPlugin[], locale: Locale):
               image: imageUrl(plugin.base, record.image),
               group: say(record.group, locale, plugin.words),
               source: plugin.id,
+              ...(record.view ? { view: record.view } : {}),
+              ...(record.fields ? { fields: record.fields } : {}),
             }
           : { id, name: id, line: '', group: plugin.id, source: plugin.id },
       )

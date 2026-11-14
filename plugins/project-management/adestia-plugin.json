@@ -110,7 +110,15 @@
         "fr": "Les phases et les jalons sur un axe de temps."
       },
       "image": "./web/gallery/timeline.svg",
-      "group": "Project"
+      "group": "Project",
+      "fields": {
+        "line": "label-range",
+        "columns": [
+          { "key": "label", "kind": "text", "label": { "en": "Phase", "fr": "Phase" }, "required": true },
+          { "key": "start", "kind": "date", "label": { "en": "Start", "fr": "Début" } },
+          { "key": "due", "kind": "date", "label": { "en": "Due", "fr": "Échéance" }, "required": true }
+        ]
+      }
     }
   }
 }

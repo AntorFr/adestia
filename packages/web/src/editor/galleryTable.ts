@@ -8,6 +8,8 @@
  * dead end; `col` is absent too, a column exists only inside a band. Images are small files under `public/blocks/`.
  */
 
+import type { PluginGalleryFields, PluginGalleryView } from '@antorfr/adestia-schemas'
+
 import type { Locale } from '../app/i18n.js'
 export type { Locale }
 
@@ -22,6 +24,10 @@ export interface CoreCard {
   /** Absolute path, served with the shell's static files. */
   readonly image: string
   readonly group: Localised
+  /** The variants (`view` values), when the block has more than one (AD-35). */
+  readonly view?: PluginGalleryView
+  /** The typed columns of its lines and the codec that writes them (AD-forms-1). */
+  readonly fields?: PluginGalleryFields
 }
 
 const TEXT: Localised = { en: 'Text', fr: 'Texte' }
@@ -46,18 +52,36 @@ export const CORE_GALLERY: Readonly<Record<string, CoreCard>> = {
     line: { en: 'Key numbers side by side, each with its label.', fr: 'Des chiffres clés côte à côte, chacun avec son libellé.' },
     image: '/blocks/figures.svg',
     group: DATA,
+    view: { values: ['tiles', 'inline'], default: 'tiles' },
+    fields: {
+      line: 'label-value-caption',
+      columns: [
+        { key: 'label', kind: 'text', label: { en: 'Label', fr: 'Libellé' }, required: true },
+        { key: 'value', kind: 'number', label: { en: 'Value', fr: 'Valeur' } },
+        { key: 'caption', kind: 'text', label: { en: 'Caption', fr: 'Légende' } },
+      ],
+    },
   },
   table: {
     name: { en: 'Table', fr: 'Tableau' },
     line: { en: 'A grid whose first column sets the tone of each row.', fr: 'Une grille dont la première colonne donne le ton de chaque ligne.' },
     image: '/blocks/table.svg',
     group: DATA,
+    fields: { line: 'table', columns: [] },
   },
   list: {
     name: { en: 'List', fr: 'Liste' },
     line: { en: 'A list of items, each with its own detail.', fr: 'Une liste d’éléments, chacun avec son détail.' },
     image: '/blocks/list.svg',
     group: DATA,
+    view: { values: ['rows', 'cards', 'chips'], default: 'rows' },
+    fields: {
+      line: 'label-value',
+      columns: [
+        { key: 'label', kind: 'text', label: { en: 'Label', fr: 'Libellé' }, required: true },
+        { key: 'value', kind: 'text', label: { en: 'Value', fr: 'Valeur' } },
+      ],
+    },
   },
   section: {
     name: { en: 'Section', fr: 'Section' },

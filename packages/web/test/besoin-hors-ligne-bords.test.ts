@@ -9,6 +9,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { type Browser, type Page, type Instance, launch, newBrowser, open, playwright } from './charte-browser.js'
+import { patience } from './patience.js'
 
 const WORDS = 'The server is not responding'
 type Route = { request(): { url(): string }; abort(c?: string): Promise<void>; fulfill(o: { status?: number; contentType?: string; body?: string }): Promise<void>; continue(): Promise<void> }
@@ -56,7 +57,7 @@ describe.skipIf(!playwright)('B-19 · bords du bandeau « le serveur ne répond 
   beforeAll(async () => {
     browser = await newBrowser()
     inst = await launch('config-writable', 'skippy', 'en')
-  }, 90_000)
+  }, patience(90_000))
   afterAll(async () => {
     await browser?.close()
     await inst?.stop()
@@ -64,7 +65,7 @@ describe.skipIf(!playwright)('B-19 · bords du bandeau « le serveur ne répond 
 
   async function ready(route = '/') {
     const o = await open(browser, inst.url, { theme: 'light', size: 'desk', locale: 'en', route })
-    await o.page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
+    await o.page.waitForSelector('.adestia-canvas__body', { timeout: patience(20_000) })
     return o
   }
 
@@ -105,7 +106,7 @@ describe.skipIf(!playwright)('B-19 · bords du bandeau « le serveur ne répond 
         page,
         (w: string) => [...document.querySelectorAll('[role="status"]')].filter((e) => (e.textContent ?? '').includes(w)).length === 1,
         WORDS,
-        60_000,
+        patience(60_000),
       )
       expect(await shown(page)).toBe(1)
       await unroute(page, '**/api/**')
@@ -113,13 +114,13 @@ describe.skipIf(!playwright)('B-19 · bords du bandeau « le serveur ne répond 
         page,
         (w: string) => [...document.querySelectorAll('[role="status"]')].filter((e) => (e.textContent ?? '').includes(w)).length === 0,
         WORDS,
-        60_000,
+        patience(60_000),
       )
       expect(await shown(page)).toBe(0)
     } finally {
       await context.close()
     }
-  }, 90_000)
+  }, patience(90_000))
 
   it('une sonde qui ne répond jamais compte comme un échec : le bandeau apparaît sous 8 s', async () => {
     const { context, page } = await ready()
@@ -130,9 +131,9 @@ describe.skipIf(!playwright)('B-19 · bords du bandeau « le serveur ne répond 
         await asRoute(r).abort('failed')
       })
       await page.evaluate(() => (location.hash = '/settings/instructions'))
-      expect(await until(page, (n) => n === 1, 8_000)).toBe(1)
+      expect(await until(page, (n) => n === 1, patience(8_000))).toBe(1)
     } finally {
       await context.close()
     }
-  }, 60_000)
+  }, patience(60_000))
 })

@@ -34,9 +34,10 @@ afterAll(cleanTmp)
 
 // A full sweep is 124 captures. Measured on ONE core (`taskset -c 0`) it takes
 // ~280-295 s, and a busy pod is slower still, so a ceiling near 420 s killed it
-// mid-run. The ceiling only guards against a hang: four times the one-core
+// mid-run. The ceiling only guards against a hang: a slow screen may now cost
+// two waits of 60 s (APPEAR_MS, one retry), so it is six times the one-core
 // measure, with the test's own timeout a little above so the kill reports first.
-const FULL_SWEEP_KILL_MS = 1_200_000
+const FULL_SWEEP_KILL_MS = 1_800_000
 const FULL_SWEEP_TEST_MS = FULL_SWEEP_KILL_MS + 30_000
 
 const run = (args: string[], timeoutMs: number) =>

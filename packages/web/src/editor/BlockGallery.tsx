@@ -7,13 +7,15 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
 import { Icon } from '../app/Icon.js'
-import { Sheet } from '../app/ui/index.js'
+import { Segmented, Sheet } from '../app/ui/index.js'
+import { VariantImage } from './VariantImage.js'
 import type { GalleryCard } from './gallery.js'
 
 export interface BlockGalleryProps {
   readonly open: boolean
   readonly cards: readonly GalleryCard[]
-  readonly onChoose: (name: string) => void
+  /** `view` is the variant chosen on the card, and only when it is not the block's default. */
+  readonly onChoose: (name: string, view?: string) => void
   readonly onClose: () => void
   readonly t: (key: string) => string
 }
@@ -27,6 +29,13 @@ export function BlockGallery({ open, cards, onChoose, onClose, t }: BlockGallery
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const list = useRef<HTMLDivElement>(null)
+  // The variant picked on each card; a card nobody touched inserts its default, written as nothing.
+  const [picked, setPicked] = useState<Readonly<Record<string, string>>>({})
+  const choose = (card: GalleryCard) => {
+    const view = picked[card.id]
+    if (card.view && view && view !== card.view.default && card.view.values.includes(view)) onChoose(card.id, view)
+    else onChoose(card.id)
+  }
 
   const shown = useMemo(() => {
     const needle = fold(query.trim())
@@ -55,7 +64,7 @@ export function BlockGallery({ open, cards, onChoose, onClose, t }: BlockGallery
       const card = ordered[current]
       if (card) {
         event.preventDefault()
-        onChoose(card.id)
+        choose(card)
       }
     }
   }
@@ -88,26 +97,48 @@ export function BlockGallery({ open, cards, onChoose, onClose, t }: BlockGallery
                 <h3 className="adestia-blockgallery__group-title">{group}</h3>
                 <div className="adestia-blockgallery__cards">
                   {members.map((card) => (
-                    <button
+                    <div
                       key={card.id}
-                      type="button"
-                      role="option"
-                      aria-selected={ordered[current]?.id === card.id}
-                      aria-label={card.name}
-                      className={`adestia-blockcard${ordered[current]?.id === card.id ? ' adestia-blockcard--active' : ''}`}
+                      className={`adestia-blockcell${ordered[current]?.id === card.id ? ' adestia-blockcell--active' : ''}`}
                       onMouseEnter={() => setActive(ordered.indexOf(card))}
-                      onClick={() => onChoose(card.id)}
                     >
-                      {card.image ? (
-                        <img className="adestia-blockcard__image" src={card.image} alt="" />
-                      ) : (
-                        <span className="adestia-blockcard__image adestia-blockcard__image--none" aria-hidden="true">
-                          <Icon name="chart-column" />
-                        </span>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={ordered[current]?.id === card.id}
+                        aria-label={card.name}
+                        className="adestia-blockcard"
+                        onClick={() => choose(card)}
+                      >
+                        {card.image ? (
+                          <img className="adestia-blockcard__image" src={card.image} alt="" />
+                        ) : (
+                          <span className="adestia-blockcard__image adestia-blockcard__image--none" aria-hidden="true">
+                            <Icon name="chart-column" />
+                          </span>
+                        )}
+                        <span className="adestia-blockcard__name">{card.name}</span>
+                        {card.line && <span className="adestia-blockcard__line">{card.line}</span>}
+                      </button>
+                      {card.view && (
+                        // The same pictures as E-6. Arrows here choose a variant, not another card.
+                        <div
+                          className="adestia-blockcell__views"
+                          onFocus={() => setActive(ordered.indexOf(card))}
+                          onKeyDown={(event) => {
+                            if (event.key.startsWith('Arrow')) event.stopPropagation()
+                          }}
+                        >
+                          <Segmented
+                            kind="image"
+                            label={t('Look')}
+                            value={picked[card.id] ?? card.view.default}
+                            choices={card.view.values.map((value) => ({ value, label: t(value), image: <VariantImage name={value} /> }))}
+                            onChange={(value) => setPicked((all) => ({ ...all, [card.id]: value }))}
+                          />
+                        </div>
                       )}
-                      <span className="adestia-blockcard__name">{card.name}</span>
-                      {card.line && <span className="adestia-blockcard__line">{card.line}</span>}
-                    </button>
+                    </div>
                   ))}
                 </div>
               </section>
