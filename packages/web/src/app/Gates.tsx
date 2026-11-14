@@ -48,7 +48,7 @@ export function RefusedGate({ t, displayName }: { readonly t: Say; readonly disp
     <Gate icon="circle-alert" tone="danger" role="alert" title={t('Not allowed')}>
       {displayName ? (
         <p className="adestia-gate__text">
-          {t('Signed in as %name — this account does not have access to this instance.').replace('%name', displayName)}
+          {t('Signed in as %name — this account does not have access to this instance.').replace('%name', () => displayName)}
         </p>
       ) : (
         <p className="adestia-gate__text">
