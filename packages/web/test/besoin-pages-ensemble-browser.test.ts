@@ -49,33 +49,6 @@ async function indexLoaded(page: any) {
   expect(await page.indexAnswered, 'the pages index never answered').not.toBeNull()
   await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => done(null)))))
 }
-// Resolves once the popover rectangle is identical on 3 consecutive frames; gives up after 5 s.
-async function popoverSettled(page: any, label: string) {
-  const settled = (await page.evaluate(
-    () =>
-      new Promise<boolean>((done) => {
-        const el = document.querySelector('.adestia-popover')
-        if (!el) return done(false)
-        const key = () => {
-          const r = el.getBoundingClientRect()
-          return `${r.top}|${r.bottom}|${r.left}|${r.right}`
-        }
-        const deadline = performance.now() + 5_000
-        let last = key()
-        let same = 1
-        const tick = () => {
-          const now = key()
-          same = now === last ? same + 1 : 1
-          last = now
-          if (same >= 3) return done(true)
-          if (performance.now() > deadline) return done(false)
-          requestAnimationFrame(tick)
-        }
-        requestAnimationFrame(tick)
-      }),
-  )) as boolean
-  expect(settled, `${label}: the popover did not stabilise within 5 s`).toBe(true)
-}
 const shot = async (page: any, name: string) => {
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.png` })
 }
@@ -259,7 +232,36 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               await page.locator('[data-block="callout"]').hover({ timeout: 3_000 }).catch(() => undefined) // a touch screen has no hover
               await page.getByRole('button', { name: w.block }).first().click()
               await page.waitForSelector('.adestia-popover', { timeout: 10_000 })
-              await popoverSettled(page, `${theme} ${size}`) // the panel measures itself once mounted: wait for its rectangle to hold still
+              // The popover places itself in steps (hidden at 0,0, then placed, then re-placed as the form fills and fonts
+              // arrive): wait for the signal that it is settled — visible, and the same rectangle on 5 consecutive frames.
+              await page.waitForFunction(
+                () =>
+                  new Promise<boolean>((resolve) => {
+                    const el = document.querySelector('.adestia-popover')
+                    if (!el) return resolve(false)
+                    const key = () => {
+                      const r = el.getBoundingClientRect()
+                      return `${r.top}|${r.left}|${r.width}|${r.height}`
+                    }
+                    let last = ''
+                    let same = 0
+                    const frame = () => {
+                      if (!el.isConnected || getComputedStyle(el).visibility === 'hidden') {
+                        same = 0
+                        last = ''
+                        return resolve(false)
+                      }
+                      const k = key()
+                      same = k === last ? same + 1 : 0
+                      last = k
+                      if (same >= 5) return resolve(true)
+                      requestAnimationFrame(frame)
+                    }
+                    requestAnimationFrame(frame)
+                  }),
+                undefined,
+                { timeout: 20_000 },
+              )
               const g = (await page.evaluate(() => {
                 const rect = (e: Element) => {
                   const r = e.getBoundingClientRect()
