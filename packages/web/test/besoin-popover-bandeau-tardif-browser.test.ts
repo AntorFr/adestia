@@ -62,7 +62,7 @@ describe.skipIf(!playwright)('E-6 popover and a band that arrives after it opene
         for (const size of SIZES) {
           let release!: () => void
           const gate = new Promise<void>((r) => (release = r))
-          const { context, page } = await open(browser, instance.url, {
+          const { context, page: typed } = await open(browser, instance.url, {
             theme: 'light',
             size,
             locale,
@@ -75,6 +75,7 @@ describe.skipIf(!playwright)('E-6 popover and a band that arrives after it opene
               })
             },
           })
+          const page = typed as any // the shared Page type lacks getByRole, hover, waitForResponse
           await page.getByRole('button', { name: w.edit, exact: true }).click()
           await page.waitForSelector('[data-block="callout"]', { timeout: 15_000 })
           await page.locator('[data-block="callout"]').scrollIntoViewIfNeeded()
@@ -83,7 +84,7 @@ describe.skipIf(!playwright)('E-6 popover and a band that arrives after it opene
           } catch {
             // touch screens have no hover
           }
-          await (page as any).getByRole('button', { name: w.block }).first().click()
+          await page.getByRole('button', { name: w.block }).first().click()
           await page.waitForSelector('.adestia-popover', { timeout: 10_000 })
           // the starting state: panel open, the stray-`app:` band (fed by the pages index) not there yet
           const before = await page.locator('.adestia-problems').count()
@@ -91,13 +92,13 @@ describe.skipIf(!playwright)('E-6 popover and a band that arrives after it opene
           if (SHOTS) await page.screenshot({ path: `${SHOTS}/popover-avant-bandeau-${locale}-${size}.png` })
 
           // the band arrives after the panel opened
-          const answered = (page as any).waitForResponse((r: any) => /\/api\/pages\/index(\?.*)?$/.test(r.url()), { timeout: 20_000 })
+          const answered = page.waitForResponse((r: any) => /\/api\/pages\/index(\?.*)?$/.test(r.url()), { timeout: 20_000 })
           release()
           await answered
           await page.waitForSelector('.adestia-problems--degraded', { timeout: 15_000 })
           expect(await page.locator('.adestia-problems').count()).toBeGreaterThan(before)
           // the panel is still open and, once the layout has settled, clear of header and bands
-          await (page as any).waitForFunction(
+          await page.waitForFunction(
             () => {
               const pop = document.querySelector('.adestia-popover')
               if (!pop) return false
@@ -123,7 +124,7 @@ describe.skipIf(!playwright)('E-6 popover and a band that arrives after it opene
 
           // E-6 / P-6 step 4: Escape still closes it
           await page.keyboard.press('Escape')
-          await (page as any).waitForFunction(() => !document.querySelector('.adestia-popover'), null, { timeout: 5_000 })
+          await page.waitForFunction(() => !document.querySelector('.adestia-popover'), null, { timeout: 5_000 })
           await context.close()
         }
       }, 120_000)
