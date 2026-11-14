@@ -911,6 +911,14 @@ branch and that `test:plugins` is replayed after a red vitest run.
   of the correction was already fixed on the epic and is unchanged.
   Test only: nothing changes for users (task `rouge-adestia-pages-13`).
 
+## v0.98.0-adestia-pages.14
+
+- **The epic's unstable screen sweep and CRLF page test wait for signals** — the bench sweep now
+  waits for a screen's proof in proportion to the shell's boot time, so the "voyages" screen no
+  longer times out under a loaded suite, and the CRLF page planning test types its wait argument
+  and waits for its signal before reading.
+  Test and bench procedure only: nothing changes for users (task `rouge-adestia-pages-9`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
