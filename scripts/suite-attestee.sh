@@ -55,7 +55,7 @@ workers=$(nproc)
 if read -r quota period < /sys/fs/cgroup/cpu.max 2>/dev/null && [ "$quota" != max ]; then
   workers=$(( (quota + period - 1) / period ))
 fi
-step vitest env BENCH_FULL_SWEEP=1 npx vitest run --maxWorkers=$workers --testTimeout=30000 --hookTimeout=60000 --exclude '**/*.real.test.ts' --exclude '**/node_modules/**' --reporter=junit --outputFile="$out/vitest.xml"
+step vitest env BENCH_FULL_SWEEP=1 ADESTIA_PATIENCE=4 npx vitest run --maxWorkers=$workers --testTimeout=30000 --hookTimeout=60000 --exclude '**/*.real.test.ts' --exclude '**/node_modules/**' --reporter=junit --outputFile="$out/vitest.xml"
 step plugins npm run test:plugins -- --test-reporter=junit --test-reporter-destination="$out/plugins.xml"
 step guards node --test --test-reporter=junit --test-reporter-destination="$out/guards.xml" bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs
 
