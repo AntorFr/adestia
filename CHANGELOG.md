@@ -889,6 +889,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   for **Save** to be active, before it clicks. Test only: nothing changes for users (task
   `rouge-adestia-pages-8`).
 
+## v0.98.0-adestia-pages.11
+
+- **The epic's unstable chat-skin test waits longer for its renders** — the render waits of
+  the chat matrix tests (`visit`, `survey`) all go through one named ceiling of 45 s instead of
+  10 to 20 s, so the "skin dobby" case no longer expires when the whole suite loads the machine.
+  Test only: nothing changes for users (task `rouge-adestia-pages-10-delais-survey`).
+
 ## Unreleased
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
