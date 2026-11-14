@@ -1,0 +1,12 @@
+---
+title: Risques
+---
+
+:::table
+| Risque                 | Gravité |                     Action |
+| :--------------------- | :-----: | -------------------------: |
+| Retard livraison       |  Haute  | Relancer \| le fournisseur |
+| Fuite                  | Moyenne |                   Colmater |
+| ligne sans tuyau final |    x    |                          y |
+| Chute                  |  Basse  |                       Rien |
+:::
