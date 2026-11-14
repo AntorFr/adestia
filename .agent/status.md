@@ -88,7 +88,6 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   la marque. `claude-lost-session.real.test.ts` est sauté sans `CLAUDE_CODE_OAUTH_TOKEN` : un `npm test` vert sans jeton
   ne le prouve pas. Le banc de chaque tranche : `node bench/scenarios/<chargements|page-suivie|hors-ligne|chat-ajouts>.mjs`.
 
-
 ## À moitié construit
 
 - La question de permission ne permet pas de corriger la règle proposée par le
@@ -116,6 +115,7 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
 ## Pièges encore vrais
 
 - **Balayage E-26 (voyages) sous charge** : l'écran charge tous les plugins puis demande `/voyages` au serveur ; la preuve `.voyages-page .vhub-card` attendait 15 s fixes, que la suite entière (navigateurs en parallèle) peut dépasser sans que le plugin soit en défaut. Seul, l'écran se prend en 5 s ; sur un cœur chargé, 3 fois plus lent, toujours vert. Aucune course du produit retrouvée (l'échec n'a pas été reproduit ici). La capture d'un écran vit désormais dans `bench/lib/capture.mjs` : toutes les attentes d'apparition (shell, écran du téléphone, preuve) durent `APPEAR_MS` = 60 s, et un écran dont l'attente expire est repris une fois dans un contexte neuf ; au second échec, l'erreur nomme la preuve manquante, dit ce que la page montre et qu'il s'agit du second essai (`rouge-adestia-pages-16` ; `packages/server/test/sweep-reprise.test.ts` le prouve sur une page factice). Le plafond de `bench-ensemble.test.ts` passe à 1 800 s (deux attentes de 60 s possibles par écran lent) ; écrans, sélecteurs et captures inchangés. Si le test rougit encore, ce n'est plus la charge mais un écran qui ne rend pas.
+- **Attentes de test : une seule patience.** `ADESTIA_PATIENCE` (entier, 1 par défaut ; 4 sur l'étape vitest de `scripts/suite-attestee.sh`) met à l'échelle les délais des tests Playwright (`packages/web/test/patience.ts`) et des gestes du balayage (`bench/sweep.mjs` ; l'attente de la preuve d'un écran, elle, est `APPEAR_MS` de `bench/lib/capture.mjs`, qui reprend une fois un écran dont le sélecteur manque). Un nouveau test navigateur passe ses délais par `patience()` ; un `waitForTimeout` porte `// pause fixe : <raison>`. Cette règle vaut pour les sept fichiers `besoin-*` corrigés par `rouge-adestia-10` ; les autres tests navigateur (par ex. `besoin-chargements-browser.test.ts`, `besoin-hors-ligne-flux.test.ts`, le helper `charte-browser.ts`, scénarios de `bench/` ; liste non exhaustive) ne l'appliquent pas encore. Livré par `rouge-adestia-10` (tests et `bench/` seuls, code du produit inchangé ; `page-follows-feed.test.tsx` attend l'import à froid de l'éditeur dans un `beforeAll`). Les tests Playwright ne se jouent pas dans un pod sans Playwright : la preuve est l'attestation de la chaîne.
 
 - **Grammaire absente après installation** : le fork git du parseur est indispensable.
   Vérifier `node_modules/micromark-extension-directive` ; utiliser `npm ci` (CLAUDE.md).
