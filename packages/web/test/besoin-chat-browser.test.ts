@@ -270,7 +270,7 @@ describe.skipIf(!playwright)('chat — E-16, E-17, E-18 through a browser (B-7, 
       beforeAll(async () => {
         en = await survey(skin, 'en', ALL)
         fr = await survey(skin, 'fr', FEW)
-      }, 4_500_000) // worst case: 6 screens × 8 waits × RENDER_WAIT (90 000) = 4 320 000, plus the browser's own launches
+      }, 8_700_000) // worst case: 6 screens × 16 waits × RENDER_WAIT (90 000) = 8 640 000, plus the browser's own launches; per screen: visit 1 + signature 1 + 4 words × (word + Stop gone + held gone) 12 + permission 1 + sheet 1
 
       it('draws no native grey control in the rail, the question or the sheet, light and dark, desk and phone', () => {
         expect(en.flatMap((r) => r.native.map((n) => `${r.where}: ${n}`))).toEqual([])
