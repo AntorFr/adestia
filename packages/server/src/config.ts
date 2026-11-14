@@ -331,6 +331,9 @@ function parseAuth(raw: unknown, issues: string[]): AuthConfig {
         ...(typeof oidc['sessionSecret'] === 'string'
           ? { sessionSecret: oidc['sessionSecret'] }
           : {}),
+        ...(typeof oidc['postLogoutRedirectUri'] === 'string'
+          ? { postLogoutRedirectUri: oidc['postLogoutRedirectUri'] }
+          : {}),
         ...(oidc['reboundAudience'] !== undefined
           ? {
               reboundAudience: stringList(

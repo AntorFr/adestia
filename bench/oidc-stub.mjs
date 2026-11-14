@@ -13,6 +13,14 @@
  * Who signs in is the stub's current user: `GET /__as?user=<name>` changes it
  * (default `alice`). Two users: `alice`, in the group `famille` (allowed), and
  * `visiteur`, in `invites` (the seed's `allowedGroups` refuses it at sign-in).
+ *
+ * Single sign-on, like a real provider: `/authorize` lets a visit through
+ * without asking, as the current user. The `end_session_endpoint`
+ * (`/logout`) ends it, and the next `/authorize` shows a sign-in form (a
+ * choice of accounts; picking one sets the current user) so another account
+ * can enter. `prompt=login` asks for the form too. Started with
+ * `noEndSession` (launcher: `--no-end-session`) the discovery document
+ * announces no `end_session_endpoint`, to exercise the fallback.
  */
 import { createSign, generateKeyPairSync, randomUUID } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
@@ -30,7 +38,7 @@ export const CLIENT_SECRET = 'bench-client-secret'
 
 const b64 = (value) => Buffer.from(typeof value === 'string' ? value : JSON.stringify(value)).toString('base64url')
 
-export async function startOidcStub() {
+export async function startOidcStub({ noEndSession = false } = {}) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
   const dir = await mkdtemp(join(tmpdir(), 'adestia-oidc-'))
   execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '2', '-subj', '/CN=127.0.0.1',
@@ -39,6 +47,10 @@ export async function startOidcStub() {
   const jwk = { ...publicKey.export({ format: 'jwk' }), kid: 'bench-key', use: 'sig', alg: 'RS256' }
 
   let current = 'alice'
+  // The provider's own session is alive from the start (the stub signs in
+  // whoever `/__as` named without asking); `/logout` ends it, and the next
+  // `/authorize` then asks who is signing in.
+  let sso = true
   const codes = new Map()
   let issuer = ''
 
@@ -69,6 +81,7 @@ export async function startOidcStub() {
           jwks_uri: `${issuer}/jwks.json`, userinfo_endpoint: `${issuer}/userinfo`,
           response_types_supported: ['code'], subject_types_supported: ['public'],
           id_token_signing_alg_values_supported: ['RS256'], token_endpoint_auth_methods_supported: ['client_secret_basic'],
+          ...(noEndSession ? {} : { end_session_endpoint: `${issuer}/logout` }),
           code_challenge_methods_supported: ['S256'], scopes_supported: ['openid', 'profile', 'email', 'groups'],
         })
       }
@@ -79,9 +92,35 @@ export async function startOidcStub() {
         current = name
         return json(res, 200, { user: name })
       }
+      if (url.pathname === '/logout') {
+        sso = false
+        const back = url.searchParams.get('post_logout_redirect_uri')
+        if (back) {
+          res.writeHead(302, { location: back })
+          return res.end()
+        }
+        res.writeHead(200, { 'content-type': 'text/plain' })
+        return res.end('signed out')
+      }
       if (url.pathname === '/authorize') {
         const redirect = url.searchParams.get('redirect_uri')
         if (!redirect) return json(res, 400, { error: 'redirect_uri is required' })
+        const asking = url.searchParams.get('prompt') === 'login'
+        const picked = url.searchParams.get('as')
+        if (picked && USERS[picked]) {
+          current = picked
+          sso = true
+        } else if (!sso || asking) {
+          // The sign-in form: credentials are asked even if `current` is set.
+          const choices = Object.keys(USERS).map((name) => {
+            const next = new URL(url)
+            next.searchParams.set('as', name)
+            next.searchParams.delete('prompt')
+            return `<li><a href="${next.pathname}${next.search.replace(/&/g, '&amp;')}">${name}</a></li>`
+          })
+          res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
+          return res.end(`<!doctype html><title>Stub sign-in</title><h1>Sign in</h1><p>Pick an account</p><ul>${choices.join('')}</ul>`)
+        } else sso = true
         const code = randomUUID()
         codes.set(code, USERS[current])
         const back = new URL(redirect)

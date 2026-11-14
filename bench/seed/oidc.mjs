@@ -19,7 +19,7 @@ export const config = { file: 'writable' }
 export { SESSION_SECRET }
 
 export default async function seed(ctx) {
-  const stub = await startOidcStub()
+  const stub = await startOidcStub({ noEndSession: ctx.noEndSession })
   ctx.onClose(stub.close)
   await populate(ctx, 'bench-alice')
   await storeToken(ctx.dataDir)

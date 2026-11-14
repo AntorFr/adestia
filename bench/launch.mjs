@@ -4,6 +4,7 @@
  *
  *   node bench/launch.mjs [--engine fake|claude] [--skin <id>] [--locale en|fr]
  *                         [--seed <name>] [--port <n>] [--data <dir>]
+ *                         [--no-end-session]
  *
  * Needs a built server (`npm run build`). Prints `listening on <url>` once
  * `/api/health` answers `ok`, runs until SIGTERM/SIGINT, then removes its
@@ -24,7 +25,7 @@
  * instance started without `configPath` would) and
  * `ready({ url })` (called once it answers, to start the turns
  * that must be running). `ctx` is `{ workspace, dataDir, base,
- * port, onClose(fn) }`.
+ * port, noEndSession, onClose(fn) }`.
  *
  * Nothing here is part of the product: no configuration key, no driver id.
  */
@@ -45,12 +46,19 @@ const fail = (message, code = 1) => {
 }
 
 const OPTIONS = ['engine', 'skin', 'locale', 'seed', 'port', 'data']
+// Flags without a value. `--no-end-session`: the OIDC stub announces no
+// `end_session_endpoint`, so sign-out takes the `/auth/login?switch=1` fallback.
+const SWITCHES = ['no-end-session']
 const parseArgs = (args) => {
   const options = { engine: 'fake', seed: 'base', port: '0' }
   for (let i = 0; i < args.length; i++) {
     const flag = args[i]
     const name = flag.startsWith('--') ? flag.slice(2) : ''
-    if (!OPTIONS.includes(name)) fail(`unknown argument ${flag} — options: ${OPTIONS.map((o) => `--${o}`).join(' ')}`, 2)
+    if (SWITCHES.includes(name)) {
+      options[name] = true
+      continue
+    }
+    if (!OPTIONS.includes(name)) fail(`unknown argument ${flag} — options: ${[...OPTIONS, ...SWITCHES].map((o) => `--${o}`).join(' ')}`, 2)
     const value = args[++i]
     if (value === undefined || value.startsWith('--')) fail(`--${name} needs a value`, 2)
     options[name] = value
@@ -138,7 +146,7 @@ try {
   // The port is chosen before the seed runs: a seed that signs people in needs
   // its own redirect address in the configuration it returns.
   const port = options.port || (await freePort())
-  const seeded = await seedModule.default({ workspace, dataDir, base, port, onClose: (close) => closers.push(close) })
+  const seeded = await seedModule.default({ workspace, dataDir, base, port, noEndSession: options['no-end-session'] === true, onClose: (close) => closers.push(close) })
   // The Claude driver prefers a stored credential to the environment. A seed
   // stores a placeholder one (for screens that show the credential); a real
   // turn must use the pod's token, so the stored one is dropped.

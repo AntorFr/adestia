@@ -98,6 +98,10 @@ auth:
   #   # the request carries the container's host, and a redirect built from it
   #   # sends the browser somewhere it cannot reach.
   #   redirectUri: https://adestia.example.org/auth/callback
+  #   # Where the provider returns the browser after Sign out has ended ITS
+  #   # session too. Default: the origin of redirectUri plus "/". "" sends none.
+  #   # The provider's client must list this URI, or it refuses the sign-out.
+  #   postLogoutRedirectUri: https://adestia.example.org/
   #   groupsClaim: groups
   #   allowedGroups: [staff]        # empty means any authenticated user
   #   # Signs session cookies. Omit it and one is generated per boot, which

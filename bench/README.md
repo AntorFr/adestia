@@ -23,7 +23,7 @@ CLAUDE_CODE_OAUTH_TOKEN=… node bench/launch.mjs --engine claude   # a real Cla
 ```
 
 Options: `--skin <id>`, `--locale en|fr`, `--seed <name>` (default `base`),
-`--port <n>` (default: a free one), `--data <dir>` (default: a throwaway
+`--no-end-session` (the `oidc` seed's provider announces no `end_session_endpoint`, so sign-out takes the `/auth/login?switch=1` fallback), `--port <n>` (default: a free one), `--data <dir>` (default: a throwaway
 directory under `os.tmpdir()`; a directory you name is kept). It prints
 `listening on <url>` once `/api/health` answers `ok`, and runs until SIGTERM,
 which stops it and removes its data. Browse the URL, or drive it by API

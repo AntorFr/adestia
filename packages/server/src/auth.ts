@@ -100,6 +100,8 @@ const PUBLIC_ROUTES = new Set([
   '/api/health',
   '/auth/login',
   '/auth/callback',
+  // Answers 401 itself when there is no refused-account cookie.
+  '/auth/refused',
   '/auth/logout',
   // Its own bearer token IS its authentication; a browser session means
   // nothing to the agent on the other end.
