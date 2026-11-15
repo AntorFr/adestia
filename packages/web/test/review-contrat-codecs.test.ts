@@ -18,10 +18,10 @@ describe('label-date-done', () => {
     expect(r.kept.map((k) => k.line)).toEqual(lines.slice(3))
   })
   it('writes done or nothing', () => {
-    const { rows, kept } = dd.read(['- A: 2026-01-01'])
-    rows[0]!.cells = { label: 'A', date: '2026-01-01', done: 'done' }
+    const { rows, kept } = dd.read(['- A: 2026-01-01']) as { rows: any[]; kept: any[] }
+    rows[0] = { ...rows[0]!, cells: { label: 'A', date: '2026-01-01', done: 'done' } } as never
     expect(dd.write(rows, kept)).toEqual(['- A: 2026-01-01 — done'])
-    rows[0]!.cells = { label: 'A', date: '2026-01-02', done: '' }
+    rows[0] = { ...rows[0]!, cells: { label: 'A', date: '2026-01-02', done: '' } } as never
     expect(dd.write(rows, kept)).toEqual(['- A: 2026-01-02'])
   })
 })
@@ -35,13 +35,13 @@ describe('label-level-owner', () => {
     expect(r.rows[2]!.cells['owner']).toBe('Ann — Bob')
   })
   it('capitalises an edited level', () => {
-    const { rows, kept } = lo.read(['- B: low'])
-    rows[0]!.cells = { label: 'B', level: 'low', owner: 'X' }
+    const { rows, kept } = lo.read(['- B: low']) as { rows: any[]; kept: any[] }
+    rows[0] = { ...rows[0]!, cells: { label: 'B', level: 'low', owner: 'X' } } as never
     expect(lo.write(rows, kept)).toEqual(['- B: Low — X'])
   })
   it('a whitespace owner still reads back', () => {
-    const { rows, kept } = lo.read(['- B: low'])
-    rows[0]!.cells = { label: 'B', level: 'High', owner: '  ' }
+    const { rows, kept } = lo.read(['- B: low']) as { rows: any[]; kept: any[] }
+    rows[0] = { ...rows[0]!, cells: { label: 'B', level: 'High', owner: '  ' } } as never
     const out = lo.write(rows, kept)
     expect(lo.read(out).rows).toHaveLength(1)
   })
