@@ -12,7 +12,7 @@
       "project-status": {
         "kind": "choice",
         "label": "Project status",
-        "help": "How the project is GOING, and only while it is under way \u2014 a project waiting or closed says that instead.",
+        "help": "How the project is GOING, and only while it is under way — a project waiting or closed says that instead.",
         "values": [
           "Green",
           "Amber",
@@ -32,7 +32,7 @@
   "vocabulary": {
     "subproject": {
       "content": "empty",
-      "description": "The sub-projects below this page, each with where it stands \u2014 its `project-status` while it is under way, its lifecycle status when that has something more urgent to say.",
+      "description": "The sub-projects below this page, each with where it stands — its `project-status` while it is under way, its lifecycle status when that has something more urgent to say.",
       "attributes": {
         "depth": {
           "values": [
@@ -85,6 +85,52 @@
           "default": "children"
         }
       }
+    },
+    "progress": {
+      "content": "empty",
+      "description": "How far the pages below this page are: the share finished, how many are late and what falls due next.",
+      "attributes": {
+        "depth": {
+          "values": [
+            "children",
+            "subtree"
+          ],
+          "default": "children"
+        },
+        "view": {
+          "values": [
+            "tiles",
+            "bar"
+          ],
+          "default": "tiles"
+        }
+      }
+    },
+    "milestones": {
+      "content": "flow",
+      "description": "Milestones written one per line — `- Label: 2026-11-20`, with `— done` once reached — each marked done, next, late or planned.",
+      "attributes": {
+        "view": {
+          "values": [
+            "list",
+            "cards"
+          ],
+          "default": "list"
+        }
+      }
+    },
+    "risks": {
+      "content": "flow",
+      "description": "Risks written one per line — `- Label: High — Marc` — with a level of High, Medium or Low and an optional owner.",
+      "attributes": {
+        "view": {
+          "values": [
+            "table",
+            "cards"
+          ],
+          "default": "table"
+        }
+      }
     }
   },
   "gallery": {
@@ -114,9 +160,32 @@
       "fields": {
         "line": "label-range",
         "columns": [
-          { "key": "label", "kind": "text", "label": { "en": "Phase", "fr": "Phase" }, "required": true },
-          { "key": "start", "kind": "date", "label": { "en": "Start", "fr": "Début" } },
-          { "key": "due", "kind": "date", "label": { "en": "Due", "fr": "Échéance" }, "required": true }
+          {
+            "key": "label",
+            "kind": "text",
+            "label": {
+              "en": "Phase",
+              "fr": "Phase"
+            },
+            "required": true
+          },
+          {
+            "key": "start",
+            "kind": "date",
+            "label": {
+              "en": "Start",
+              "fr": "Début"
+            }
+          },
+          {
+            "key": "due",
+            "kind": "date",
+            "label": {
+              "en": "Due",
+              "fr": "Échéance"
+            },
+            "required": true
+          }
         ]
       }
     }

@@ -358,3 +358,128 @@ export function barState(entry, today) {
   if (entry.tone === 'waiting') return classify(entry, today)
   return entry.grade ?? classify(entry, today)
 }
+
+/**
+ * ── The project blocks: `progress`, `milestones`, `risks` ───────────────────
+ *
+ * Reading only. Nothing here rewrites a line: a line this module cannot read
+ * comes back in `unread`, with its text byte for byte, so the caller names it
+ * and the Raw view still holds it. The same rule `parseLine` follows.
+ */
+
+/**
+ * The pages a `progress` block counts: the walk `timeline` and `subproject`
+ * share (`under`), minus the page carrying the block — a page is never one of
+ * its own sub-pages, whatever file it is written in.
+ */
+export function scopeOf(pages, base, depth, carrier) {
+  return pages.filter((page) => page.path !== carrier && under(page.path, base, depth))
+}
+
+/**
+ * The three figures of `:::progress`.
+ *
+ * `percent` rounds DOWN: 7 of 8 is 87, never a 100 that says "done" about a
+ * folder with one page left. `late` is `classify`'s own verdict (open, `due`
+ * passed), so the figure and the dashed marker of E-31 cannot disagree.
+ * `next` is the open page whose `due` is nearest from today on (today
+ * included). An empty scope gives `total: 0` and no percentage — the caller
+ * says so in one sentence rather than drawing 0%.
+ */
+export function progressOf(pages, base, depth, carrier, today) {
+  const scope = scopeOf(pages, base, depth, carrier)
+  const total = scope.length
+  const open = scope.filter((page) => page.finished !== true)
+  const done = total - open.length
+  const dated = open
+    .map((page) => ({ page, due: DATE_FIELD(page.fields?.due) }))
+    .filter((item) => item.due !== undefined)
+  const late = dated.filter(({ page, due }) => classify({ due, finished: false }, today) === 'late').length
+  const upcoming = dated
+    .filter(({ due }) => due >= today)
+    .sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : 0))[0]
+  return {
+    total,
+    done,
+    percent: total === 0 ? null : Math.floor((done * 100) / total),
+    late,
+    next: upcoming
+      ? { label: upcoming.page.title || upcoming.page.path, path: upcoming.page.path, due: upcoming.due }
+      : null,
+  }
+}
+
+/** The label before the first colon and what follows it, or null. */
+function splitLine(text) {
+  const cut = text.indexOf(':')
+  if (cut === -1) return null
+  const label = text.slice(0, cut).trim()
+  if (!label) return null
+  return { label, rest: text.slice(cut + 1).trim() }
+}
+
+/** `'2026-11-20'` or `'2026-11-20 — done'` → `{label, due, done}`; anything else → null. */
+export function parseMilestone(text) {
+  const parts = splitLine(text)
+  if (!parts) return null
+  const [date, ...flag] = parts.rest.split(/\s+—\s+/)
+  if (!DATE.test(date) || iso(new Date(utc(date))) !== date) return null
+  if (flag.length > 1) return null
+  if (flag.length === 1 && flag[0].toLowerCase() !== 'done') return null
+  return { label: parts.label, due: date, done: flag.length === 1 }
+}
+
+/**
+ * Each milestone's state: `done` (its line says so), `late` (not done, date
+ * passed — and late wins over next), `next` (the first of the others, by
+ * date, the written order breaking a tie), `planned` (the rest). Items keep
+ * the written order; `unread` keeps the unreadable lines as written.
+ */
+export function milestonesOf(lines, today) {
+  const items = []
+  const unread = []
+  for (const text of lines) {
+    const mile = parseMilestone(text)
+    if (mile) items.push(mile)
+    else unread.push(text)
+  }
+  let next
+  for (const mile of items) {
+    if (mile.done || mile.due < today) continue
+    if (!next || mile.due < next.due) next = mile
+  }
+  return {
+    items: items.map((mile) => ({
+      ...mile,
+      state: mile.done ? 'done' : mile.due < today ? 'late' : mile === next ? 'next' : 'planned',
+    })),
+    unread,
+  }
+}
+
+/** The three levels, as the file writes them and the block says them. */
+export const RISK_LEVELS = ['High', 'Medium', 'Low']
+
+/** `'High — Marc'` → `{label, level: 'High', owner: 'Marc'}`; owner absent when not written; else null. */
+export function parseRisk(text) {
+  const parts = splitLine(text)
+  if (!parts) return null
+  const cut = parts.rest.search(/\s+—\s+/)
+  const word = (cut === -1 ? parts.rest : parts.rest.slice(0, cut)).trim()
+  const owner = cut === -1 ? '' : parts.rest.slice(cut).replace(/^\s+—\s+/, '').trim()
+  const level = RISK_LEVELS.find((name) => name.toLowerCase() === word.toLowerCase())
+  if (!level) return null
+  return { label: parts.label, level, ...(owner ? { owner } : {}) }
+}
+
+/** The risks in written order, and the lines that are not one, untouched. */
+export function risksOf(lines) {
+  const items = []
+  const unread = []
+  for (const text of lines) {
+    const risk = parseRisk(text)
+    if (risk) items.push(risk)
+    else unread.push(text)
+  }
+  return { items, unread }
+}
