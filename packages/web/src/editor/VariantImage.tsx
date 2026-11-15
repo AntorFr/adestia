@@ -65,6 +65,33 @@ export function VariantImage({ name }: { readonly name: string }): ReactNode {
           <rect x="17" y="19" width="16" height="7" rx="3.5" />
         </>,
       )
+    case 'bar':
+      return box(
+        <>
+          <rect x="2" y="12" width="44" height="8" rx="4" {...line} />
+          <rect x="2" y="12" width="28" height="8" rx="4" />
+        </>,
+      )
+    case 'list':
+      return box(
+        <>
+          <circle cx="5" cy="8" r="2.5" />
+          <rect x="11" y="6" width="35" height="4" rx="1.5" />
+          <circle cx="5" cy="16" r="2.5" opacity="0.5" />
+          <rect x="11" y="14" width="35" height="4" rx="1.5" opacity="0.5" />
+          <circle cx="5" cy="24" r="2.5" opacity="0.5" />
+          <rect x="11" y="22" width="35" height="4" rx="1.5" opacity="0.5" />
+        </>,
+      )
+    case 'table':
+      return box(
+        <>
+          <rect x="2" y="4" width="44" height="6" rx="1.5" />
+          <rect x="2" y="13" width="44" height="4" rx="1" opacity="0.5" />
+          <rect x="2" y="20" width="44" height="4" rx="1" opacity="0.5" />
+          <rect x="2" y="27" width="44" height="3" rx="1" opacity="0.5" />
+        </>,
+      )
     default:
       return null
   }

@@ -367,3 +367,70 @@ button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outli
 .adestia-loading .adestia-icon { animation: adestia-spin 1s linear infinite; }
 @keyframes adestia-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .adestia-loading .adestia-icon { animation: none; } }
+
+/* ── Project blocks: static card, state pill, figure tile, meter ──────────
+   Four pieces the charter lacked (gardien verdict, docs/ecrans.md
+   "Components"), built by the first block that draws them. No hue stands
+   alone: a state is always a word AND an icon, and nothing here is amber —
+   amber is only ever the owner's own `Amber`. */
+
+/* A card that is not a control: the same box, no hover lift, no pointer. */
+.adestia-card--static { cursor: default; min-height: 0; }
+.adestia-card--static:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border);
+}
+
+/* State pill. Done, next, late, planned; High, Medium, Low. */
+.adestia-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: fit-content;
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+  color: var(--text);
+  font: 600 var(--text-xs)/1.4 var(--font-mono);
+  white-space: nowrap;
+}
+.adestia-state--done,
+.adestia-state--low { color: var(--text-muted); background: transparent; border-color: var(--border); }
+.adestia-state--next { border-color: var(--accent-text); color: var(--accent-text); background: var(--accent-quiet); }
+.adestia-state--medium { background: var(--surface-soft); }
+/* Late: the dashed muted outline of E-31, the word beside it. Not a hue. */
+.adestia-state--late { border-style: dashed; border-color: var(--text-muted); color: var(--text-muted); background: transparent; }
+.adestia-state--high { border-color: var(--danger-text); color: var(--danger-text); background: transparent; }
+
+/* Figure tile: a big number over its label. It folds by its CONTAINER's
+   width, not the viewport's: the canvas narrows when the chat rail opens. */
+.adestia-figures { container-type: inline-size; }
+.adestia-figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+}
+.adestia-figure__value { font: 700 var(--text-2xl)/1.15 var(--font-sans, inherit); overflow-wrap: anywhere; }
+.adestia-figure__label { color: var(--text-muted); font-size: var(--text-sm); }
+.adestia-figure__caption { color: var(--text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
+.adestia-figures__row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+@container (max-width: 30rem) {
+  .adestia-figures__row { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Meter: a bar read as `role=progressbar`, its value said in words. */
+.adestia-meter {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.adestia-meter__fill { display: block; height: 100%; background: var(--accent); }

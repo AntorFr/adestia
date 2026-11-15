@@ -199,7 +199,14 @@
         "fr": "Où en sont les pages de dessous, et ce qui est en retard."
       },
       "image": "./web/gallery/progress.svg",
-      "group": "Project"
+      "group": "Project",
+      "view": {
+        "values": [
+          "tiles",
+          "bar"
+        ],
+        "default": "tiles"
+      }
     },
     "milestones": {
       "name": {
@@ -211,7 +218,45 @@
         "fr": "Des jalons datés : fait, prochain, en retard ou prévu."
       },
       "image": "./web/gallery/milestones.svg",
-      "group": "Project"
+      "group": "Project",
+      "view": {
+        "values": [
+          "list",
+          "cards"
+        ],
+        "default": "list"
+      },
+      "fields": {
+        "line": "label-date-done",
+        "columns": [
+          {
+            "key": "label",
+            "kind": "text",
+            "label": {
+              "en": "Milestone",
+              "fr": "Jalon"
+            },
+            "required": true
+          },
+          {
+            "key": "date",
+            "kind": "date",
+            "label": {
+              "en": "Date",
+              "fr": "Date"
+            },
+            "required": true
+          },
+          {
+            "key": "done",
+            "kind": "check",
+            "label": {
+              "en": "Done",
+              "fr": "Fait"
+            }
+          }
+        ]
+      }
     },
     "risks": {
       "name": {
@@ -223,7 +268,45 @@
         "fr": "Des risques avec un niveau et un responsable."
       },
       "image": "./web/gallery/risks.svg",
-      "group": "Project"
+      "group": "Project",
+      "view": {
+        "values": [
+          "table",
+          "cards"
+        ],
+        "default": "table"
+      },
+      "fields": {
+        "line": "label-level-owner",
+        "columns": [
+          {
+            "key": "label",
+            "kind": "text",
+            "label": {
+              "en": "Risk",
+              "fr": "Risque"
+            },
+            "required": true
+          },
+          {
+            "key": "level",
+            "kind": "choice",
+            "label": {
+              "en": "Level",
+              "fr": "Niveau"
+            },
+            "required": true
+          },
+          {
+            "key": "owner",
+            "kind": "text",
+            "label": {
+              "en": "Owner",
+              "fr": "Responsable"
+            }
+          }
+        ]
+      }
     }
   }
 }

@@ -367,3 +367,53 @@ button.pm-timeline__span:hover {
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+/* ── progress, milestones, risks ──────────────────────────────────────────
+   The pieces are the shell's (`.adestia-state`, `.adestia-figure`,
+   `.adestia-meter`, `.adestia-card--static`); this is only their layout. */
+.pm-empty {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+.pm-progress--bar { display: flex; flex-direction: column; gap: var(--space-2); }
+.pm-progress__head { display: flex; align-items: baseline; gap: var(--space-2); }
+.pm-progress__head strong { font-size: var(--text-xl); }
+.pm-progress__head span,
+.pm-progress__line { color: var(--text-muted); font-size: var(--text-sm); margin: 0; }
+.pm-list { list-style: none; margin: 0; padding: 0; }
+.pm-mile {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+.pm-list .pm-mile { padding: var(--space-2) 0; border-bottom: 1px solid var(--border); }
+.pm-list .pm-mile:last-child { border-bottom: 0; }
+.pm-mile__label { flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; }
+.pm-mile__date,
+.pm-risk__owner { color: var(--text-muted); font-size: var(--text-sm); }
+.pm-mile--done .pm-mile__label { color: var(--text-muted); text-decoration: line-through; }
+.pm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--space-2);
+}
+.pm-grid .adestia-card__title { overflow-wrap: anywhere; }
+.pm-risks__scroll { overflow-x: auto; }
+.pm-risks { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.pm-risks th,
+.pm-risks td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border); vertical-align: middle; }
+.pm-risks th { color: var(--text-muted); font-weight: 600; }
+.pm-risks td:first-child { overflow-wrap: anywhere; }
+.pm-unread {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
