@@ -31,7 +31,14 @@ const GAP = 8
 export function Popover({ anchor, open, onClose, children, label, className, avoid }: PopoverProps) {
   const panel = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ top: number; left: number; maxHeight: number } | null>(null)
-  useFocusScope(panel, open, { trap: false, onEscape: onClose })
+  // Focus can only enter a panel that is visible: until `pos` is set it is `visibility: hidden`
+  // and `focus()` would be a silent no-op. So the scope arms once the panel is placed.
+  useFocusScope(panel, open && pos !== null, { trap: false, onEscape: onClose })
+
+  // A reopening must place afresh, never show the panel at its previous position.
+  useLayoutEffect(() => {
+    if (!open) setPos(null)
+  }, [open])
 
   useLayoutEffect(() => {
     const host = anchor.current
