@@ -188,6 +188,42 @@
           }
         ]
       }
+    },
+    "progress": {
+      "name": {
+        "en": "Progress",
+        "fr": "Avancement"
+      },
+      "line": {
+        "en": "How far the pages below are, and what is late.",
+        "fr": "Où en sont les pages de dessous, et ce qui est en retard."
+      },
+      "image": "./web/gallery/progress.svg",
+      "group": "Project"
+    },
+    "milestones": {
+      "name": {
+        "en": "Milestones",
+        "fr": "Jalons"
+      },
+      "line": {
+        "en": "Dated milestones, each done, next, late or planned.",
+        "fr": "Des jalons datés : fait, prochain, en retard ou prévu."
+      },
+      "image": "./web/gallery/milestones.svg",
+      "group": "Project"
+    },
+    "risks": {
+      "name": {
+        "en": "Risks",
+        "fr": "Risques"
+      },
+      "line": {
+        "en": "Risks with a level and an owner.",
+        "fr": "Des risques avec un niveau et un responsable."
+      },
+      "image": "./web/gallery/risks.svg",
+      "group": "Project"
     }
   }
 }
