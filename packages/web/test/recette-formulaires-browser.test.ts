@@ -29,7 +29,7 @@ const fileOf = (page: any, slug: string): Promise<string> =>
 /** The page file once `ok` accepts its text (a save is the signal, not a delay); the last text read, wanted or not. */
 async function settled(page: any, slug: string, ok: (text: string) => boolean): Promise<string> {
   try {
-    await expect.poll(async () => ok(await fileOf(page, slug)), { timeout: patience(30_000), intervals: [500] }).toBe(true)
+    await expect.poll(async () => ok(await fileOf(page, slug)), { timeout: patience(30_000), interval: 500 }).toBe(true)
   } catch {
     // the caller's own assertion says what the file held
   }
