@@ -710,7 +710,8 @@ describe.skipIf(!playwright)('blocs finis, réglages lisibles, données en formu
       await page.getByRole('button', { name: 'Add block' }).click()
       const gallery = page.getByRole('dialog', { name: 'Add block' })
       await gallery.getByRole('option', { name: 'Figures' }).waitFor()
-      expect(await gallery.getByRole('radio', { name: 'tiles' }).count()).toBe(1)
+      // Figures and Progress (project group) both offer tiles.
+      expect(await gallery.getByRole('radio', { name: 'tiles' }).count()).toBe(2)
       expect(await gallery.getByRole('radio', { name: 'rows' }).count(), 'list shows its own three').toBe(1)
       await gallery.getByRole('radio', { name: 'inline' }).click()
       await gallery.getByRole('option', { name: 'Figures' }).click()
