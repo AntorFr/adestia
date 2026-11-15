@@ -318,20 +318,15 @@ button.pm-timeline__span:hover {
   padding: var(--space-2) 0;
 }
 .pm-subproject__card {
-  display: flex;
+  /* The box, the border, the hover and the press are the charter's
+     `.adestia-card`; only the inside is laid out here. */
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
   padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
+  margin: 0;
+  min-width: 0;
 }
-.pm-subproject__card:hover { border-color: var(--accent); }
 /* La boulette et le nom sur une ligne, le mot dessous : un nom de projet long
    a besoin d'aller à la ligne, ce qu'une ligne de liste ne lui permettait pas
    mais qu'une carte doit. */
@@ -427,3 +422,30 @@ button.pm-timeline__span:hover {
 .pm-risks tbody tr:nth-child(odd) { background: transparent; }
 .pm-grid .adestia-card { align-items: flex-start; text-align: left; margin: 0; }
 .pm-grid .adestia-card__title { font: inherit; font-weight: 600; margin: 0; }
+
+/* ── `:::timeline view=list` — the dated entries as rows ───────────────────
+   The same entries and the same words as the bars; a late one is the dashed
+   `--text-muted` outline of its pill, never amber. */
+.pm-timeline--list .pm-list { margin: 0; padding: 0; list-style: none; }
+.pm-timeline__row > .adestia-state,
+.pm-timeline__row > .pm-timeline__owner { flex: none; min-width: 8rem; }
+.pm-timeline__row { padding: var(--space-2) 0; border-bottom: 1px solid var(--border); }
+.pm-timeline__row:last-child { border-bottom: 0; }
+.pm-timeline__name {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+button.pm-timeline__name { cursor: pointer; }
+button.pm-timeline__name:hover { text-decoration: underline; }
+.pm-timeline__owner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: 600 var(--text-xs)/1.4 var(--font-mono);
+}
+.pm-timeline__row--done .pm-mile__label,
+.pm-timeline__row--past .pm-mile__label { color: var(--text-muted); }

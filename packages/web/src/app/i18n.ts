@@ -571,6 +571,8 @@ const FR: Readonly<Record<string, string>> = {
   rows: 'Lignes',
   cards: 'Cartes',
   chips: 'Pastilles',
+  bars: 'Barres',
+  list: 'Liste',
   note: 'note',
   tip: 'astuce',
   warning: 'avertissement',

@@ -83,6 +83,13 @@
             "children"
           ],
           "default": "children"
+        },
+        "view": {
+          "values": [
+            "bars",
+            "list"
+          ],
+          "default": "bars"
         }
       }
     },
@@ -157,6 +164,13 @@
       },
       "image": "./web/gallery/timeline.svg",
       "group": "Project",
+      "view": {
+        "values": [
+          "bars",
+          "list"
+        ],
+        "default": "bars"
+      },
       "fields": {
         "line": "label-range",
         "columns": [

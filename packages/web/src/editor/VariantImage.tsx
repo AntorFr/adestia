@@ -72,6 +72,14 @@ export function VariantImage({ name }: { readonly name: string }): ReactNode {
           <rect x="2" y="12" width="28" height="8" rx="4" />
         </>,
       )
+    case 'bars':
+      return box(
+        <>
+          <rect x="2" y="5" width="26" height="6" rx="2" />
+          <rect x="14" y="13" width="30" height="6" rx="2" opacity="0.5" />
+          <rect x="24" y="21" width="22" height="6" rx="2" />
+        </>,
+      )
     case 'list':
       return box(
         <>

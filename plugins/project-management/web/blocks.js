@@ -227,6 +227,56 @@ export default function createProjectBlocks(api) {
     return date.toLocaleDateString(api.locale, parts)
   }
 
+  /**
+   * The dated entries as rows — `view=list`. The same entries, in the order of
+   * their dates, each with the word the bars carry as their title: the state
+   * is a word in a pill (calendar states) or beside a dot (the owner's own
+   * Green / Amber / Red), never a hue alone. A late entry is the dashed
+   * `--text-muted` outline, as on the bars; amber stays the owner's.
+   */
+  function timelineList(entries, today, openPage) {
+    const PILL = { done: 'done', past: 'done', late: 'late', current: 'next', ahead: 'planned' }
+    const sorted = [...entries].sort((a, b) => {
+      const left = a.start ?? a.due
+      const right = b.start ?? b.due
+      return left === right ? (a.due < b.due ? -1 : a.due > b.due ? 1 : 0) : left < right ? -1 : 1
+    })
+    return h(
+      'ul',
+      { className: 'pm-list pm-timeline__list' },
+      sorted.map((entry, index) => {
+        const state = barState(entry, today)
+        const word = STATES[state]
+        const mark = !word
+          ? null
+          : PILL[state]
+            ? pill(PILL[state], word)
+            : h('span', { className: 'pm-timeline__owner', key: 'owner' }, [
+                h('i', { className: `pm-subproject__ico pm-subproject__ico--${state}`, 'aria-hidden': 'true', key: 'dot' }),
+                h('span', { key: 'word' }, word),
+              ])
+        const label = h(
+          entry.path && openPage ? 'button' : 'span',
+          {
+            className: 'pm-mile__label pm-timeline__name',
+            key: 'label',
+            ...(entry.path && openPage ? { type: 'button', onClick: () => openPage(entry.path) } : {}),
+          },
+          entry.label,
+        )
+        return h('li', { className: `pm-mile pm-timeline__row pm-timeline__row--${state}`, key: index, title: spell(entry, today) }, [
+          mark,
+          label,
+          h(
+            'span',
+            { className: 'pm-mile__date', key: 'date' },
+            entry.start ? `${day(entry.start)} → ${day(entry.due)}` : day(entry.due),
+          ),
+        ])
+      }),
+    )
+  }
+
   function Timeline({ attributes = {}, items = [], path, openPage, pages }) {
     const scale = attributes.scale ?? 'months'
     const depth = attributes.depth ?? 'self'
@@ -287,6 +337,14 @@ export default function createProjectBlocks(api) {
     if (!box) return h('div', { className: 'pm-timeline' }, [grammar, leftover])
 
     const today = new Date().toISOString().slice(0, 10)
+    // `view` is how the SAME entries are drawn, never what is written: the
+    // file is byte for byte the same under either, and so is the walk.
+    if (attributes.view === 'list') {
+      return h('div', { className: 'pm-timeline pm-timeline--list' }, [
+        timelineList(entries, today, openPage),
+        leftover,
+      ])
+    }
     const at = (date) => `${(fraction(date, box) * 100).toFixed(2)}%`
     const phases = entries.filter((entry) => entry.start)
     // Sorted by date, then laid out in as many rows as it takes for no two
@@ -497,7 +555,7 @@ export default function createProjectBlocks(api) {
         openPage ? 'button' : 'div',
         {
           key: row.path,
-          className: 'pm-subproject__card',
+          className: openPage ? 'adestia-card pm-subproject__card' : 'adestia-card adestia-card--static pm-subproject__card',
           ...(openPage ? { type: 'button', onClick: () => openPage(row.path) } : {}),
         },
         [
