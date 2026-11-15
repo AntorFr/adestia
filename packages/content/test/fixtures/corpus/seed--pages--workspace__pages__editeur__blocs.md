@@ -1,0 +1,54 @@
+---
+title: Tous les blocs, éditable
+type: fiche
+id: editeur-blocs
+---
+
+# Tous les blocs, éditable
+
+Un paragraphe, puis une liste à puces :
+
+- un premier point
+- un second, avec **du gras** et un [[projet#servante]] qui existe
+- un lien perdu : [[projet#introuvable]]
+
+> Une citation, pour voir son filet.
+
+:::callout{ico=💡 title="À savoir"}
+Un encadré, avec un peu de texte dedans.
+:::
+
+:::figures{title="En chiffres" ico=📊 couleur=rouge}
+- Avancement: 62 % — 8 lots sur 13
+- Jalon: 12 oct. — dans 3 jours
+:::
+
+:::table
+| Pièce | Quantité |
+|---|---|
+| Plaque | 2 |
+| Tasseau | 14 |
+:::
+
+:::list{source=files view=cards title="Fichiers" ico=📎}
+:::
+
+:::list{depth=children pull=status title="Sous-pages"}
+:::
+
+:::gallery
+![Avant](assets/degrade.png)
+![Après](assets/degrade.png)
+:::
+
+:::content{type=note title="À gauche" w=1/2}
+Un premier bloc de la ligne.
+:::
+
+:::content{type=note title="À droite" w=1/2}
+Un second.
+:::
+
+:::content{type=note from=disparu title="D'un plugin absent"}
+Ce bloc demande un plugin qui n'est pas là.
+:::

@@ -52,8 +52,10 @@ describe('the block menu', () => {
     // A block's settings open where it is inserted now, so a required
     // attribute is something to ASK for — `content` comes in on its `type`.
     // `app` stays out: the core's own table says nothing draws it.
-    expect(items().map((item) => item.key)).toEqual(['callout', 'row', 'gallery', 'content', 'figures', 'table', 'list', 'browse'])
+    expect(items().map((item) => item.key)).toEqual(['callout', 'row', 'section', 'columns', 'gallery', 'content', 'figures', 'table', 'list', 'browse'])
     expect(items().map((item) => item.key)).not.toContain('app')
+    // A column exists only inside a band: no card, no menu line.
+    expect(items().map((item) => item.key)).not.toContain('col')
   })
 
   it('names the container block so it cannot be taken for Crepe’s own table', () => {

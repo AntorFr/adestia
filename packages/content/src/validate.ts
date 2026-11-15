@@ -38,10 +38,53 @@ function hasContent(node: AnyDirective): boolean {
   return 'children' in node && Array.isArray(node.children) && node.children.length > 0
 }
 
+/** What a container may sit in, and the columns a band may have (AD-32). */
+const COLUMN_COUNTS: readonly number[] = [2, 3]
+
 export function validateDocument(tree: Root): readonly Diagnostic[] {
   const diagnostics: Diagnostic[] = []
+  // `visit` reaches a parent before its children, so a child finds its parent here.
+  const parents = new WeakMap<object, object>()
+  const containerAbove = (node: object, names: readonly string[]): boolean => {
+    for (let up = parents.get(node); up; up = parents.get(up)) {
+      if (names.includes((up as { name?: string }).name ?? '')) return true
+    }
+    return false
+  }
 
-  visit(tree, (node) => {
+  const checkContainer = (directive: AnyDirective, name: string, line: number | undefined): void => {
+    const refuse = (code: string, message: string, args: Record<string, string> = {}): void => {
+      diagnostics.push({ severity: 'error', block: name, line, code, args: { block: name, ...args }, message })
+    }
+    if (name === 'section' && containerAbove(directive, ['section', 'col'])) {
+      refuse(
+        'container-depth',
+        containerAbove(directive, ['col'])
+          ? 'A section cannot sit in a column: a column holds blocks only.'
+          : 'A section cannot sit in another section.',
+      )
+    } else if (name === 'columns' && containerAbove(directive, ['col'])) {
+      refuse('container-depth', 'Columns cannot sit in a column: a column holds blocks only.')
+    } else if (name === 'col') {
+      const up = parents.get(directive) as { type?: string; name?: string } | undefined
+      if (up?.type !== 'containerDirective' || up.name !== 'columns') {
+        refuse('col-outside-columns', 'A "col" belongs in a "columns" band.')
+      }
+    }
+    if (name === 'columns') {
+      const children = (directive as ContainerDirective).children as RootContent[]
+      const cols = children.filter((c) => c.type === 'containerDirective' && c.name === 'col').length
+      if (!COLUMN_COUNTS.includes(cols)) {
+        refuse('columns-count', `A "columns" band holds 2 or 3 "col"; this one holds ${cols}.`, { count: String(cols) })
+      }
+      if (children.some((c) => !(c.type === 'containerDirective' && c.name === 'col'))) {
+        refuse('columns-content', 'A "columns" band holds "col" blocks only; the rest is kept but not drawn.')
+      }
+    }
+  }
+
+  visit(tree, (node, _index, parent) => {
+    if (parent) parents.set(node, parent)
     // Only the two BLOCK forms: the grammar no longer parses an inline
     // `:name`, so a colon in prose can never reach this check.
     if (node.type !== 'containerDirective' && node.type !== 'leafDirective') {
@@ -65,6 +108,8 @@ export function validateDocument(tree: Root): readonly Diagnostic[] {
 
     const spec = blockSpec(name)!
     const attributes = directive.attributes ?? {}
+
+    if (node.type === 'containerDirective') checkContainer(directive, name, line)
 
     // Judged against EVERY definition of the name, not the contextless one.
     // Definitions need not agree, and this validator has no page context: a

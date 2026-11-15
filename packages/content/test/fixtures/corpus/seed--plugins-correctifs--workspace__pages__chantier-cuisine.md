@@ -1,0 +1,10 @@
+---
+title: Chantier cuisine
+type: projet
+id: cuisine
+---
+
+Les tâches de la maison, cochées ici comme dans la liste :
+
+:::checklist{page=taches show=all}
+:::
