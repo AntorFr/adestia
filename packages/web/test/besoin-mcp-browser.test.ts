@@ -354,19 +354,19 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
         g.mode = 'hold'
         await dialog(page).getByRole('button', { name: w.remove }).click()
         await dialog(page).waitFor({ state: 'hidden', timeout: T })
-        expect(await removeButton(page, locale).isDisabled()).toBe(true)
+        await expect.poll(() => removeButton(page, locale).isDisabled(), { timeout: T }).toBe(true)
         expect(await dialog(page).count()).toBe(0)
         await shot(page, `B20-en-vol-${locale}`)
         const done = page.waitForResponse((r) => r.request().method() === 'DELETE' && r.url().includes(`/api/mcp/servers/${name}`), { timeout: T })
         g.release()
         await done
         await page.locator(`${canvas} .adestia-tile__label:text-is("agenda")`).first().waitFor({ state: 'visible', timeout: T })
-        expect(await page.evaluate(() => location.hash)).toBe('#/settings/mcp')
+        await expect.poll(() => page.evaluate(() => location.hash), { timeout: T }).toBe('#/settings/mcp')
         // the list refetches after the DELETE: wait for the removed tile to leave, a count read at once saw the old list
         await page.locator(`${canvas} .adestia-tile__label:text-is("${name}")`).first().waitFor({ state: 'detached', timeout: T })
         expect(await page.locator(`${canvas} .adestia-tile__label:text-is("${name}")`).count()).toBe(0)
         expect(g.calls).toBe(1)
-        expect(await names(base)).not.toContain(name)
+        await expect.poll(() => names(base), { timeout: T }).not.toContain(name)
         expect(await names(base)).toContain('agenda')
       } finally {
         await context.close()
