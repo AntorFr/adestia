@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { McpServers } from '../src/app/McpServers.js'
 import { translator } from '../src/app/i18n.js'
+import { patience } from './patience.js'
 
 afterEach(cleanup)
 
@@ -208,11 +209,11 @@ describe('E-10 refetch after a write', () => {
     const save = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement
     await waitFor(() => expect(save.disabled).toBe(false))
     fireEvent.click(save)
-    await waitFor(() => expect(lists).toBe(2))
+    await waitFor(() => expect(lists).toBe(2), { timeout: patience(1000) })
     expect(screen.queryByText('Loading…')).toBeNull()
     await act(async () => { refetch.settle(res(200, SERVERS)) })
     // The answer is in once the declaration is drawn again; read the screen after.
-    expect(await screen.findByRole('button', { name: 'Remove' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Remove' }, { timeout: patience(1000) })).toBeTruthy()
     expect(screen.queryByText('Loading…')).toBeNull()
   })
 

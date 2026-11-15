@@ -1342,6 +1342,24 @@ its report names that commit and the ruleset id, and if the token cannot, it is 
 on a pushed head that contains `origin/main`, and replaces its mentions of CI; `docs/parcours.md`
 P-15 step 2 and the Tests line of *Cross-cutting* follow.
 
+### AD-preuve-5 — A local level and a single-test replay, declared beside the whole suite
+
+`.sdlc.yaml` also declares `tests.local` (`scripts/suite-locale.sh`) and `tests.rejouer`
+(`scripts/rejouer.sh {tests}`), under the unchanged `commande:`. The local level plays install,
+typecheck, lint, vitest without the test files that drive a browser or `bench/launch.mjs`
+(found by grep for `playwright|chromium|launch.mjs` under `packages/*/test`, so a new browser test
+leaves the level by itself) and the plugins' tests; no build, guards or boot. It writes the same
+`resultats.xml` through `scripts/suite-rapport.mjs`, so a test keeps its name in both levels (the
+`build` and `boot` cases are dropped from its report, not reported red). Measured in the same pod:
+local ~10 min (2846 tests), whole suite ~35 min (3491 tests). `rejouer.sh` takes JUnit names as
+arguments (space-separated, quoted when they contain spaces, with or without the `classname`
+prefix; `etape > typecheck` or `etape > lint` replays a step), plays only those tests (vitest by
+file and `-t`, `node --test` by name pattern for plugins), and exits non-zero on a name that matches
+no test, never a green at zero test. The local level proves nothing for a commit: only the attested
+suite does (AD-preuve-1). `scripts/suite-attestee.sh` is unchanged.
+*Rejected:* a hand-kept list of excluded files (it rots as browser tests are added); a second report
+format for the local level (names would drift from the attested suite).
+
 ## Decisions of adestia-acces-refuse
 
 An OIDC account that is in no allowed group used to meet a bare JSON 403 at `/auth/callback`, and

@@ -8,7 +8,12 @@ deploiement:
 # tests: the suite this repository has attested (`attester --publier`, rule R15).
 # GitHub Actions plays no suite; the forge only checks the `tests-complets` status.
 tests:
-  commande: scripts/suite-attestee.sh
+  commande: scripts/suite-attestee.sh   # whole suite: ~35 min (34m55s, 3491 tests, same pod)
   rapport: resultats.xml
   format: junit
   delai: 100m
+  # The local level: install, typecheck, lint, vitest without the browser/boot files, plugins;
+  # no build, guards or boot. ~10 min (10m03s, 2846 tests, same pod), same test names.
+  local: scripts/suite-locale.sh
+  # Replays only the named tests ({tests}: JUnit names, space-separated, bare or quoted).
+  rejouer: scripts/rejouer.sh {tests}
