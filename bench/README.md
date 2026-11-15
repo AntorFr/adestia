@@ -23,7 +23,7 @@ CLAUDE_CODE_OAUTH_TOKEN=… node bench/launch.mjs --engine claude   # a real Cla
 ```
 
 Options: `--skin <id>`, `--locale en|fr`, `--seed <name>` (default `base`),
-`--port <n>` (default: a free one), `--data <dir>` (default: a throwaway
+`--no-end-session` (the `oidc` seed's provider announces no `end_session_endpoint`, so sign-out takes the `/auth/login?switch=1` fallback), `--port <n>` (default: a free one), `--data <dir>` (default: a throwaway
 directory under `os.tmpdir()`; a directory you name is kept). It prints
 `listening on <url>` once `/api/health` answers `ok`, and runs until SIGTERM,
 which stops it and removes its data. Browse the URL, or drive it by API
@@ -66,6 +66,7 @@ or scenario caller. It uses the repository's TypeScript parser, without a browse
 | `--seed` | What it shows |
 |---|---|
 | `base` | The populated instance: 20+ pages in two stores (every core block, a lost and an ambiguous wikilink, a vocabulary the product refuses to save, an unreadable frontmatter, a stray `app:`, files, two collections), conversations (running, unread, idle, archived, long, medium, a thread with every bubble state), six MCP servers in every health, instructions and three catalogues (importable, empty, unreachable), four delegations from two callers, a brief, a stored credential, a refused plugin and a plugin delivering a skill. No settings route: E-14 says it does not expose its configuration. |
+| `saisie` | `base` plus the reference pages of the data form E-35 and the settings E-6 (`figures`, `list`, `table`, `timeline`, each with a line nobody can read), for `scenarios/saisie-formulaire.mjs` and `scenarios/reglages-blocs.mjs`. |
 | `chat-ajouts` | E-16 loading, failure and the context-lost line: the base instance plus a conversation with two `contextLost` agent messages, a plain one and 20 more rows. |
 | `chat-permission` | E-17/E-18: isolated desk/phone threads, pending/signed/denied/expired signatures, questions with and without a lasting rule; `permissions.mode: ask` also supports the real-Claude proof. |
 | `config-writable` | `base`, with the configuration file the screen reads and writes. |
@@ -172,7 +173,7 @@ scripted engine, then captures each screen of `docs/ecrans.md` (E-1 to E-31) in
 `light` and `dark`, at 1440×900 and at a 390×844 touch viewport:
 31 × 2 × 2 = 124 files in `<out>/<skin>/<E-n>-<name>-<theme>-<desk|phone>.png`
 (`<skin>` is `default` without `--skin`; `--out` defaults to `bench/shots-sweep`,
-ignored by git). Two to four minutes, depending on the machine.
+ignored by git). Two to four minutes, depending on the machine (about three times that on a loaded core). Every wait for the chat shell, the phone's shell screen or the proof selector lasts `APPEAR_MS` = 60 s (`bench/lib/capture.mjs`). A capture whose wait ran out is taken once more in a fresh context; only that timeout is retried (a loading or fatal screen, a capture file under 500 bytes or a timeout inside a gesture or in `page.goto` fails at once). A second timeout fails it: the error names the selector that never appeared, adds the first 100 characters of what the page showed and says it was the second attempt; the screen's remaining captures are then printed `FAIL … not tried (proof missing earlier)` (also when it was the chat shell or the phone's shell screen that never appeared, not a proof selector) and counted as failures, so a broken screen costs up to 2 × 60 s and up to four failures. The sweep needs the build (`npm run build`, so `packages/server/dist` exists).
 
 The table at the top of the script is the one place that knows a screen: its
 seed, route, the gesture that opens it and the **selector that proves it is that

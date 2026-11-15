@@ -15,6 +15,7 @@ import { mkdirSync } from 'node:fs'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { type Size, type Theme, type Instance, launch, newBrowser, open, playwright } from './charte-browser.js'
+import { patience } from './patience.js'
 
 const SHOTS = process.env.PAGES_SHOTS
 if (SHOTS) mkdirSync(SHOTS, { recursive: true })
@@ -42,7 +43,7 @@ const visit = async (browser: BrowserOf, base: string, locale: string, theme: Th
     locale,
     route,
     before: async (page: any) => {
-      page.indexAnswered = page.waitForResponse((r: any) => /\/api\/pages\/index(\?.*)?$/.test(r.url()), { timeout: 20_000 }).catch(() => null)
+      page.indexAnswered = page.waitForResponse((r: any) => /\/api\/pages\/index(\?.*)?$/.test(r.url()), { timeout: patience(20_000) }).catch(() => null)
     },
   })) as { context: any; page: any }
 async function indexLoaded(page: any) {
@@ -76,7 +77,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
         beforeAll(async () => {
           instance = await launch('besoin-pages-ensemble', skin, locale)
           browser = await newBrowser()
-        }, 60_000)
+        }, 180_000) // the instance boots and the browser starts: under a loaded pod 60 s was shorter than that
         afterAll(async () => {
           await browser?.close()
           await instance?.stop()
@@ -88,26 +89,26 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
           for (const theme of THEMES)
             for (const size of SIZES) {
               const { context, page } = await visit(browser, instance.url, locale, theme, size, '/page/dossier/sous/profonde')
-              await page.waitForFunction(() => document.querySelectorAll('nav.adestia-crumbs button').length >= 3, null, { timeout: 15_000 })
+              await page.waitForFunction(() => document.querySelectorAll('nav.adestia-crumbs button').length >= 3, null, { timeout: patience(15_000) })
               await indexLoaded(page)
               const trail = await crumbs(page)
               expect(trail.map((t) => t.toLowerCase()), `${theme} ${size}`).toEqual([w.home.toLowerCase(), 'dossier', 'sous', 'page profonde'])
               await shot(page, `profonde-${skin}-${locale}-${theme}-${size}`)
               await context.close()
             }
-        }, 180_000)
+        }, patience(180_000))
 
         // P-4 step 6, exclusion: opening the editor on a root page does not make a folder appear in its trail.
         it('racine_en_edition_fil_ariane_sans_dossier_invente', async () => {
           const { context, page } = await visit(browser, instance.url, locale, 'light', 'desk', '/page/racine')
-          await page.waitForFunction(() => /Page à la racine/.test(document.querySelector('nav.adestia-crumbs')?.textContent ?? ''), null, { timeout: 15_000 })
+          await page.waitForFunction(() => /Page à la racine/.test(document.querySelector('nav.adestia-crumbs')?.textContent ?? ''), null, { timeout: patience(15_000) })
           await page.getByRole('button', { name: w.edit, exact: true }).click()
-          await page.getByRole('button', { name: w.done, exact: true }).waitFor({ timeout: 15_000 })
+          await page.getByRole('button', { name: w.done, exact: true }).waitFor({ timeout: patience(15_000) })
           await indexLoaded(page)
           expect(await crumbs(page)).toEqual([w.home, 'Page à la racine'])
           await shot(page, `racine-edition-${skin}-${locale}`)
           await context.close()
-        }, 60_000)
+        }, patience(60_000))
 
         // P-4 step 9: a read-only page shows each diagnostic in the instance's language, the block name as written.
         // Breaks if the sentence for a block that needs content is shown untranslated (or only in English).
@@ -115,7 +116,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
           for (const theme of THEMES)
             for (const size of SIZES) {
               const { context, page } = await visit(browser, instance.url, locale, theme, size, '/page/callout-vide')
-              await page.waitForSelector('.adestia-editor__raw', { timeout: 15_000 })
+              await page.waitForSelector('.adestia-editor__raw', { timeout: patience(15_000) })
               const flat = ((await page.evaluate(() => document.querySelector('.adestia-editor')!.textContent ?? '')) as string).replace(/\s+/g, ' ')
               expect(flat, `${theme} ${size}`).toContain(NEEDS_CONTENT[locale].sentence)
               const other = locale === 'fr' ? NEEDS_CONTENT.en.sentence : NEEDS_CONTENT.fr.sentence
@@ -123,7 +124,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               await shot(page, `callout-vide-${skin}-${locale}-${theme}-${size}`)
               await context.close()
             }
-        }, 180_000)
+        }, patience(180_000))
 
         // P-5 step 6 / E-4: a save the vocabulary refuses shows its first diagnostic in the instance's language
         // in the save status, and the editor stays open with its text. Breaks if the status shows the English sentence
@@ -136,32 +137,81 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             // armed BEFORE the typing that triggers the save: the answer to the PUT that carries the empty callout is the first signal
             // (an earlier autosave, mid-typing, answers 'Saved' and is not the refusal)
             const saveAnswered = page
-              .waitForResponse((r: any) => r.request().method() === 'PUT' && /:::callout/.test(r.request().postData() ?? '') && new RegExp(`/api/pages/refus-${i}(\\.md)?(\\?.*)?$`).test(r.url()), { timeout: 60_000 })
+              .waitForResponse((r: any) => r.request().method() === 'PUT' && /:::callout/.test(r.request().postData() ?? '') && new RegExp(`/api/pages/refus-${i}(\\.md)?(\\?.*)?$`).test(r.url()), { timeout: patience(60_000) })
               .catch(() => null)
             // the editor is mounted and holds the page text: the signal that a click lands on the real paragraph
-            await page.waitForFunction(() => [...document.querySelectorAll('.ProseMirror')].some((e) => (e.textContent ?? '').includes('Corps.')), null, { timeout: 45_000 })
+            await page.waitForFunction(() => [...document.querySelectorAll('.ProseMirror')].some((e) => (e.textContent ?? '').includes('Corps.')), null, { timeout: patience(45_000) })
+            // saves the page makes while it is being typed into (the autosave of the intermediate text): counted from
+            // before the first keystroke, so Enter is not pressed while one is in flight — its answer would rebase the
+            // editor under the block just picked and the refusal would never leave
+            const puts: string[] = []
+            let inFlight = 0
+            const isSave = (r: any) => r.method() === 'PUT' && r.url().includes(`/api/pages/refus-${i}`)
+            page.on('request', (r: any) => { if (isSave(r)) inFlight++ })
+            page.on('requestfinished', (r: any) => { if (isSave(r)) inFlight-- })
+            page.on('requestfailed', (r: any) => { if (isSave(r)) inFlight-- })
+            page.on('response', (r: any) => { if (isSave(r.request())) puts.push(String(r.status())) })
             await page.locator('.ProseMirror').last().getByText('Corps.').click()
             await page.keyboard.press('End')
             await page.keyboard.press('Enter')
-            await page.keyboard.type('/')
-            await page.locator('.milkdown-slash-menu').first().waitFor({ state: 'visible', timeout: 45_000 })
-            await page.keyboard.type('callout')
-            // the menu has filtered itself down to the block: the proof Enter will pick it
-            await page.waitForFunction(() => {
+            // The slash menu can lose the Enter under load: an autosave of the intermediate text answers between the
+            // checks and the keystroke, rebases the editor and closes the menu. The signal is the block itself: until it
+            // is in the editor, the line is cleared and the menu opened again (3 attempts), then the wait blames the pick.
+            const callout = page.locator('.ProseMirror [data-block="callout"]').first()
+            const menuFiltered = (ms: number) => page.waitForFunction(() => {
               const menu = document.querySelector('.milkdown-slash-menu') as HTMLElement | null
               return !!menu && menu.dataset.show === 'true' && /callout/.test(menu.innerText) && !/Heading/.test(menu.innerText)
-            }, null, { timeout: 30_000 })
-            await page.keyboard.press('Enter') // an empty :::callout, which the vocabulary refuses at save
-            // first signal: the save left and the server answered it
-            expect(await saveAnswered, 'the save never left: no PUT answered').not.toBeNull()
-            // second signal: the status carries the refusal
+            }, null, { timeout: ms })
+            let picked = false
+            for (let attempt = 0; attempt < 3 && !picked; attempt++) {
+              if (attempt > 0) {
+                // a rebase by an autosave answer may have dropped the empty line and the focus with it: land again at the end of
+                // the document, and open a new empty line only if the caret is not already on one
+                await page.locator('.ProseMirror').last().getByText('Corps.').click()
+                await page.keyboard.press('Control+End')
+                const line = await page.evaluate(() => (window.getSelection()?.anchorNode?.textContent ?? '').trim())
+                if (line.startsWith('/')) await page.keyboard.press('Shift+Home') // what is left of the last try: typed over
+                else if (line !== '') await page.keyboard.press('Enter') // no empty line left: a new one
+              }
+              await page.keyboard.type('/')
+              const last = attempt === 2
+              // a menu that never opens (the '/' lost to a rebase under load) is a failed attempt, not a verdict: only the last one blames it
+              const opened = await page.locator('.milkdown-slash-menu').first().waitFor({ state: 'visible', timeout: last ? patience(45_000) : patience(10_000) }).then(() => true, () => false)
+              if (!opened) {
+                if (last) throw new Error(`the slash menu never opened after 3 attempts (saves seen: [${puts.join(',')}])`)
+                continue
+              }
+              await page.keyboard.type('callout')
+              // the menu has filtered itself down to the block: the proof Enter will pick it
+              const filtered = await menuFiltered(last ? patience(30_000) : patience(10_000)).then(() => true, () => false)
+              if (!filtered) {
+                if (last) throw new Error(`the slash menu never filtered down to the callout after 3 attempts (saves seen: [${puts.join(',')}])`)
+                continue
+              }
+              // no save in flight: the signal that the editor is at rest and Enter lands on the menu alone
+              for (const start = Date.now(); inFlight > 0; ) {
+                if (Date.now() - start > patience(30_000)) throw new Error(`an autosave never answered before the block was picked (saves seen: [${puts.join(',')}])`)
+                // pause fixe : poll interval while a save is in flight
+                await page.waitForTimeout(patience(50))
+              }
+              await page.keyboard.press('Enter') // an empty :::callout, which the vocabulary refuses at save
+              // the proof the keystroke landed on the menu: the block is in the editor. Without it an Enter that fell
+              // through as a newline would leave no refusal to wait for, and the wait below would blame the save
+              picked = await callout.waitFor({ state: 'attached', timeout: attempt === 2 ? patience(45_000) : patience(10_000) }).then(() => true, () => false)
+            }
+            if (!picked) {
+              await shot(page, `refus-ECHEC-bloc-${skin}-${locale}-${theme}`)
+              throw new Error(`the callout never entered the editor: Enter did not pick the block, so no refusal could leave (saves seen: [${puts.join(',')}])`)
+            }
+            expect(await saveAnswered, `the save never left: no PUT carrying the empty callout was answered (l'enregistrement n'est jamais parti); PUT statuses seen: [${puts.join(',')}]`).not.toBeNull()
+            // first signal above: the save left and the server answered it; second signal: the status carries the refusal
             const flat = () => page.evaluate(() => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' '))
             const want = NEEDS_CONTENT[locale].saved
             await page
-              .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 15_000 })
+              .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 45_000 })
               .catch(async (error: unknown) => {
                 await shot(page, `refus-ECHEC-${skin}-${locale}-${theme}`)
-                throw new Error(`the answer came without the status text: ${String(error)}\nstatus read: ${(await flat()).slice(-400)}`)
+                throw new Error(`the answer came without the status text (la réponse est venue sans le texte du statut): ${String(error)}\nstatus read: ${(await flat()).slice(-400)}`)
               })
             const other = locale === 'fr' ? NEEDS_CONTENT.en.saved : NEEDS_CONTENT.fr.saved
             expect(await flat(), `${theme}`).not.toContain(other)
@@ -170,7 +220,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             await shot(page, `refus-${skin}-${locale}-${theme}`)
             await context.close()
           }
-        }, 240_000)
+        }, 300_000)
 
         // P-6 step 4 / E-6: the popover stays below the header and the bands even when its block is the first
         // one of the page, right under the bands; at 1440 px and on a phone, in both themes.
@@ -178,13 +228,44 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
           for (const theme of THEMES)
             for (const size of SIZES) {
               const { context, page } = await visit(browser, instance.url, locale, theme, size, '/page/haut')
-              await page.waitForSelector('.adestia-problems', { timeout: 15_000 })
+              await page.waitForSelector('.adestia-problems', { timeout: patience(15_000) })
               await page.getByRole('button', { name: w.edit, exact: true }).click()
-              await page.waitForSelector('[data-block="callout"]', { timeout: 15_000 })
-              await page.locator('[data-block="callout"]').hover({ timeout: 3_000 }).catch(() => undefined) // a touch screen has no hover
+              await page.waitForSelector('[data-block="callout"]', { timeout: patience(15_000) })
+              await page.locator('[data-block="callout"]').hover({ timeout: patience(3_000) }).catch(() => undefined) // a touch screen has no hover
               await page.getByRole('button', { name: w.block }).first().click()
               await page.waitForSelector('.adestia-popover', { timeout: 10_000 })
-              await page.waitForTimeout(300) // the panel measures itself once mounted: a visual settle before reading its geometry
+              // The popover places itself in steps (hidden at 0,0, then placed, then re-placed as the form fills and fonts
+              // arrive), and a band can appear or change height under load, which re-places the popover a frame later:
+              // wait for the signal that the WHOLE set is settled — popover visible, and the rectangles of the popover, the
+              // canvas header and every band, and the number of bands, identical on 5 consecutive frames.
+              await page.waitForFunction(
+                () =>
+                  new Promise<boolean>((resolve) => {
+                    const box = (e: Element) => {
+                      const r = e.getBoundingClientRect()
+                      return `${r.top}|${r.left}|${r.width}|${r.height}`
+                    }
+                    const key = (el: Element) => {
+                      const header = document.querySelector('.adestia-canvas__header')
+                      const bands = [...document.querySelectorAll('.adestia-problems')]
+                      return [box(el), header ? box(header) : 'no-header', String(bands.length), ...bands.map(box)].join('#')
+                    }
+                    let last = ''
+                    let same = 0
+                    const frame = () => {
+                      const el = document.querySelector('.adestia-popover')
+                      if (!el || !el.isConnected || getComputedStyle(el).visibility === 'hidden') return resolve(false)
+                      const k = key(el)
+                      same = k === last ? same + 1 : 0
+                      last = k
+                      if (same >= 5) return resolve(true)
+                      requestAnimationFrame(frame)
+                    }
+                    requestAnimationFrame(frame)
+                  }),
+                undefined,
+                { timeout: 20_000 },
+              )
               const g = (await page.evaluate(() => {
                 const rect = (e: Element) => {
                   const r = e.getBoundingClientRect()
@@ -210,7 +291,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               await shot(page, `reglages-haut-${skin}-${locale}-${theme}-${size}`)
               await context.close()
             }
-        }, 240_000)
+        }, patience(240_000))
 
         // P-4 step 5 / E-5: the editor shows the fields of a CRLF page as it shows those of its LF twin.
         // Breaks if the properties of a page whose lines end in \r\n come up empty.
@@ -220,26 +301,26 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             // Each step waits for the proof that the previous one landed, never for a duration: the page loaded,
             // the editor mounted (its Done button), the gear drawn, the popover open AND filled (title is non-empty).
             const edit = page.getByRole('button', { name: w.edit, exact: true })
-            await edit.waitFor({ timeout: 20_000 })
+            await edit.waitFor({ timeout: patience(20_000) })
             // The editor reads what the plugins contribute (the vocabulary behind the selects) when it MOUNTS; the index
             // answers only after the plugins are loaded. Open the editor before that and the properties come up as
             // bare text fields, whatever the page says.
             await indexLoaded(page)
             await edit.click()
-            await page.getByRole('button', { name: w.done, exact: true }).waitFor({ timeout: 20_000 })
+            await page.getByRole('button', { name: w.done, exact: true }).waitFor({ timeout: patience(20_000) })
             const gear = page.locator('.adestia-editor__meta-gear')
-            await gear.waitFor({ state: 'visible', timeout: 20_000 })
+            await gear.waitFor({ state: 'visible', timeout: patience(20_000) })
             // A click that lands while the editor is still remounting is lost: click again until the popover is there.
-            const deadline = Date.now() + 20_000
+            const deadline = Date.now() + patience(20_000)
             while (!(await page.locator('.adestia-popover').count()) && Date.now() < deadline) {
               await gear.click()
-              await page.locator('.adestia-popover').waitFor({ timeout: 2_000 }).catch(() => null)
+              await page.locator('.adestia-popover').waitFor({ timeout: patience(2_000) }).catch(() => null)
             }
             // the fields are filled: the first input carries the title, read from the page, not an empty form
             await page.waitForFunction(
               (t: string) => (document.querySelector('.adestia-popover input') as HTMLInputElement | null)?.value === t,
               title,
-              { timeout: 30_000 },
+              { timeout: patience(30_000) },
             )
             const fields = (await page.evaluate(() => ({
               inputs: [...document.querySelectorAll('.adestia-popover input')].map((i) => (i as HTMLInputElement).value),
@@ -260,7 +341,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
           }
           expect(crlf.selects).toEqual(lf.selects)
           expect(crlf.inputs.slice(1)).toEqual(lf.inputs.slice(1))
-        }, 120_000)
+        }, patience(120_000))
 
         // P-12 step 5 / E-23: `at:`, `enabled:` and `until:` of a CRLF note read as those of its LF twin.
         // Breaks if one of the three keys is lost on `\r\n` lines (the note then reads as a plain `every:` note or as invalid).
@@ -268,9 +349,13 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
           for (const theme of THEMES)
             for (const size of SIZES) {
               const { context, page } = await visit(browser, instance.url, locale, theme, size, '/planif')
-              await page.waitForFunction(() => /Note mission CRLF/.test(document.querySelector('.adestia-canvas__body')?.textContent ?? ''), null, { timeout: 15_000 })
-              const all = await lines(page, '.adestia-canvas__body')
               const titles = ['Note at CRLF', 'Note at LF', 'Note coupée CRLF', 'Note coupée LF', 'Note mission CRLF', 'Note mission LF', 'Note CRLF valide', 'Note LF valide', 'Note CRLF trop rapide']
+              // The list is drawn piecemeal under load: wait for all nine notes, not for the last one to appear.
+              await page.waitForFunction((wanted: string[]) => {
+                const text = document.querySelector('.adestia-canvas__body')?.textContent ?? ''
+                return wanted.every((t: string) => text.includes(t))
+              }, titles, { timeout: 15_000 })
+              const all = await lines(page, '.adestia-canvas__body')
               const row = (title: string): string[] => {
                 const from = all.indexOf(title)
                 expect(from, `${title} is listed`).toBeGreaterThanOrEqual(0)
@@ -293,7 +378,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               await shot(page, `planif-cles-${skin}-${locale}-${theme}-${size}`)
               await context.close()
             }
-        }, 180_000)
+        }, patience(180_000))
       })
     }
   }

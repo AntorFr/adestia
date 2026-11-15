@@ -1,13 +1,13 @@
 # Adestia — architecture
 
-> Product documentation. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
+> Product documentation. On a feature branch of `adestia-pages` (AD-32 to AD-36) it adds that tranche on top of `epic/adestia-pages`; only what a tranche built is built (tranche 1: AD-34 and AD-36 for the page root, and the gallery; tranche 2: AD-33 and AD-35, block variants, settings and data forms; tranche 3: sections and columns, AD-32, and the move into, out of and between them, AD-structure-1). "Gallery" means the block gallery sheet (E-34) and the `gallery` key of a plugin manifest, never the `:::gallery` image block. On `epic/adestia-qualite` (the epic's integration branch, where its tranches merge), it describes the epic's target; on
 > `main`, exactly what is built. On a feature branch of `adestia-correctifs` (e.g. the chat tranche, AD-23) it adds that tranche on top of `epic/adestia-correctifs`; nothing is in `main` until the epic merges. An epic is a group of features delivered together; a tranche is one of them. Stable identifiers, never renumbered: `B-n` (needs), `P-n`
 > (journeys, `docs/parcours.md`), `E-n` (screens, `docs/ecrans.md`), `AD-n` (decisions,
 > this file), `R-n` (refactoring targets, this file).
 >
 > Written by the epic `adestia-qualite` (2026-10-15), a quality pass that changes **no
 > behaviour**. Decisions taken BEFORE this epic live in `DESIGN.md` › Decision log, which is
-> not renumbered; `AD-n` starts at `AD-1` with this epic. The epic `adestia-correctifs` (AD-15 onward) then repairs the defects this pass listed and does change behaviour, each repair named in the CHANGELOG; `AD-21` is taken by the epic `adestia-ajouts`, hence the gap before AD-22. The map below is the code as first
+> not renumbered; `AD-n` starts at `AD-1` with this epic. The epic `adestia-correctifs` (AD-15 onward) then repairs the defects this pass listed and does change behaviour, each repair named in the CHANGELOG; `AD-21` is taken by the epic `adestia-ajouts`, and sits further down the file, after AD-22. The map below is the code as first
 > documented at the git tag `v0.88.0` (the packages' `version` fields stay `0.0.0`), updated for the completed charter, pages, chat, plugins, tests and server tranches; the repository's later tags (`git tag`) mark releases, not this map.
 
 ## Overview
@@ -46,8 +46,8 @@ Outside `packages/`:
   `page-author`, `persona-author`, `schedule-author`, `collections`), delivered to the agent.
 - `bench/` — screenshot bench: `run.sh` builds the image and drives Chromium in docker,
   `bench.mjs` and `scenarios/`; `live-codex.sh` boots a real Codex engine. Without docker:
-  `launch.mjs` (fake or real engine), `fake-engine.mjs`, `seed/`, `oidc-stub.mjs` and `sweep.mjs`
-  (see the AD-2 and AD-3 detail below).
+  `launch.mjs` (fake or real engine), `fake-engine.mjs`, `seed/`, `oidc-stub.mjs`, `sweep.mjs` and its
+  `lib/capture.mjs` (see the AD-2 and AD-3 detail below).
 - `spikes/` — validation record (editor, concurrency, copilot-cli, codex-cli, esm-runtime,
   shell-tools-transport); not linted, not shipped.
 
@@ -117,7 +117,11 @@ Outside `packages/`:
   `reader/` holds the recursive walk, directive dispatch and block renderers by kind.
   `useAutosave.ts` owns the document baseline and save cadence, `useEditorSurface.ts`
   the mounted writing surface, `usePageDrop.ts` the reading drop target; `SaveStatus.tsx`
-  draws the save result.
+  draws the save result. `moveBlock.ts` judges a move and `moveui.ts` draws its live region and drop line (AD-deplacer-1);
+  `containers.ts` says what a section, a band of columns and a column may hold and how a fresh one is built (AD-32);
+  `reader/Containers.tsx` draws them in reading (AD-structure-1);
+  `BlockGallery.tsx` is the gallery sheet, `gallery.ts` merges `galleryTable.ts` (core cards) with the enabled plugins'
+  `gallery` records, `galleryBridge.ts` links the editor to the sheet and `insertionPoint.ts` says where a block lands (AD-deplacer-2).
 - `plugins/` — `contract.ts` (the plugin front-end contract, `PluginApi`), `loader.ts`,
   `words.ts` (plugin word tables), `Boundary.tsx`, `PageEditor.tsx`.
 - `sw/` — the service worker (`sw.ts`, `policy.ts`, `register.ts`).
@@ -211,7 +215,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). No workflow plays the suite: `scripts/suite-attestee.sh` (typecheck, lint, tests, the build and a start of the built server), declared by `tests:` in `.sdlc.yaml`, is played by `attester --publier`, which sets the `tests-complets` status (AD-preuve-1).
+  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). No workflow plays the suite: `scripts/suite-attestee.sh` (typecheck, lint, tests, the build and a start of the built server), declared by `tests:` in `.sdlc.yaml`, is played by `attester --publier`, which sets the `tests-complets` status (AD-preuve-1). The waits of `bench/sweep.mjs` (but for one 700 ms settling pause) and of seven browser suites (`besoin-charte-comportement`, `besoin-chat-browser`, `besoin-pages-ensemble-browser`, `besoin-mcp-browser`, `besoin-hors-ligne-bords`, `besoin-hors-ligne-browser`, `besoin-tours`) are scaled by one factor, `ADESTIA_PATIENCE` (an integer, 1 by default; `scripts/suite-attestee.sh` sets 4 on the vitest step): in those suites a Playwright delay goes through `patience()` of `packages/web/test/patience.ts`, never a literal, and a `waitForTimeout` that remains is a pause (it is scaled too, `waitForTimeout(patience(250))`) with a `// pause fixe : <reason>` comment above it, saying it is not a wait for a signal. A value that is not an integer of at least 1 reads as 1. The other browser suites and helpers (among them `besoin-pages-browser`, `ensemble-hors-ligne-browser`, `besoin-charte-browser`, `besoin-chat-narrow-browser`, `besoin-chargements-browser`, `besoin-hors-ligne-flux` and the helper `charte-browser.ts`; the list is not exhaustive) still use literal delays; a new browser test follows the rule. A test that is red in the full suite and green alone measures the load, not the product.
 
 ## Decisions of adestia-qualite
 
@@ -282,7 +286,7 @@ stops shipping Playwright.
   `bench/shots-sweep`, ignored by git). A screen table in the script lists, per `E-n`, the
   route, the gesture that opens it and the **selector that proves it is that screen**; a capture
   whose selector is absent, or that shows `.adestia-gate__card--fatal` or a loading state, fails the sweep
-  and names the screen. The sweep exits non-zero on any failure and prints a count.
+  and names the screen. The capture of one screen lives in `bench/lib/capture.mjs` (a module of its own, because `bench/sweep.mjs` runs its sweep as soon as it is imported): every wait for the chat shell, the phone's shell screen or the screen's proof selector lasts `APPEAR_MS` (60 s), and a capture whose wait ran out is retried once in a fresh context, so a busy pod does not fail a sweep by itself. Only that timeout is retried: a loading or fatal screen, a capture file under 500 bytes, or a timeout in a gesture's own wait (editor, composer, click, service-worker cache, `page.goto`) fails at once. After a second timeout the screen's remaining captures are not tried and are counted as failures (`FAIL … not tried`). The sweep exits non-zero on any failure and prints a count.
 - **docker.** `bench/run.sh` and `bench/bench.mjs` are untouched except that the Playwright
   import falls back from `/usr/lib/node_modules` to the global root. Scenarios keep working.
 
@@ -374,7 +378,7 @@ regression test `bench/tests/doc-besoin.test.mjs` checks relative Markdown link 
 (excluding package tests, nested spike documents and skills) and collects `var(--x` uses in CSS
 under `packages/web/src` and `plugins/*/web`, subtracts definitions in CSS, skins and
 scripts, and reports any remainder. Run it with
-`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5 (B-5: the last CHANGELOG title is the latest git tag or the next version of the same series, `status.md` cites that title, and no existing tag lacks its entry — only tags merged into HEAD (`git tag --list 'v*' --merged HEAD`) count, so the tags of an epic not yet merged do not turn `main` red; the rule is the pure `checkVersions` of `bench/tests/lib/doc-version.mjs`, pinned by `doc-version.test.mjs`, and `scripts/suite-attestee.sh` fetches tags when the clean checkout has none). Skin declarations
+`node --test bench/tests/doc-besoin.test.mjs` to check B-4 and B-5 (B-5: after a stable tag the last CHANGELOG title is that tag or its next version; after a series pre-release `vX.Y.Z-serie.K` it is `vX.Y.Z-serie.J` with `J <= K+1` (it may lag, one ahead at most) or `vX.Y.Z`; `status.md` cites that title, and no existing *stable* tag lacks its entry (a pre-release owes none: its entry races the merge that lays the tag) — only tags merged into HEAD (`git tag --list 'v*' --merged HEAD`) count, so the tags of an epic not yet merged do not turn `main` red; the rule is the pure `checkVersions` of `bench/tests/lib/doc-version.mjs`, pinned by `doc-version.test.mjs`, and `scripts/suite-attestee.sh` fetches tags when the clean checkout has none). Skin declarations
 and JS/TSX inline parameters count as definitions outside those stylesheets;
 this does not mean the CSS-only difference is empty.
 
@@ -814,7 +818,8 @@ band above the page (problems band E-19, skin console). The right behaviour, rea
 of `docs/ecrans.md` ("stay inside the viewport"): the panel never covers the header or the bands
 above the page; it keeps clear of them by taking the *bottom edge of the canvas header* as its
 top limit, and follows its anchor on scroll and resize (`scroll` captured, `resize`), closing
-nothing. The cause is **confirmed by a bench scenario at 1440×900 before the fix** (a page with a
+nothing. The canvas bands are read again at each placement, and the canvas is watched for
+added or removed children, so a band mounted after the panel opened is avoided too. The cause is **confirmed by a bench scenario at 1440×900 before the fix** (a page with a
 block near the top, E-19 band present, the popover opened): if the overlap is another one
 (the console band, the read-only banner), the same rule — the panel stays below every element the
 canvas draws above the page — covers it, and the cause found is written in the task. If nothing
@@ -1182,7 +1187,15 @@ a section holds blocks and columns; a column holds blocks (and no section or col
 section. `w` and `row` keep their rules at the page level and inside a section (a section is a flow of bands like the page); inside a `col` the blocks are stacked at the column's full width and `w` is ignored (kept in the file, not rewritten). `closed=fold` is the saved initial state; the reader's fold toggle is local to the screen, writes nothing and works on a read-only page. The reader renders
 containers recursively; the editor drops into them (AD-34). A page without containers parses and serialises
 byte-for-byte as before (B-31), checked by round-trip tests over the pages of the repository and the seeds.
-The grammar fork `micromark-extension-directive` must accept this nesting: verified first, in tranche 3's first task.
+The grammar fork `micromark-extension-directive` accepts this nesting (verified, `packages/content/test/containers.test.ts`): the
+serialiser writes each container's fence from its own depth, so a column holding only a paragraph closes with `:::`, and one holding
+blocks with `::::` — canonical and deterministic. The validator (`validate.ts`) judges by the parent chain and keeps the text of
+what it refuses, with four codes: `container-depth` (a section in a section or a column, columns in a column), `columns-count`
+(a band of other than 2 or 3 `col`), `columns-content` (anything but `col` in a band) and `col-outside-columns`. The tranche's
+non-regression corpus (`packages/content/test/fixtures/corpus/`: the pages the bench seeds write and hand-written edge cases) pins
+what `main` writes back, byte for byte: the source itself when the page is already canonical, otherwise the `.out` file beside it
+(CRLF, unquoted attributes, a trailing blank line and a few other normalisations of `main` — B-31 promises that a page without
+containers is written back as `main` wrote it, not that sources are normalised), with the DOM of the reader as a `.html` snapshot.
 *Rejected*: a markdown table or raw HTML for layout (the editor cannot move blocks in it); a free grid with
 coordinates (not the page of a document, outside the scope); a layout stored in the frontmatter (a block would
 live in two places). *Reversed if*: the fork cannot nest directives without a change that breaks the existing pages.
@@ -1196,7 +1209,7 @@ lines back gives the same rows (round-trip tested). A line the form cannot read 
 block needs a datum the line form cannot hold.
 
 ### AD-34 — One move operation under pointer, keyboard, buttons and touch
-Moving is one operation on the document tree — `moveBlock(from, toParent, toIndex)` — checked against AD-32's depth rule.
+Moving is one operation on the document tree — `moveBlock(doc, from, toParent, toIndex)` — checked against AD-32's depth rule.
 Pointer drag (`blockview.tsx startDrag`), keyboard, the buttons and touch all call it; the gallery inserts through
 the same position model. The drop line and the live region are drawn from its result. *Rejected*: a second path
 for the keyboard (two behaviours to keep equal); Crepe's own handle (limited to prose, DESIGN.md).
@@ -1210,7 +1223,58 @@ A new `:::` name is kept for a different thing (a different data shape), per the
 A template is a markdown file in the core's or a plugin's `templates/`, with a `template:` frontmatter key holding `name`, `image` and `description` (declared in `docs/donnees.md`); "New from template" (E-36) copies the body and the page's own frontmatter (`type`, `title` from the user's name) and drops the `template:` key, so a created page carries no trace of it. No template entity, no user templates (out of scope). The core's and plugins' templates and block specs reach the shell through the plugin manifest (`gallery`, `templates`, `packages/schemas`; `blocks` stays the rendering module's path), not a new route (`docs/donnees.md`). `project-management`
 ships "Project status".
 
+### AD-deplacer-1 — `moveBlock` is a pure function of the page tree, and every entry point reads its result
+`packages/web/src/editor/moveBlock.ts` exports `moveBlock(doc, from, toParent, toIndex)` returning `{ok: true, from, to, total}`
+or `{ok: false, reason}` (tranche 3 adds `depth` and `none-next`, and takes paths through the tree — AD-structure-1; `range` is a position past either end, `parent` a place that holds no blocks).
+`blockview.tsx startDrag`, the **Move up / Move down** buttons, `Alt+↑/↓` and the touch long-press all call it and nothing else; the
+drop line, the live region ("Moved to position 3 of 7", localised) and the refusal line are drawn from the result. Tranche 1 only ever
+passed the page root as `toParent`; tranche 3 passes sections and columns too. Touch: a 400 ms press on the grip starts the same drag as the pointer; the buttons stay the
+non-drag path on a phone. *Rejected*: a keyboard-only path (AD-34 already rejects it). *Reversed if* the long press collides with the
+phone's text selection on the bench — then the buttons are the touch path and the press is dropped, which does not touch B-23's promise.
+
+### AD-deplacer-2 — The gallery lists a table, not the editor's menu
+`editor/gallery.ts` merges the core table (name, line, image, group per block, in `en`/`fr`) with the `gallery` records of the manifests
+of **enabled** plugins only (the loader already reads only those: a disabled plugin has no record to list). The `/` menu
+(`slash.ts`) keeps its list and gains "Browse" as its last item; both insert through the one position model: after the focused block, end of
+the page when none, end of the container when the focus is a container (tranche 3). `packages/schemas/src/plugin.ts` validates `gallery`
+(`name`, `line`, `image`, `group`; `fields` and `view` optional, read by the shell as AD-forms-1 and AD-35 say), and a plugin block with no record shows its identifier.
+The gallery is a sheet (`.adestia-sheet*`, bottom sheet on a phone) like the other sheets of the shell; no new component family.
+*Rejected*: deriving the cards from the `/` menu labels (no image, no line, no group).
+
 *Reversed if* (AD-34 to AD-36): AD-34 and AD-35 not expected; AD-36 only if Monsieur's choice on the mockup `etat-projet` (blocks A, B, C, B-29) needs a seed shape the frontmatter cannot carry — settled in the design of tranche 4.
+
+### AD-structure-1 — How a block moves into, out of and between containers
+Tranche 3 extends `moveBlock(from, toParent, toIndex)` (AD-34) with container parents; no second path. `from` is a path of
+indices through the page tree (page → section → column, each index counting the movable children of its level) or a page-level
+index; `toParent` is the page, a section or a column. The depth rule of AD-32 is checked inside `moveBlock` (`mayHold` in
+`containers.ts`), which answers `{ok:false, reason}` where `reason` is `depth` (a section into a section or a column, columns into a
+column, a container into itself), `range` (past either end — the `bounds` of the first design, named `range` in the code since tranche 1),
+`parent` (a place that holds no blocks, or a lone `col`) or `none-next`; the UI shows the translated reason in the live region and
+next to the drop line, and a refused move writes nothing. `stepBlock` turns a keyboard or button step into the same call:
+`Alt+←` (**Move out of the container**) moves the block out, to just after its container in the container's parent (from a column:
+after the `columns` block); `Alt+→` (**Move into the next container**) moves it into the container that immediately follows it
+(the first column of a `columns`, the start of a section); when nothing follows, or the next container would break the depth rule,
+it refuses with its reason. **Move up / Move down** at the edge of a column pass to the neighbouring column of the band, which is
+the touch path between columns (no drag needed). The settings' "Leave the parent block" is hidden inside a section or column in
+favour of Move out. Moving a container moves its content. A column emptied stays (a `columns` always keeps 2 or 3 `col`); an empty
+`col` is drawn with its "Drop here" lane in editing and nothing in reading. The gallery inserts **Section** and **Columns** (two
+columns by default; `col` has no card) at the tranche-1 insertion point; when the focus is a container the block goes at its end.
+The count is set in the block's settings (E-6, in its own Columns group above the redrawn groups of tranche 2): 2 → 3 adds an empty column, 3 → 2
+removes the last one only when it is empty, and is otherwise refused with the reason shown — no data is deleted.
+The fold toggle (`reader/Containers.tsx`) is a React state of the reader, keyed by the section's position, initialised from
+`closed=fold`; it is never written, and is available when the page is read-only. Below 820 px the columns stack in source order.
+*Rejected*: a second keyboard path; persisting the fold per user (a stored datum the epic does not have); letting an
+emptied `col` disappear (it would change a `columns` from 3 to 2 silently).
+*Reversed if*: the fork cannot nest directives (AD-32); it can, so the tranche was built whole.
+
+### AD-forms-1 — A `fields` entry is a list of typed columns plus a line codec
+*(tranche `adestia-pages-blocs-formulaires`, refines AD-33.)* The `fields` of a block's `gallery` entry (core table or plugin manifest) is `{ "columns": [{ "key", "kind": "text|number|date|link", "label", "required"? }], "line": "label-value-caption | label-range | label-value | table" }`. The contract accepts `link`, but no block declares it and the form draws it as a plain text field. `line` names one of four codecs written once in the shell (`editor/blockform/`), one per line format that exists today; it is not a free template, so no plugin can invent a line format the reader does not parse. `label` is a string or an `{en, fr}` pair, as in the template declarations. A plugin that declares a `fields` without a known `line` has it ignored (no **Edit data**), never an error. *Rejected*: a per-block form component (a plugin block gets no form); a format string (a second grammar). *Reversed if*: a block needs a column kind the four cannot say.
+
+### AD-forms-2 — The form edits rows; lines it cannot read ride along
+A codec reads the block's lines into `rows` and `kept` (a line it cannot read, with its index). Writing returns the lines with each kept line at its index and the rows around it, so a round trip of an unedited block is byte-identical and a hand-written line is never dropped. **Raw** edits the same lines directly, with the page's own bullet (`-`: the editor's serializer spells `*`), and an empty **Raw** is written as one empty bullet, since the server refuses a block with no body. The round trip (`lines → rows → lines`) is tested per codec against fixtures written by hand in the format of before the epic.
+
+### AD-forms-3 — Apply is one document change
+**Apply** and each variant or width choice in E-6 go through `blockview.tsx` (`write` for E-6, `applyLines` for the form): one transaction, one undo step, written by the editor's normal save. The form holds its state in the sheet until Apply; E-6 writes at once. No server route is added.
 
 ### AD-etat-projet-1 — The project blocks belong to `project-management`
 `progress`, `milestones` and `risks` (B-29's A, B, C) are blocks of the `project-management` plugin, not of the core: they are
@@ -1303,6 +1367,49 @@ its report names that commit and the ruleset id, and if the token cannot, it is 
 (Code and commands) states that no workflow plays the suite, that green is `attester --publier`
 on a pushed head that contains `origin/main`, and replaces its mentions of CI; `docs/parcours.md`
 P-15 step 2 and the Tests line of *Cross-cutting* follow.
+
+## Decisions of adestia-acces-refuse
+
+An OIDC account that is in no allowed group used to meet a bare JSON 403 at `/auth/callback`, and
+signing out left the identity provider's SSO cookie alive. Two decisions fix both; the server
+stays stateless (two signed cookies, no session table).
+
+### AD-acces-refuse-1 — A refused login leaves a short signed `adestia_refused` cookie, and the shell asks who it was
+
+`/auth/callback`, when `isAllowed` fails, no longer answers `403 {"error": …}` to a browser. It
+sets `adestia_refused` (signed like the session cookie, `path: /`, `httpOnly`, `sameSite: lax`,
+`secure` as for the session, ten-minute ceiling) carrying `displayName`, `userId` and the `id_token`
+(the logout hint), clears the login cookie, sets no session, and redirects to `/`. The shell then
+gets 401 from `/api/instance` as for any anonymous caller; on a 401 it asks the new
+`GET /auth/refused`, which answers `{ displayName }` from that cookie (200) or 401 without it.
+With an answer, E-1 shows the refused gate naming the account; without, the sign-in gate as
+today. Other callback failures (no sign-in in progress, provider down, expired login) keep their
+JSON answers: they are not a refused account. A cookie that is forged, expired or absent is just
+absent. *Rejected:* a server-rendered HTML page (outside the charte and the `t()` locales);
+a session for the refused account that `/api/instance` answers 403 on (a refused account would
+hold a session cookie the whole instance must then remember to distrust). *Reversed if:* the id
+token pushes the cookie past 4000 characters (`COOKIE_LIMIT`, under the 4 KB a browser keeps); then the hint is dropped and logout falls
+back as AD-acces-refuse-2 describes.
+
+### AD-acces-refuse-2 — `POST /auth/logout` also ends the provider's session
+
+`POST /auth/logout` clears `adestia_session` and `adestia_refused`. For a document request
+(`Accept: text/html`) under OIDC it then asks the discovered provider for its
+`end_session_endpoint` and redirects there (RP-initiated logout), with `client_id`,
+`id_token_hint` when the refused cookie carries one, and `post_logout_redirect_uri`
+(`auth.oidc.postLogoutRedirectUri`, default `<origin of redirectUri>/`; the empty string sends
+none). The session cookie does not keep the id token (it is already near the size limit with
+groups), so a signed-in sign-out sends `client_id` alone. Back at `/`, a visitor with no session
+meets the sign-in gate, and **Sign in** reaches the provider's login screen. When the provider
+advertises no `end_session_endpoint`, or discovery fails, the redirect goes to `/auth/login?switch=1`,
+which adds `prompt=login` to the authorization request so the provider asks for credentials even
+with its SSO cookie; the fetch form (`Accept` other) still answers `{signedOut: true}`. The route
+is the one the cog menu's **Sign out** (E-15) already posts to, so an authorised account signs out
+of the provider too: the same mechanism, not a second one. `OidcClient` gains
+`endSessionUrl(hint?)` next to `beginLogin`. *Needs from the deployment, not from this repo:* the
+provider's client lists the post-logout redirect URI; this tranche changes no provider
+configuration. *Rejected:* clearing the session only and relying on `prompt=login` always (a
+provider that ignores `prompt` reconnects the same account silently).
 
 ## Refactoring targets
 

@@ -261,6 +261,9 @@ describe.skipIf(!playwright)('pages tranche, from the need', () => {
             for (const size of SIZES) {
               const { context, page } = await visit(browser, instance.url, locale, theme, size, '/planif')
               await page.waitForFunction(() => /Note CRLF valide/.test(document.querySelector('.adestia-canvas__body')?.textContent ?? ''), null, { timeout: 15_000 })
+              // the title paints before its cadence: wait for the settled list, not for the first title (a loaded run read the row half drawn)
+              const next = (all: string[], title: string) => all[all.indexOf(title) + 1]
+              await expect.poll(async () => { const l = await body(page); return [next(l, 'Note CRLF valide'), next(l, 'Note LF valide'), next(l, 'Note CRLF trop rapide')].join('|') }, { timeout: 15_000 }).toBe('2h|2h|5m')
               const all = await body(page)
               const at = (title: string) => all.indexOf(title)
               const ok = at('Note CRLF valide')

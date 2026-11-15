@@ -19,16 +19,20 @@
 
 import { shapesOf, type BlockSpec } from '@antorfr/adestia-content'
 import type { BlockEditFeatureConfig } from '@milkdown/crepe/feature/block-edit'
-import { commandsCtx, schemaCtx } from '@milkdown/kit/core'
+import { commandsCtx, editorViewCtx, schemaCtx } from '@milkdown/kit/core'
 import {
   addBlockTypeCommand,
   clearTextInCurrentBlockCommand,
   wrapInBlockTypeCommand,
 } from '@milkdown/kit/preset/commonmark'
 
+import { NodeSelection } from '@milkdown/kit/prose/state'
+
 import type { IconName } from '../app/icons.js'
 import { openSettingsOnNextBlock } from './blockview.js'
+import { CONTAINERS, freshContainer } from './containers.js'
 import { iconMarkup } from './dom-icon.js'
+import { insertionPos } from './insertionPoint.js'
 import { editorBlocks, pmId } from './vocabulary.js'
 
 /** Crepe's builder, named through the config that receives it. */
@@ -55,7 +59,14 @@ const ICONS: Readonly<Record<string, IconName>> = {
   table: 'table',
   list: 'list',
   row: 'corner-down-left',
+  section: 'chevron-down',
+  columns: 'panel-right-open',
 }
+
+/** What "Browse" says to the editor bar: open the gallery. */
+export const OPEN_GALLERY = 'adestia:open-gallery'
+/** Told to a block just inserted from the gallery: open its data form if it has one (P-17 step 4). */
+export const OPEN_FORM = 'adestia:open-form'
 
 /** Anything the table gains before somebody chooses it an icon. */
 const FALLBACK: IconName = 'sparkles'
@@ -68,9 +79,14 @@ const FALLBACK: IconName = 'sparkles'
  *
  * `app` stays out: the core's own table says nothing draws it, and offering a
  * block that renders as a notice is a dead end in a menu.
+ *
+ * `col` stays out too: a `col` set down outside `columns` is a
+ * `col-outside-columns` diagnostic, not a block — a column exists only in a band.
  */
+const NOT_INSERTABLE = new Set(['app', 'col'])
+
 function insertable(spec: BlockSpec): boolean {
-  return spec.name !== 'app'
+  return !NOT_INSERTABLE.has(spec.name)
 }
 
 /**
@@ -79,7 +95,7 @@ function insertable(spec: BlockSpec): boolean {
  * for a section's subject — and the settings open on it. Nothing else is
  * written: an attribute at its default reads as a decision nobody made.
  */
-function seed(spec: BlockSpec): Record<string, string> {
+export function seed(spec: BlockSpec): Record<string, string> {
   const attributes: Record<string, string> = {}
   for (const [name, attribute] of Object.entries(spec.attributes)) {
     if (!attribute.required) continue
@@ -112,6 +128,20 @@ export function buildBlockMenu(builder: MenuBuilder, t: (key: string) => string 
         if (!nodeType) return
 
         const commands = ctx.get(commandsCtx)
+        if (CONTAINERS.has(spec.name)) {
+          // A container is built whole (a band comes with its columns) and set
+          // down where the gallery would put it, in place of the `/` typed.
+          commands.call(clearTextInCurrentBlockCommand.key)
+          const view = ctx.get(editorViewCtx)
+          const node = freshContainer(view.state.schema, spec.name)
+          if (!node) return
+          const { doc, selection } = view.state
+          const at = insertionPos(doc, { from: selection.from, to: selection.to, depth: selection.$from.depth }, spec.name)
+          const tr = view.state.tr.insert(at, node)
+          tr.setSelection(NodeSelection.create(tr.doc, at))
+          view.dispatch(tr.scrollIntoView())
+          return
+        }
         // The block about to exist opens its settings: it asks for what it
         // needs instead of appearing bare.
         openSettingsOnNextBlock()
@@ -132,4 +162,13 @@ export function buildBlockMenu(builder: MenuBuilder, t: (key: string) => string 
       },
     })
   }
+  // Last, and always: the gallery shows what a short menu cannot (E-34).
+  group.addItem('browse', {
+    label: t('Browse'),
+    icon: iconMarkup('search'),
+    onRun: (ctx) => {
+      ctx.get(commandsCtx).call(clearTextInCurrentBlockCommand.key)
+      ctx.get(editorViewCtx).dom.dispatchEvent(new CustomEvent(OPEN_GALLERY, { bubbles: true }))
+    },
+  })
 }

@@ -127,6 +127,7 @@ export function Canvas(props: CanvasProps) {
           attach={(dropped) => channel.attach.current?.(dropped)}
           compose={(text) => channel.compose.current?.(text)}
           blocks={props.blocks}
+          galleryPlugins={loaded}
           // Who owns this page's domain, and the features on — what the
           // reader's `from=` resolution walks. Owner from the page's FOLDER:
           // ownership is a claim on folders, and the deepest claim wins.

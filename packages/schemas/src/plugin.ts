@@ -83,6 +83,61 @@ export interface PluginBlockSpec {
   readonly attributes?: Readonly<Record<string, PluginBlockAttribute>>
 }
 
+/** A sentence in English, or in each language the author wrote it in. */
+export type PluginGalleryText = string | { readonly en: string; readonly fr?: string }
+
+/**
+ * How one block shows in the gallery (E-34) — declared data, like the rest.
+ *
+ * Keyed by block name in `PluginManifest.gallery`; `blocks` stays the path of
+ * the rendering module and `vocabulary` the grammar, so nothing is renamed.
+ * `fields` (the typed columns of the block's lines, AD-forms-1) and `view` (its
+ * variants, AD-35) are read when well formed and dropped, never refused, when
+ * not: a `fields` naming a line format the shell has no codec for simply gives
+ * no form.
+ */
+export interface PluginGalleryEntry {
+  /** What the card is called. */
+  readonly name: PluginGalleryText
+  /** One line saying what the block is for. */
+  readonly line: PluginGalleryText
+  /** A small picture, relative to the plugin folder, served as its other static files. */
+  readonly image: string
+  /** `Text`, `Data`, `Layout`, `Project`, or the plugin's own name. */
+  readonly group: string
+  /** The block's form: its columns and the line format they are written in. */
+  readonly fields?: PluginGalleryFields
+  /** The block's variants: the closed set of values of its `view` attribute. */
+  readonly view?: PluginGalleryView
+}
+
+/** The four line formats that exist, one codec each in the shell (AD-forms-1). */
+export const GALLERY_LINE_FORMATS = ['label-value-caption', 'label-range', 'label-value', 'table'] as const
+export type PluginGalleryLine = (typeof GALLERY_LINE_FORMATS)[number]
+
+export const GALLERY_COLUMN_KINDS = ['text', 'number', 'date', 'link'] as const
+type PluginGalleryColumnKind = (typeof GALLERY_COLUMN_KINDS)[number]
+
+export interface PluginGalleryColumn {
+  readonly key: string
+  readonly kind: PluginGalleryColumnKind
+  readonly label: PluginGalleryText
+  readonly required?: boolean
+}
+
+export interface PluginGalleryFields {
+  /** Empty for `table`, whose columns are the ones the written table has. */
+  readonly columns: readonly PluginGalleryColumn[]
+  readonly line: PluginGalleryLine
+}
+
+export interface PluginGalleryView {
+  /** The variants; at least two. */
+  readonly values: readonly string[]
+  /** The value that is never written without the user choosing it. */
+  readonly default: string
+}
+
 /**
  * One frontmatter field a plugin's own code reads, for a type it claims.
  *
@@ -172,6 +227,14 @@ export interface PluginManifest {
    * `packages/content/src/vocabulary.ts` holds the walk; DESIGN.md the rule.
    */
   readonly vocabulary?: Readonly<Record<string, PluginBlockSpec>>
+
+  /**
+   * How this plugin's blocks show in the block gallery, by block name.
+   *
+   * Only while the plugin is ACTIVE, like `vocabulary`. A block with no record
+   * still appears, under its identifier.
+   */
+  readonly gallery?: Readonly<Record<string, PluginGalleryEntry>>
 
   /**
    * Frontmatter `type:` values this plugin's own code dispatches on — e.g. a

@@ -1,0 +1,9 @@
+---
+title: Page à la racine
+---
+
+Un texte.
+
+:::callout{ico=💡 title="Un encadré"}
+Dedans.
+:::

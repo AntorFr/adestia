@@ -10,6 +10,9 @@ import { plain, type Node } from '../nodes.js'
  * not understand.
  */
 export function Figures({ node }: { readonly node: Node }) {
+  // `view` is a choice: `tiles` is the default and an unknown value reads as
+  // it, so a hand-written page never draws nothing.
+  const inline = node.attributes?.['view'] === 'inline'
   const tiles: { label: string; value: string; caption?: string }[] = []
   const walk = (kids: readonly Node[] | undefined) => {
     for (const kid of kids ?? []) {
@@ -31,11 +34,39 @@ export function Figures({ node }: { readonly node: Node }) {
   }
   walk(node.children)
   if (tiles.length === 0) return null
+  if (inline) {
+    return (
+      <div className="adestia-figures adestia-figures--inline">
+        {tiles.map((tile, index) => (
+          <span className="adestia-figure adestia-figure--inline" key={`${tile.label}-${index}`}>
+            <b className="adestia-figure__value">{tile.value}</b>
+            <span className="adestia-figure__label">
+              {tile.label}
+              {tile.caption ? <em> · {tile.caption}</em> : null}
+            </span>
+          </span>
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="adestia-figures">
       {tiles.map((tile, index) => (
         <div className="adestia-figure" key={`${tile.label}-${index}`}>
           <b className="adestia-figure__value">{tile.value}</b>
+          {percent(tile.value) !== null && (
+            <span
+              className="adestia-figure__meter"
+              role="meter"
+              aria-label={tile.label || tile.value}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={percent(tile.value) ?? 0}
+              aria-valuetext={tile.value}
+            >
+              <i style={{ width: `${percent(tile.value) ?? 0}%` }} />
+            </span>
+          )}
           <span className="adestia-figure__label">
             {tile.label}
             {tile.caption ? <em> · {tile.caption}</em> : null}
@@ -46,3 +77,11 @@ export function Figures({ node }: { readonly node: Node }) {
   )
 }
 
+
+/** A figure that is a percentage ("62 %") draws its bar; anything else does not. */
+function percent(value: string): number | null {
+  const found = /^(\d+(?:[.,]\d+)?)\s*%/.exec(value.trim())
+  if (!found) return null
+  const n = Number((found[1] ?? '').replace(',', '.'))
+  return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : null
+}

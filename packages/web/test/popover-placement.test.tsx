@@ -170,3 +170,84 @@ describe('Popover under the canvas chrome', () => {
     expect(frames.length).toBe(0)
   })
 })
+
+describe('Popover following bands that come and go after it opened', () => {
+  const settle = () => act(async () => { await Promise.resolve(); await Promise.resolve() })
+
+  it('moves below a band that appears after opening, and returns when it leaves', async () => {
+    const p = mount(false)
+    p.problems.remove()
+    rects.set(p.anchor, { top: 70, bottom: 90, left: 100 })
+    p.rerender(true)
+    // header only (bottom 60): below the anchor, 98
+    expect(top()).toBe(98)
+
+    const late = Object.assign(document.createElement('div'), { className: 'adestia-console-host' })
+    rects.set(late, { top: 60, bottom: 200 })
+    p.anchor.parentElement!.append(late)
+    await settle()
+    flush()
+    expect(top()).toBe(208) // 200 + GAP: not over the new band
+
+    late.remove()
+    await settle()
+    flush()
+    expect(top()).toBe(98)
+  })
+})
+
+describe('Popover keeping off a block (avoid)', () => {
+  beforeEach(() => {
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get(this: HTMLElement) { return this.classList.contains('adestia-popover') ? panelHeight - 2 : 0 },
+    })
+  })
+  afterEach(() => { delete (HTMLElement.prototype as unknown as Record<string, unknown>).scrollHeight })
+
+  function open(block: Box, anchor: Box = { top: 70, bottom: 90, left: 100 }) {
+    const p = mount(false)
+    p.problems.remove()
+    const target = document.createElement('div')
+    document.body.append(target)
+    rects.set(target, block)
+    rects.set(p.anchor, anchor)
+    p.rerender(true)
+    const avoid = { current: target }
+    render(<Popover anchor={{ current: p.anchor }} open onClose={() => {}} avoid={avoid}>z</Popover>)
+    return document.querySelectorAll<HTMLElement>('.adestia-popover')[1]!
+  }
+  const px = (v: string) => Number.parseFloat(v)
+
+  it('goes below the block when it fits', () => {
+    const el = open({ top: 200, bottom: 300, left: 100, width: 600 })
+    expect(px(el.style.top)).toBe(308)
+  })
+
+  it('goes above the block when only the top has room', () => {
+    const el = open({ top: 600, bottom: 880, left: 100, width: 600 })
+    expect(px(el.style.top)).toBe(392) // 600 - 8 - 200
+  })
+
+  it('goes beside the block (right, then left) when neither side has room', () => {
+    let el = open({ top: 100, bottom: 890, left: 100, width: 600 })
+    expect(px(el.style.left)).toBe(708)
+    expect(px(el.style.top)).toBe(100)
+    cleanup(); document.body.innerHTML = ''
+    el = open({ top: 100, bottom: 890, left: 800, width: 632 })
+    expect(px(el.style.left)).toBe(472) // 800 - 8 - 320
+  })
+
+  it('on a narrow screen takes the larger gap and shrinks to it', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true })
+    panelHeight = 600
+    const el = open({ top: 100, bottom: 400, left: 8, width: 374 })
+    expect(px(el.style.top)).toBe(408)
+    expect(el.style.maxHeight).toBe('484px') // 892 - 408
+  })
+
+  it('hangs from the anchor as usual when the block leaves no room anywhere', () => {
+    const el = open({ top: 70, bottom: 890, left: 8, width: 1424 })
+    expect(px(el.style.top)).toBe(98) // anchor bottom 90 + 8
+  })
+})

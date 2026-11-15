@@ -34,22 +34,38 @@ afterAll(cleanTmp)
 
 // A full sweep is 124 captures. Measured on ONE core (`taskset -c 0`) it takes
 // ~280-295 s, and a busy pod is slower still, so a ceiling near 420 s killed it
-// mid-run. The ceiling only guards against a hang: four times the one-core
+// mid-run. The ceiling only guards against a hang: a slow screen may now cost
+// two waits of 60 s (APPEAR_MS, one retry), so it is six times the one-core
 // measure, with the test's own timeout a little above so the kill reports first.
-const FULL_SWEEP_KILL_MS = 1_200_000
+const FULL_SWEEP_KILL_MS = 1_800_000
 const FULL_SWEEP_TEST_MS = FULL_SWEEP_KILL_MS + 30_000
 
+// What a red says when it is read later, by someone who was not there: the sweep prints its list of
+// failed screens (screen, proof, page seen) only at its end, so a sweep killed at the ceiling has said
+// nothing but its own progress. The message adds whether the ceiling was reached, how long it ran, and
+// the last capture it took.
+const said = (r: { status: number | null; stdout: string; stderr: string; killed: boolean; ms: number }) => {
+  const last = r.stdout.trim().split('\n').filter((l) => l.startsWith('shot ')).pop() ?? '(no capture taken)'
+  const how = r.killed ? `killed at the ${FULL_SWEEP_KILL_MS / 1000} s ceiling` : `exit ${r.status}`
+  return `sweep ${how} after ${Math.round(r.ms / 1000)} s; last: ${last}\n${r.stderr}`
+}
+
 const run = (args: string[], timeoutMs: number) =>
-  new Promise<{ status: number | null; stdout: string; stderr: string }>((done) => {
+  new Promise<{ status: number | null; stdout: string; stderr: string; killed: boolean; ms: number }>((done) => {
+    const started = Date.now()
+    let killed = false
     const child = spawn(process.execPath, [sweep, ...args], { stdio: ['ignore', 'pipe', 'pipe'] })
     let stdout = ''
     let stderr = ''
     child.stdout.on('data', (d: Buffer) => (stdout += d))
     child.stderr.on('data', (d: Buffer) => (stderr += d))
-    const timer = setTimeout(() => child.kill('SIGKILL'), timeoutMs)
+    const timer = setTimeout(() => {
+      killed = true
+      child.kill('SIGKILL')
+    }, timeoutMs)
     child.on('exit', (status) => {
       clearTimeout(timer)
-      done({ status, stdout, stderr })
+      done({ status, stdout, stderr, killed, ms: Date.now() - started })
     })
   })
 
@@ -89,12 +105,12 @@ describe.skipIf(!ready)('B-3 · the sweep captures every screen, both themes, bo
   let out = ''
   let def: Shot[] = []
   let skippy: Shot[] = []
-  const results: Record<string, { status: number | null; stdout: string; stderr: string }> = {}
+  const results: Record<string, Awaited<ReturnType<typeof run>>> = {}
 
   it('default skin: exits 0 and says 124/124', async () => {
     out = await tmpDir('sweep-ensemble-')
     results.default = await run(['--out', out], FULL_SWEEP_KILL_MS)
-    expect(results.default.status, results.default.stderr).toBe(0)
+    expect(results.default.status, said(results.default)).toBe(0)
     expect(results.default.stdout).toContain('124/124')
     expect(results.default.stderr).not.toContain('FAIL')
     def = readShots(join(out, 'default'))
@@ -149,7 +165,7 @@ describe.skipIf(!ready)('B-3 · the sweep captures every screen, both themes, bo
 
   it('--skin skippy: exits 0, 124/124, under skippy/, and E-2 and E-16 are not the default skin', async () => {
     results.skippy = await run(['--skin', 'skippy', '--out', out], FULL_SWEEP_KILL_MS)
-    expect(results.skippy.status, results.skippy.stderr).toBe(0)
+    expect(results.skippy.status, said(results.skippy)).toBe(0)
     expect(results.skippy.stdout).toContain('124/124')
     skippy = readShots(join(out, 'skippy'))
     expect(skippy).toHaveLength(124)

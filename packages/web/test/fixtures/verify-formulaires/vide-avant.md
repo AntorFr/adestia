@@ -1,0 +1,5 @@
+---
+title: Vide
+---
+
+Du texte.
