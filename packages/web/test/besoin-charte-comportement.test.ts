@@ -327,15 +327,24 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
       })
     })
 
+    // The signal that the menu is armed: focus has entered the panel (placed, then focused),
+    // not a delay. Escape and the outside click are only heard from that point.
+    // (`Page` of charte-browser.ts does not type `waitForFunction`; the real Playwright page has it.)
+    const menuReady = (page: Page) =>
+      (page as Page & { waitForFunction(fn: () => boolean, arg: null, options: { timeout: number }): Promise<unknown> })
+        .waitForFunction(() => document.activeElement?.closest('.adestia-cog__panel') != null, null, { timeout: patience(10_000) })
+
     it('closes on Escape and returns the focus to the cog; a click outside closes it too', async () => {
       await visit(browser, 'base', { route: '/settings' }, async (page) => {
         await cog(page)
         await page.waitForSelector('.adestia-cog__panel', { state: 'visible' })
+        await menuReady(page)
         await page.keyboard.press('Escape')
         await page.waitForSelector('.adestia-cog__panel', { state: 'detached', timeout: patience(5000) })
         expect(await focusOnCog(page)).toBe(true)
         await cog(page)
         await page.waitForSelector('.adestia-cog__panel', { state: 'visible' })
+        await menuReady(page)
         await page.mouse.click(300, 700)
         await page.waitForSelector('.adestia-cog__panel', { state: 'detached', timeout: patience(5000) })
       })
