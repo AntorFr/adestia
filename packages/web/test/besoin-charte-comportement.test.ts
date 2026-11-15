@@ -225,7 +225,7 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
       const slow = async (page: Page) => {
         await page.route('**/api/settings', async (route) => {
           await lifted
-          await route.continue()
+          await route.continue().catch(() => undefined)
         })
       }
       return { lift, slow }

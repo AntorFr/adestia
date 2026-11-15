@@ -308,7 +308,9 @@ export function BlockForm({ name, fields, lines, stale = false, locale, fresh = 
                         data-row={one.id}
                         onFocus={() => setCurrent(one.id)}
                         onKeyDown={(event) => {
-                          const by = stepOf(event.nativeEvent)
+                          const step = stepOf(event.nativeEvent)
+                          // Only up and down reorder rows; in and out belong to the page's blocks.
+                          const by = step === 'up' ? -1 : step === 'down' ? 1 : undefined
                           if (!by) return
                           event.preventDefault()
                           move(one.id, by, 'input')

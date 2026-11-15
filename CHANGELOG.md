@@ -818,6 +818,14 @@ branch and that `test:plugins` is replayed after a red vitest run.
 
 - **A refused account now gets a real "access refused" page, with a button to switch account** — an OIDC account outside the authorised groups sees the refused screen (E-1), which names the account and offers **Se déconnecter**. Signing out also ends the identity provider's session (its `end_session_endpoint`, or `/auth/login?switch=1` with `prompt=login` as a fallback), so the next sign-in can use another account. The deployment must list the post-logout return URI on the provider's OIDC client (`auth.oidc.postLogoutRedirectUri`).
 
+## v0.97.15
+
+- **Two load-sensitive web tests now wait for a signal instead of a fixed hold** — the settings spinner test (E-14) holds the `/api/settings` route until the test releases it, and the MCP refetch test (E-10) waits on the list count and the "Remove" button with a scaled delay. No assertion is removed. A test-only fix: nothing changes for users.
+
+## v0.97.16
+
+- **The repository now declares its local test level and a single-test replay** — `.sdlc.yaml` names `scripts/suite-locale.sh` (install, typecheck, lint and the unit tests without the browser and boot files, about 10 minutes) and `scripts/rejouer.sh` (replays only the named tests, and fails on a name that matches no test), so working phases no longer replay the whole suite. The attested suite is unchanged. Tooling only: nothing changes for users.
+
 ## v0.98.0-adestia-pages.1
 
 - **The red vitest step of `epic/adestia-pages` is traced to three flaky tests** — the
@@ -918,7 +926,6 @@ branch and that `test:plugins` is replayed after a red vitest run.
   "Apply" to come back, instead of reading right after the fill and blur. The other unstable test
   of the correction was already fixed on the epic and is unchanged.
   Test only: nothing changes for users (task `rouge-adestia-pages-13`).
-
 ## v0.98.0-adestia-pages.14
 
 - **The epic's unstable screen sweep and CRLF page test wait for signals** — the bench sweep now
@@ -956,6 +963,19 @@ branch and that `test:plugins` is replayed after a red vitest run.
 - **Gallery contract for plugins** — A plugin manifest may carry a `gallery` record per block
   (`name`, `line`, `image`, `group`) so its block shows by name and line, not by identifier;
   `project-management` declares `timeline` and `subproject`. A disabled plugin's blocks are absent.
+- **Sections and columns** — A page can hold a **Section** (a title, an optional icon, foldable; `closed=fold`
+  starts it folded) and a band of **Columns** (two or three, stacked in file order under 820 px), added from the
+  gallery and drawn in reading and editing; the fold is a reader's toggle, local to the screen and never written,
+  also on a read-only page; the band's settings choose 2 or 3 columns. Written as `:::section`, `::::columns` around
+  `:::col`; a section in a section or a column, or a band of other than two or three columns, is reported and its text
+  kept. A page without containers is written back exactly as before (a corpus of the bench's pages pins it). The gallery
+  card for `:::row` is now **Line break**, since **Columns** is the band.
+- **Move a block into, out of and between columns and sections** — `Alt+→` takes a block into the
+  section or column band that immediately follows it, `Alt+←` out to just after its container; the grip's
+  drag and the bar's four arrows (up, down, out, in; the arrows at a column's edge cross to the next
+  column, so a phone needs no drag) end in the same move. Moving a container moves what it holds. A
+  drop that breaks the depth rule (a section in a section or a column) keeps its line, marked, with the
+  reason beside it and in the live region, and writes nothing.
 - **Core blocks redrawn, `figures` gets `view`** — `figures` reads as tiles (default) or as one
   line (`view=inline`); a tile whose figure is a percentage draws a bar named for screen readers
   (`role="meter"`, 0–100, the label as its name) with nothing written for it. `list` keeps

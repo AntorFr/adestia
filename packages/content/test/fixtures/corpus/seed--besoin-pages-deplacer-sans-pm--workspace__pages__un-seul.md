@@ -1,0 +1,7 @@
+---
+title: Un seul bloc
+---
+
+:::callout{ico=💡 title="Bloc 1"}
+Texte du bloc 1.
+:::
