@@ -15,8 +15,8 @@ tests:
   # The local level: install, typecheck, lint, vitest without the browser/boot files, plugins;
   # no build, guards or boot. ~10 min (10m03s, 2846 tests, same pod), same test names.
   local: scripts/suite-locale.sh
-  # Replays only the named tests ({tests}: JUnit names, space-separated, bare or quoted).
-  rejouer: scripts/rejouer.sh {tests}
+  # Replays the named tests, each with its whole file, from a fresh extraction ({tests}: JUnit names, space-separated, bare or quoted).
+  rejouer: npm ci && scripts/rejouer.sh {tests}
   # The levels between local and the suite (AD-niveaux-1): scripts/niveaux.mjs reads the files
   # changed since {base} and the map scripts/ecrans.json, then plays the local level plus the screen
   # tests of the touched screens (ecrans) or the suite minus those of untouched screens (fiche).

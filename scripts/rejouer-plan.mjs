@@ -1,6 +1,6 @@
 // Helper of scripts/rejouer.sh: `plan <dir> <names…>` writes what to play, `report <dir> <out> <names…>`
 // keeps the cases that were asked for and fails on a name that matched no test or on a red case.
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const [mode, dir, ...rest] = process.argv.slice(2)
@@ -26,30 +26,47 @@ function cases(file) {
 
 const wanted = rest.map(parse)
 
+// Test files by kind, read from the tree (a bare name is looked up in their source).
+const ls = (d) => (existsSync(d) ? readdirSync(d).map((f) => `${d}/${f}`) : [])
+const vitestFiles = () => ['packages/content', 'packages/drivers', 'packages/schemas', 'packages/server', 'packages/web']
+  .flatMap((p) => ls(`${p}/test`)).filter((f) => /\.test\.tsx?$/.test(f) && !/\.real\.test\.ts$/.test(f))
+const pluginFiles = () => [...ls('plugins/test'), ...ls('plugins').flatMap((p) => ls(`${p}/test`))].filter((f) => /\.test\.js$/.test(f))
+// Files whose source carries the last segment of the name (a title may be built, then none match).
+const holding = (files, name) => {
+  const last = name.split(' > ').pop()
+  return files.filter((f) => readFileSync(f, 'utf8').includes(last))
+}
+
 if (mode === 'plan') {
+  // A named test is replayed with its WHOLE file (no -t): the neighbour that leaves a state behind
+  // is played too. The report keeps only the named cases.
   const files = new Set()
-  const pats = []
-  const plug = []
+  const plug = new Set()
   const steps = new Set()
+  let all = false      // a bare name found in no file source: play every vitest file
+  let allPlug = false
   for (const w of wanted) {
     if (w.cls === 'etape') {
       if (!['typecheck', 'lint'].includes(w.name)) { console.error(`rejouer.sh: step "${w.name}" cannot be replayed alone (typecheck, lint)`); process.exit(2) }
       steps.add(w.name)
       continue
     }
-    const inPlugins = w.cls === null || w.cls.startsWith('plugins/') || w.cls === 'test'
-    const inVitest = w.cls === null || !inPlugins
-    if (inVitest) {
-      if (w.cls) files.add(w.cls)
-      // vitest -t matches the full name, the suites and the test joined by a space.
-      pats.push('^' + rx(w.name).replace(/ > /g, ' ') + '$')
-    }
-    if (inPlugins) plug.push('^' + rx(w.name) + '$')
+    if (w.cls === null) {
+      // A bare name: the files whose source holds it; found nowhere (a built title), play both kinds.
+      const v = holding(vitestFiles(), w.name)
+      const p = holding(pluginFiles(), w.name)
+      v.forEach((x) => files.add(x))
+      p.forEach((x) => plug.add(x))
+      if (!v.length && !p.length) { all = true; allPlug = true }
+    } else if (w.cls.startsWith('plugins/') || w.cls === 'test') {
+      if (w.cls !== 'test') plug.add(w.cls); else allPlug = true
+    } else files.add(w.cls)
   }
+  const screen = [...files].filter((f) => existsSync(f) && /playwright|chromium|launch\.mjs/.test(readFileSync(f, 'utf8')))
   const wr = (f, v) => writeFileSync(join(dir, f), v)
-  wr('vitest.files', [...files].join('\n') + (files.size ? '\n' : ''))
-  wr('vitest.args', pats.join('|'))
-  wr('plugins.args', plug.join('|'))
+  wr('vitest.files', all ? 'ALL\n' : [...files].join('\n') + (files.size ? '\n' : ''))
+  wr('plugins.files', allPlug ? 'ALL\n' : [...plug].join('\n') + (plug.size ? '\n' : ''))
+  wr('screens.files', screen.join('\n') + (screen.length ? '\n' : ''))
   wr('steps.args', [...steps].join('\n'))
   process.exit(0)
 }
