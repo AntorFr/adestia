@@ -296,7 +296,9 @@ export async function loadPlugins(
       view === undefined &&
       blocks === undefined &&
       chrome === undefined &&
-      layouts === undefined
+      layouts === undefined &&
+      // A plugin that only ships page seeds is a plugin: its templates are read by the shell itself.
+      (descriptor.templates ?? []).length === 0
     ) {
       // Nothing usable came back: drop the styles we just injected rather than
       // leaving a dead plugin's CSS restyling the page.

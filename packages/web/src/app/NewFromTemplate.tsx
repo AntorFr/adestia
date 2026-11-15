@@ -65,8 +65,11 @@ function TemplateSheet({ folder, sources, pages, stores, fetchImpl, locale, open
 
   useEffect(() => {
     alive.current = true
+    // The sheet's trap puts focus on its first control once it has mounted; the title wins right after.
+    const focus = setTimeout(() => input.current?.focus(), 0)
     return () => {
       alive.current = false
+      clearTimeout(focus)
     }
   }, [])
 
@@ -214,7 +217,6 @@ function TemplateSheet({ folder, sources, pages, stores, fetchImpl, locale, open
             ref={input}
             className="adestia-input"
             value={title}
-            autoFocus
             autoComplete="off"
             onChange={(event) => {
               setTitle(event.target.value)
