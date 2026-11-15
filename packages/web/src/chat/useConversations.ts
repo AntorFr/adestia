@@ -598,7 +598,8 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
     // moment the first message is typed — before its POST has left. A message
     // sent in that gap is held too, once the first one has gone.
     if (current.turning || current.live?.running) {
-      patchConversation(tabId, { held: [...current.held, { text, attachments }] })
+      const bubble = { text, attachments }
+      patchConversation(tabId, { held: [...current.held, bubble] })
       const controller = new AbortController()
       // A draft has no conversation until the first message makes it: wait for that
       // message to have left, and take the id it was made with.
@@ -611,6 +612,18 @@ function useTurn({ fetchImpl, model, view, t }: ConversationsOptions, open: Open
         { ...turnOptions({ model, view }, text, attachments, id), signal: controller.signal },
         fetchImpl,
       )
+      if (start.kind === 'stream' && !conversation(id).turning) {
+        // The running turn settled in the instant this left AND its consumer
+        // has already finished (its follow-up attach answered 204): nobody is
+        // left to adopt the fresh stream, and the bubble would wait for ever.
+        // This message IS that turn now — follow it here.
+        patchConversation(id, (previous) => ({
+          held: previous.held.filter((entry) => entry !== bubble),
+          live: INITIAL_TURN,
+        }))
+        void pump(id, start.states)
+        return
+      }
       if (start.kind === 'stream') {
         // The running turn settled in the instant this left, so the desk
         // answered with a fresh stream instead of holding. Drop this
