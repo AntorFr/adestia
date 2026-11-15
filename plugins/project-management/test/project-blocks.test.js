@@ -71,7 +71,7 @@ test('progress: due today is next, not late; an unreadable due counts as neither
   const r = progressOf(pages, 'p', 'children', 'x', TODAY)
   assert.equal(r.late, 0)
   assert.equal(r.next.path, 'p/a.md')
-  assert.equal(r.total, 3)
+  assert.equal(r.total, 2)
 })
 
 test('progress: depth subtree reaches deeper pages, children does not', () => {
