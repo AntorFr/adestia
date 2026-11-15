@@ -394,7 +394,7 @@ export function progressOf(pages, base, depth, carrier, today) {
   const dated = open
     .map((page) => ({ page, due: DATE_FIELD(page.fields?.due) }))
     .filter((item) => item.due !== undefined)
-  const late = dated.filter(({ page, due }) => classify({ due, finished: false }, today) === 'late').length
+  const late = dated.filter(({ due }) => classify({ due, finished: false }, today) === 'late').length
   const upcoming = dated
     .filter(({ due }) => due >= today)
     .sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : 0))[0]

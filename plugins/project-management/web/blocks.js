@@ -35,6 +35,12 @@ const folderOf = (path) => (path.includes('/') ? path.slice(0, path.lastIndexOf(
 export function table(locale) {
   return String(locale ?? '').slice(0, 2) === 'fr'
     ? {
+        'How far the pages below this page are: the share finished, how many are late and what falls due next.':
+          'Où en sont les pages sous cette page : la part terminée, combien sont en retard et ce qui échoit ensuite.',
+        'Milestones written one per line — `- Label: 2026-11-20`, with `— done` once reached — each marked done, next, late or planned.':
+          'Les jalons, écrits un par ligne — `- Libellé: 2026-11-20`, avec `— done` une fois atteints — chacun marqué fait, prochain, en retard ou prévu.',
+        'Risks written one per line — `- Label: High — Marc` — with a level of High, Medium or Low and an optional owner.':
+          'Les risques, écrits un par ligne — `- Libellé: High — Marc` — avec un niveau High, Medium ou Low et un responsable facultatif.',
         'Phases and milestones on a time axis — written as list lines in the block, or read from the start:/due: of the pages below.':
           'Phases et jalons sur un axe de temps — écrits en lignes de liste dans le bloc, ou lus dans les start:/due: des fiches du dessous.',
         'The sub-projects below this page, each with where it stands — its `project-status` while it is under way, its lifecycle status when that has something more urgent to say.':
