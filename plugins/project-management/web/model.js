@@ -423,7 +423,7 @@ export function parseMilestone(text) {
   const parts = splitLine(text)
   if (!parts) return null
   const [date, ...flag] = parts.rest.split(/\s+—\s+/)
-  if (!DATE.test(date) || iso(new Date(utc(date))) !== date) return null
+  if (!DATE.test(date) || !Number.isFinite(utc(date)) || iso(new Date(utc(date))) !== date) return null
   if (flag.length > 1) return null
   if (flag.length === 1 && flag[0].toLowerCase() !== 'done') return null
   return { label: parts.label, due: date, done: flag.length === 1 }
