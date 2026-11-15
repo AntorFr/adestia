@@ -26,5 +26,5 @@ export const labelLevelOwner = makeCodec(
     if (level === null) return null
     return { label, level, owner: tail.join(' — ') }
   },
-  (c) => `- ${c['label'] ?? ''}: ${levelOf(c['level'] ?? '') ?? c['level'] ?? ''}${c['owner'] ? ` — ${c['owner']}` : ''}`,
+  (c) => `- ${c['label'] ?? ''}: ${levelOf(c['level'] ?? '') ?? c['level'] ?? ''}${c['owner']?.trim() ? ` — ${c['owner'].trim()}` : ''}`,
 )
