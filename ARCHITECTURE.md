@@ -215,7 +215,7 @@ and every turn — chat, scheduled, delegated, callback wake — goes through th
   checks every bundled plugin's French entries. Skins have no words through the locale today.
 - **Tests** — `vitest.config.ts` runs `packages/*/test`, aliasing every `@antorfr/*` to its
   `src/index.ts`; `npm run test:plugins` runs `node --test` over the plugins; `bench/` is the
-  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). No workflow plays the suite: `scripts/suite-attestee.sh` (typecheck, lint, tests, the build and a start of the built server), declared by `tests:` in `.sdlc.yaml`, is played by `attester --publier`, which sets the `tests-complets` status (AD-preuve-1). The waits of `bench/sweep.mjs` (but for one 700 ms settling pause) and of seven browser suites (`besoin-charte-comportement`, `besoin-chat-browser`, `besoin-pages-ensemble-browser`, `besoin-mcp-browser`, `besoin-hors-ligne-bords`, `besoin-hors-ligne-browser`, `besoin-tours`) are scaled by one factor, `ADESTIA_PATIENCE` (an integer, 1 by default; `scripts/suite-attestee.sh` sets 4 on the vitest step): in those suites a Playwright delay goes through `patience()` of `packages/web/test/patience.ts`, never a literal, and a `waitForTimeout` that remains is a pause (it is scaled too, `waitForTimeout(patience(250))`) with a `// pause fixe : <reason>` comment above it, saying it is not a wait for a signal. A value that is not an integer of at least 1 reads as 1. The other browser suites and helpers (among them `besoin-pages-browser`, `ensemble-hors-ligne-browser`, `besoin-charte-browser`, `besoin-chat-narrow-browser`, `besoin-chargements-browser`, `besoin-hors-ligne-flux` and the helper `charte-browser.ts`; the list is not exhaustive) still use literal delays; a new browser test follows the rule. A test that is red in the full suite and green alone measures the load, not the product.
+  visual check (`bench/run.sh` with docker; `bench/launch.mjs` and `bench/sweep.mjs` without). No workflow plays the suite: `scripts/suite-attestee.sh` (typecheck, lint, tests, the build and a start of the built server), declared by `tests:` in `.sdlc.yaml`, is played by `attester --publier`, which sets the `tests-complets` status (AD-preuve-1). The waits of `bench/sweep.mjs` (but for the one 700 ms settling pause of `bench/lib/capture.mjs`) and of eight browser suites (`recette-formulaires-browser`, `besoin-charte-comportement`, `besoin-chat-browser`, `besoin-pages-ensemble-browser`, `besoin-mcp-browser`, `besoin-hors-ligne-bords`, `besoin-hors-ligne-browser`, `besoin-tours`) are scaled by one factor, `ADESTIA_PATIENCE` (an integer, 1 by default; `scripts/suite-attestee.sh` sets 4 on the vitest step): in those suites a Playwright delay goes through `patience()` of `packages/web/test/patience.ts`, never a literal, and a `waitForTimeout` that remains is a pause (it is scaled too, `waitForTimeout(patience(250))`) with a `// pause fixe : <reason>` comment above it, saying it is not a wait for a signal (two older `waitForTimeout(500)` of `besoin-chat-browser`, at the end of `visit()` and after the sign button of E-18, are not yet scaled). A value that is not an integer of at least 1 reads as 1. The other browser suites and helpers (among them `besoin-pages-browser`, `ensemble-hors-ligne-browser`, `besoin-charte-browser`, `besoin-chat-narrow-browser`, `besoin-chargements-browser`, `besoin-hors-ligne-flux` and the helper `charte-browser.ts`; the list is not exhaustive) still use literal delays; a new browser test follows the rule. A test that is red in the full suite and green alone measures the load, not the product.
 
 ## Decisions of adestia-qualite
 
@@ -1367,6 +1367,24 @@ its report names that commit and the ruleset id, and if the token cannot, it is 
 (Code and commands) states that no workflow plays the suite, that green is `attester --publier`
 on a pushed head that contains `origin/main`, and replaces its mentions of CI; `docs/parcours.md`
 P-15 step 2 and the Tests line of *Cross-cutting* follow.
+
+### AD-preuve-5 — A local level and a single-test replay, declared beside the whole suite
+
+`.sdlc.yaml` also declares `tests.local` (`scripts/suite-locale.sh`) and `tests.rejouer`
+(`scripts/rejouer.sh {tests}`), under the unchanged `commande:`. The local level plays install,
+typecheck, lint, vitest without the test files that drive a browser or `bench/launch.mjs`
+(found by grep for `playwright|chromium|launch.mjs` under `packages/*/test`, so a new browser test
+leaves the level by itself) and the plugins' tests; no build, guards or boot. It writes the same
+`resultats.xml` through `scripts/suite-rapport.mjs`, so a test keeps its name in both levels (the
+`build` and `boot` cases are dropped from its report, not reported red). Measured in the same pod:
+local ~10 min (2846 tests), whole suite ~35 min (3491 tests). `rejouer.sh` takes JUnit names as
+arguments (space-separated, quoted when they contain spaces, with or without the `classname`
+prefix; `etape > typecheck` or `etape > lint` replays a step), plays only those tests (vitest by
+file and `-t`, `node --test` by name pattern for plugins), and exits non-zero on a name that matches
+no test, never a green at zero test. The local level proves nothing for a commit: only the attested
+suite does (AD-preuve-1). `scripts/suite-attestee.sh` is unchanged.
+*Rejected:* a hand-kept list of excluded files (it rots as browser tests are added); a second report
+format for the local level (names would drift from the attested suite).
 
 ## Decisions of adestia-acces-refuse
 

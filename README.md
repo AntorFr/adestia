@@ -231,6 +231,11 @@ npm run lint      # part of the attested suite (`attester --publier`, see CLAUDE
 npm run build
 ```
 
+While working, play the local level instead of the whole suite: `scripts/suite-locale.sh` (about 10 minutes: install,
+typecheck, lint, vitest without the browser test files, plugins; no build, guards or boot), and
+`scripts/rejouer.sh "<test name>"` to replay named tests only (names as `resultats.xml` of an earlier run carries them, `<file> > <describe> > <test>` or just the test name; `etape > lint` replays a step; it needs `npm ci` first, and fails on a name that matches no test).
+Both write `resultats.xml` with the suite's test names. `scripts/suite-attestee.sh` (about 35 minutes) stays the proof (AD-preuve-1; the local level, AD-preuve-5). `local:` and `rejouer:` are read by the chain on `main` only; the scripts themselves run anywhere.
+
 The web shell dispatches screens in `app/Canvas.tsx`; `CanvasHeader.tsx` owns the
 breadcrumb and phone return. `Home.tsx` composes `Brief` and `Domains`; the page
 editor delegates saving to `editor/useAutosave.ts` and reading to `editor/reader/`.
