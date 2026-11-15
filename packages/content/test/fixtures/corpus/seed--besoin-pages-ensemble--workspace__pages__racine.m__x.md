@@ -1,0 +1,5 @@
+---
+title: Page voisine
+---
+
+Texte.

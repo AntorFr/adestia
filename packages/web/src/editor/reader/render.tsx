@@ -40,7 +40,8 @@ function withBreaks(value: string): ReactNode {
  * whole line — both are laid out the way everything else is, one after
  * another, and must not be pulled into a row.
  */
-function widthOf(node: Node): number | undefined {
+function widthOf(node: Node, ctx: Ctx): number | undefined {
+  if (ctx.inColumns) return undefined
   if (node.type !== 'containerDirective' && node.type !== 'leafDirective') return undefined
   const asked = node.attributes?.['w']
   const share = asked === undefined ? undefined : WIDTHS[asked]
@@ -70,7 +71,7 @@ function children(node: Node, ctx: Ctx): ReactNode {
   for (let index = 0; index < list.length; index += 1) {
     const first = list[index]
     if (first === undefined) continue
-    if (widthOf(first) === undefined) {
+    if (widthOf(first, ctx) === undefined) {
       out.push(<Fragment key={index}>{render(first, ctx)}</Fragment>)
       continue
     }
@@ -80,7 +81,7 @@ function children(node: Node, ctx: Ctx): ReactNode {
     let cursor = index
     while (cursor < list.length) {
       const next = list[cursor]
-      const share = next === undefined ? undefined : widthOf(next)
+      const share = next === undefined ? undefined : widthOf(next, ctx)
       // A hair of tolerance, because three thirds do not add to one in binary.
       if (next === undefined || share === undefined || filled + share > 1 + 1e-9) break
       run.push(next)

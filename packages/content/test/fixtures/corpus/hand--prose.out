@@ -1,0 +1,23 @@
+---
+title: Prose
+status: en cours
+tags:
+  - un
+  - deux
+---
+
+# Titre
+
+Un **gras**, un *italique*, du `code`, un [lien](https://example.org) et un [[wiki]].
+
+> Citation
+> sur deux lignes
+
+| A | B |
+| - | - |
+| 1 | 2 |
+
+---
+
+Fin avec deux espaces\
+saut de ligne.

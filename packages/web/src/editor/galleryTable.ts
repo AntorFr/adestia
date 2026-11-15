@@ -5,7 +5,7 @@
  * A table here, not derived from the `/` menu: the menu has labels and icons
  * but no picture, no line and no group (AD-deplacer-2). `app` is absent for
  * the reason `slash.ts` keeps it out — nothing draws it, a card would be a
- * dead end. Images are small files under `public/blocks/`.
+ * dead end; `col` is absent too, a column exists only inside a band. Images are small files under `public/blocks/`.
  */
 
 import type { PluginGalleryFields, PluginGalleryView } from '@antorfr/adestia-schemas'
@@ -83,9 +83,23 @@ export const CORE_GALLERY: Readonly<Record<string, CoreCard>> = {
       ],
     },
   },
-  row: {
+  section: {
+    name: { en: 'Section', fr: 'Section' },
+    line: { en: 'A titled stretch of the page that can fold away.', fr: 'Un passage de la page avec un titre, qui peut se replier.' },
+    image: '/blocks/section.svg',
+    group: LAYOUT,
+  },
+  columns: {
     name: { en: 'Columns', fr: 'Colonnes' },
-    line: { en: 'Blocks side by side on one line.', fr: 'Des blocs côte à côte sur une même ligne.' },
+    line: { en: 'Two or three columns side by side, stacked on a phone.', fr: 'Deux ou trois colonnes côte à côte, empilées sur téléphone.' },
+    image: '/blocks/columns.svg',
+    group: LAYOUT,
+  },
+  row: {
+    // Not "Columns" any more: that word is the band's (`columns`), and two cards
+    // with one name are a coin toss in the gallery.
+    name: { en: 'Line break', fr: 'Saut de ligne' },
+    line: { en: 'Ends the line: the next block starts a new one.', fr: 'Termine la ligne : le bloc suivant en commence une nouvelle.' },
     image: '/blocks/row.svg',
     group: LAYOUT,
   },

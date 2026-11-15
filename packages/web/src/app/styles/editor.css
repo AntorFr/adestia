@@ -319,11 +319,21 @@ h2.adestia-editor__title { padding-bottom: 3px; }
 }
 .adestia-edblock__bar .adestia-btn:disabled { opacity: 0.4; cursor: default; }
 .adestia-edblock__down svg { transform: rotate(180deg); } /* the charte list has one arrow */
-.adestia-edblock__up[hidden], .adestia-edblock__down[hidden] { display: none; }
+.adestia-edblock__out svg { transform: rotate(-90deg); } /* in and out turn the same arrow */
+.adestia-edblock__into svg { transform: rotate(90deg); }
+.adestia-edblock__up[hidden], .adestia-edblock__down[hidden],
+.adestia-edblock__out[hidden], .adestia-edblock__into[hidden] { display: none; }
 
 /* The phone: a finger needs 44 px on the move controls (E-4). */
 @media (max-width: 820px) {
   .adestia-edblock__bar .adestia-btn--icon.adestia-btn--sm { width: 44px; height: 44px; min-width: 44px; }
+  /* One bar at a time: with a block inside a container pointed at, focused or
+     selected, the container's bar (two rows of 44 px) would sit over the
+     child's bar and its Up/Down — the touch path for moving (B-23). */
+  .adestia-edblock:has(.adestia-edblock:is(:hover, :focus-within, .adestia-edblock--open, .ProseMirror-selectednode)) > .adestia-edblock__bar {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 /* The live region: where the block went, or why it did not. */
@@ -359,6 +369,26 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
   pointer-events: none;
 }
 .adestia-drop-line[hidden] { display: none; }
+/* A refused drop keeps its line, in the danger colour, with the reason beside it (AD-structure-1). */
+.adestia-drop-line--refused {
+  background: var(--danger-text);
+  box-shadow: 0 0 0 2px var(--accent-quiet);
+}
+.adestia-drop-line--refused::after {
+  content: attr(data-reason);
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: max-content;
+  max-width: min(32rem, calc(100vw - var(--space-4)));
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--danger-text);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--danger-text);
+  font-size: var(--text-xs);
+  line-height: 1.3;
+}
 .adestia-edblock__act[hidden] { display: none; }
 
 /* Which block the bar belongs to: a faint outline on the one pointed at. */
@@ -607,6 +637,54 @@ body.adestia-dragging-block * { cursor: grabbing !important; user-select: none; 
 .adestia-blockcard__line { font-size: var(--text-xs); color: var(--text-muted); }
 .adestia-blockgallery__empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); padding: var(--space-5) var(--space-3); text-align: center; }
 .adestia-blockgallery__hint { color: var(--text-muted); font-size: var(--text-sm); }
+
+/* ── Containers while being written (B-28) ─────────────────────────────────
+   Dashed edges and the drop lane are editing's alone: reading draws the
+   content (reader.css). A column carries no bar, so its edge wears its number. */
+.adestia-edblock--container {
+  margin: var(--space-3) 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--border-strong, var(--border));
+  border-radius: var(--radius-lg);
+}
+.adestia-edblock--columns > .adestia-edblock__body {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(var(--columns, 2), minmax(0, 1fr));
+}
+.adestia-edblock--columns:has(> .adestia-edblock__body > .adestia-edblock--col:nth-child(3)) {
+  --columns: 3;
+}
+.adestia-edblock--col { margin: 0; min-width: 0; }
+.adestia-edblock--col::before {
+  content: attr(data-block) " " attr(data-col);
+  display: block;
+  padding: 0 0 var(--space-2);
+  font: 600 var(--text-2xs) / 1.3 var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.adestia-edblock--folded::after {
+  content: attr(data-note);
+  display: inline-block;
+  margin-top: var(--space-2);
+  font: 500 var(--text-2xs) / 1.3 var(--font-mono);
+  color: var(--text-faint);
+}
+/* The drop lane of a column with nothing in it. */
+.adestia-edblock--hollow > .adestia-edblock__body::before {
+  content: "+ " attr(data-drop);
+  display: block;
+  padding: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+.adestia-blockset__choice { display: flex; gap: var(--space-2); }
+@media (max-width: 820px) {
+  .adestia-edblock--columns > .adestia-edblock__body { grid-template-columns: minmax(0, 1fr); }
+}
+.adestia-edblock--col > .adestia-edblock__bar { display: none; }
 
 /* The data form (E-35): a row per entry, one control per column, in the shared sheet. */
 .adestia-blockset__foot {
