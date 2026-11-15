@@ -244,6 +244,14 @@ export interface PluginManifest {
   readonly gallery?: Readonly<Record<string, PluginGalleryEntry>>
 
   /**
+   * Page seeds this plugin ships (AD-36), as paths under its folder, each
+   * `templates/<name>.md`. Absent means none. The seed's own frontmatter
+   * (`template:` — name, image, description) is read by the shell from the
+   * file, served by the plugin's static route; nothing is restated here.
+   */
+  readonly templates?: readonly string[]
+
+  /**
    * Frontmatter `type:` values this plugin's own code dispatches on — e.g. a
    * task app declaring `["tache", "liste"]`.
    *

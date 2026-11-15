@@ -334,6 +334,22 @@ export function parsePluginManifest(input: unknown, folderName: string): PluginM
     }
   }
 
+  const templates = input['templates']
+  if (templates !== undefined) {
+    if (!Array.isArray(templates)) {
+      issues.push({ field: 'templates', message: 'must be an array of paths under templates/' })
+    } else {
+      for (const [index, path] of templates.entries()) {
+        const field = `templates[${index}]`
+        if (typeof path !== 'string') {
+          issues.push({ field, message: 'must be a string' })
+        } else if (!/^templates\/[^/\\]+\.md$/.test(path) || path.startsWith('templates/.')) {
+          issues.push({ field, message: 'must be a markdown file directly under templates/ (templates/<name>.md)' })
+        }
+      }
+    }
+  }
+
   const fields = input['fields']
   if (fields !== undefined) {
     if (!isObject(fields)) {

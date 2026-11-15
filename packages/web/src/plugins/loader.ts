@@ -68,6 +68,8 @@ export interface PluginDescriptor {
   readonly vocabulary?: Readonly<Record<string, ContributedBlock>>
   /** How the manifest says this plugin's blocks show in the gallery. */
   readonly gallery?: Readonly<Record<string, PluginGalleryEntry>>
+  /** The page seeds it ships, as paths under its folder (AD-36). */
+  readonly templates?: readonly string[]
   readonly chrome?: string
   readonly styles?: readonly string[]
   readonly contract?: number
@@ -99,6 +101,8 @@ export interface LoadedPlugin {
   /** The blocks it adds to the vocabulary, and how the gallery shows them. */
   readonly blockNames?: readonly string[]
   readonly gallery?: PluginDescriptor['gallery']
+  /** The page seeds it ships (AD-36). */
+  readonly templates?: PluginDescriptor['templates']
   /**
    * This plugin's own words, in the reader's language — what the shell says
    * when it draws something the MANIFEST declared. See `Words`.
@@ -314,6 +318,7 @@ export async function loadPlugins(
       ...(descriptor.fields ? { fields: descriptor.fields } : {}),
       ...(descriptor.vocabulary ? { blockNames: Object.keys(descriptor.vocabulary) } : {}),
       ...(descriptor.gallery ? { gallery: descriptor.gallery } : {}),
+      ...(descriptor.templates ? { templates: descriptor.templates } : {}),
       ...(words ? { words } : {}),
     })
   }

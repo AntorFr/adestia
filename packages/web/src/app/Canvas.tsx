@@ -21,7 +21,9 @@ import { EmptyState } from './ui/EmptyState.js'
 import { Home } from './Home.js'
 import { MissingPage } from './MissingPage.js'
 import { Preferences, prefsTitle, type PrefsPage } from './Preferences.js'
+import { NewFromTemplate } from './NewFromTemplate.js'
 import { Section } from './Section.js'
+import { templateSources } from './templates.js'
 import { Loading } from './ui/Loading.js'
 import { SkinSlot } from './SkinSlot.js'
 import { encodePath, ownerOf } from './owners.js'
@@ -46,6 +48,8 @@ export interface CanvasProps {
   readonly loaded: readonly LoadedPlugin[]
   readonly pages: readonly IndexEntry[]
   readonly stores: readonly StoreInfo[]
+  /** Folders where a page can be written, as the index last said (a hint). */
+  readonly writableFolders?: readonly string[]
   readonly openApp: string | undefined
   readonly settings: { page: PrefsPage; item?: string } | undefined
   readonly settingsPage: PrefsPage | undefined
@@ -62,7 +66,7 @@ export interface CanvasProps {
   readonly mount: EditorMount | undefined
   readonly section: string | undefined
   readonly channel: ChatChannel
-  readonly openPage: (path: string) => void
+  readonly openPage: (path: string, store?: string) => void
   readonly openSection: (path: string) => void
   readonly openPlugin: (plugin: LoadedPlugin) => void
   readonly closeApp: () => void
@@ -166,6 +170,11 @@ export function Canvas(props: CanvasProps) {
   if (props.pageLoading) return <Loading t={t} />
 
   if (section) {
+    // E-3's button: drawn only once the index has answered, for a folder it lists as writable,
+    // and only when some active plugin (or the core) ships a seed. Never a disabled one.
+    const sources = templateSources(loaded)
+    const offer =
+      props.indexed !== false && (props.writableFolders ?? []).includes(section) && sources.length > 0
     return (
       <Section
         path={section}
@@ -177,6 +186,22 @@ export function Canvas(props: CanvasProps) {
         openPage={openPage}
         {...(props.ready === undefined ? {} : { ready: props.ready && props.indexed !== false })}
         t={t}
+        {...(offer
+          ? {
+              headerAction: (
+                <NewFromTemplate
+                  folder={section}
+                  sources={sources}
+                  pages={pages}
+                  stores={stores}
+                  fetchImpl={props.fetchImpl}
+                  locale={props.locale === 'fr' ? 'fr' : 'en'}
+                  openPage={openPage}
+                  t={t}
+                />
+              ),
+            }
+          : {})}
       />
     )
   }
