@@ -4,7 +4,7 @@
  * draws it stays a thin skin over rules that are tested on their own.
  */
 
-import { readTemplateDeclaration, writeFrontmatter, type TemplateText } from '@antorfr/adestia-content'
+import { readTemplateDeclaration, writeFrontmatter, type TemplateDeclaration, type TemplateText } from '@antorfr/adestia-content'
 
 import type { LoadedPlugin } from '../plugins/loader.js'
 import type { Locale } from './i18n.js'
@@ -70,7 +70,7 @@ function leaf(id: string): string {
 }
 
 export function cardOf(source: TemplateSource, text: string, locale: Locale): TemplateCard {
-  const declared = readTemplateDeclaration(text)
+  const declared: TemplateDeclaration | undefined = readTemplateDeclaration(text)
   const name = say(declared?.name, locale, source.words) ?? leaf(source.id)
   const line = say(declared?.description, locale, source.words) ?? ''
   return {
