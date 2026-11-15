@@ -15,7 +15,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { PluginGalleryColumn, PluginGalleryFields, PluginGalleryText } from '@antorfr/adestia-schemas'
 
 import { Button, EmptyState, Field, Sheet } from '../app/ui/index.js'
-import { cellKey, cellsOf, codecFor, isDelimiter, linesOfText, validateRow, type Cells, type Kept, type Problem, type Refusal, type Row } from './blockform/index.js'
+import { DONE, LEVELS, cellKey, cellsOf, codecFor, isDelimiter, linesOfText, validateRow, type Cells, type Kept, type Problem, type Refusal, type Row } from './blockform/index.js'
 import { stepOf } from './moveui.js'
 
 export interface BlockFormProps {
@@ -50,6 +50,7 @@ const MESSAGES: Readonly<Record<Refusal, string>> = {
   order: 'Due is before start',
   colon: 'A label cannot hold a colon',
   dash: 'A value cannot hold a spaced dash',
+  choice: 'Choose one of the offered values',
   newline: 'Write it on one line',
 }
 
@@ -319,16 +320,43 @@ export function BlockForm({ name, fields, lines, stale = false, locale, fresh = 
                         <div className="adestia-blockform__cells">
                           {columns.map((column, i) => {
                             const refusal = bad.find((p) => p.key === column.key)?.refusal
-                            const input = (
-                              <input
-                                type={column.kind === 'date' ? 'date' : 'text'}
-                                className="adestia-input"
-                                value={one.row.cells[column.key] ?? ''}
-                                {...(isTable ? { 'aria-label': `${t('Row %n').replace('%n', String(index + 1))}, ${t('Column %n').replace('%n', String(i + 1))}` } : {})}
-                                {...(i === 0 ? { 'data-first': '' } : {})}
-                                onChange={(event) => edit(one.id, column.key, event.target.value)}
-                              />
-                            )
+                            const name = say(column.label, locale, t)
+                            const common = {
+                              ...(i === 0 ? { 'data-first': '' } : {}),
+                              ...(isTable ? { 'aria-label': `${t('Row %n').replace('%n', String(index + 1))}, ${t('Column %n').replace('%n', String(i + 1))}` } : {}),
+                            }
+                            const input =
+                              column.kind === 'check' ? (
+                                <input
+                                  type="checkbox"
+                                  aria-label={name}
+                                  checked={(one.row.cells[column.key] ?? '') !== ''}
+                                  {...common}
+                                  onChange={(event) => edit(one.id, column.key, event.target.checked ? DONE : '')}
+                                />
+                              ) : column.kind === 'choice' ? (
+                                <select
+                                  className="adestia-input"
+                                  value={one.row.cells[column.key] ?? ''}
+                                  {...common}
+                                  onChange={(event) => edit(one.id, column.key, event.target.value)}
+                                >
+                                  <option value="">{''}</option>
+                                  {LEVELS.map((level) => (
+                                    <option key={level} value={level}>
+                                      {level}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type={column.kind === 'date' ? 'date' : 'text'}
+                                  className="adestia-input"
+                                  value={one.row.cells[column.key] ?? ''}
+                                  {...common}
+                                  onChange={(event) => edit(one.id, column.key, event.target.value)}
+                                />
+                              )
                             return isTable ? (
                               <div key={column.key} className="adestia-field">
                                 {input}

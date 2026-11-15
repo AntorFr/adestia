@@ -111,11 +111,18 @@ export interface PluginGalleryEntry {
   readonly view?: PluginGalleryView
 }
 
-/** The four line formats that exist, one codec each in the shell (AD-forms-1). */
-export const GALLERY_LINE_FORMATS = ['label-value-caption', 'label-range', 'label-value', 'table'] as const
+/** The line formats that exist, one codec each in the shell (AD-forms-1, AD-etat-projet-2). */
+export const GALLERY_LINE_FORMATS = [
+  'label-value-caption',
+  'label-range',
+  'label-value',
+  'table',
+  'label-date-done',
+  'label-level-owner',
+] as const
 export type PluginGalleryLine = (typeof GALLERY_LINE_FORMATS)[number]
 
-export const GALLERY_COLUMN_KINDS = ['text', 'number', 'date', 'link'] as const
+export const GALLERY_COLUMN_KINDS = ['text', 'number', 'date', 'link', 'check', 'choice'] as const
 type PluginGalleryColumnKind = (typeof GALLERY_COLUMN_KINDS)[number]
 
 export interface PluginGalleryColumn {

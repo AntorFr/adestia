@@ -1,5 +1,7 @@
 import type { PluginGalleryColumn, PluginGalleryLine } from '@antorfr/adestia-schemas'
 
+import { DONE } from './label-date-done.js'
+import { levelOf } from './label-level-owner.js'
 import type { Cells } from './types.js'
 
 /**
@@ -14,6 +16,7 @@ export type Refusal =
   | 'order' // a due before the start
   | 'colon' // a label holding the colon that ends it
   | 'dash' // a figure holding the spaced dash that starts its caption
+  | 'choice' // a level outside High, Medium, Low
   | 'newline' // a line is one line
 
 export interface Problem {
@@ -45,6 +48,8 @@ export function refuseCell(column: PluginGalleryColumn, value: string): Refusal 
   if (text === '') return column.required ? 'required' : null
   if (column.kind === 'number' && !isNumericValue(text)) return 'number'
   if (column.kind === 'date' && !isIsoDate(text)) return 'date'
+  if (column.kind === 'check' && text !== DONE) return 'choice'
+  if (column.kind === 'choice' && levelOf(text) === null) return 'choice'
   return null
 }
 
