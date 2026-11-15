@@ -23,6 +23,10 @@ npm run lint         # eslint packages plugins; part of the attested suite
 npm run build        # server/dependencies, then the web shell and its vendor/SW files
 ```
 
+Two levels, same test names: `scripts/suite-locale.sh` (~10 min: no build, guards, boot, browser tests) while
+working; `scripts/suite-attestee.sh` (~35 min, whole suite) before delivering. `scripts/rejouer.sh "<name>"…`
+replays only named tests (JUnit names, quoted if spaced) and fails on a name that matches no test.
+
 One test file: `npx vitest run packages/web/test/<file>.test.tsx` from the root.
 
 `npm test` does not run `bench/tests/*.test.mjs`: those are `node --test bench/tests/<file>`,
