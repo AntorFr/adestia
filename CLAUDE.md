@@ -23,9 +23,20 @@ npm run lint         # eslint packages plugins; part of the attested suite
 npm run build        # server/dependencies, then the web shell and its vendor/SW files
 ```
 
-Two levels, same test names: `scripts/suite-locale.sh` (~10 min: no build, guards, boot, browser tests) while
-working; `scripts/suite-attestee.sh` (~35 min, whole suite) before delivering. `scripts/rejouer.sh "<name>"…`
-replays only named tests (JUnit names, quoted if spaced) and fails on a name that matches no test.
+Four levels, same test names, one `resultats.xml` format:
+
+| Level | Command | Plays | Duration |
+|---|---|---|---|
+| `local` | `scripts/suite-locale.sh` | install, typecheck, lint, vitest without browser files, plugins; no build, guards or boot | ~10 min |
+| `ecrans` | `node scripts/niveaux.mjs ecrans <base>` | the local level plus the screen tests of the screens the work touches | see README |
+| `fiche` | `node scripts/niveaux.mjs fiche <base>` | the whole suite minus the screen tests of untouched screens | see README |
+| suite | `scripts/suite-attestee.sh` | everything: build, guards, boot | ~35 min |
+
+`<base>` is a commit (the feature's fork point from `main`); the changed files are `git diff <base> HEAD`,
+read against the map `scripts/ecrans.json`. `node scripts/niveaux.mjs --lister ecrans|fiche <base>` prints what
+a level would play and plays nothing; `--verifier` checks the map. `scripts/rejouer.sh "<name>"…` replays only
+named tests (JUnit names, quoted if spaced), each with its whole file, and fails on a name that matches no test.
+The tag's check accepts only a `tests-complets` status whose description begins with « niveau » (`success niveau suite · …`); a bare `success` is refused.
 
 One test file: `npx vitest run packages/web/test/<file>.test.tsx` from the root.
 
