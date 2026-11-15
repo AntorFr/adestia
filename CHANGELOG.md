@@ -830,3 +830,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
 
 - **The CRLF note test on /planif now waits for all nine notes to be drawn** — the test that reads the at, enabled and until keys of a CRLF note waited for one title only, then read the whole canvas, so it turned red under the load of the full suite when a later note was not yet rendered. It now waits for every title of the list. No assertion is removed. A test-only fix: nothing changes for users.
 
+## v0.97.18
+
+- **The MCP "Remove" test now waits for signals instead of instant reads** — the test that removes an MCP server (B-20) read the disabled "Remove" button and the server list at one instant, so it turned red under the load of the full suite. It now waits for each state: the disabled button, the settings route and the list without the server. No assertion is removed. A test-only fix: nothing changes for users.
+
