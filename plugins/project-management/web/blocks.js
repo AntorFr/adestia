@@ -661,7 +661,7 @@ export default function createProjectBlocks(api) {
 
   function Milestones({ attributes = {}, items = [] }) {
     const view = attributes.view === 'cards' ? 'cards' : 'list'
-    const { items: rows, unread } = milestonesOf(items, today())
+    const { items: rows, unread } = milestonesOf(items.filter((line) => line.trim() !== ''), today())
     if (rows.length === 0 && unread.length === 0) {
       return h('p', { className: 'pm-empty' }, t('No milestone yet. Use Edit data to add one.'))
     }
@@ -695,7 +695,7 @@ export default function createProjectBlocks(api) {
 
   function Risks({ attributes = {}, items = [] }) {
     const view = attributes.view === 'cards' ? 'cards' : 'table'
-    const { items: rows, unread } = risksOf(items)
+    const { items: rows, unread } = risksOf(items.filter((line) => line.trim() !== ''))
     if (rows.length === 0 && unread.length === 0) {
       return h('p', { className: 'pm-empty' }, t('No risk recorded. Use Edit data to add one.'))
     }

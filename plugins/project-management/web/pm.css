@@ -417,3 +417,13 @@ button.pm-timeline__span:hover {
   font-size: var(--text-sm);
   overflow-wrap: anywhere;
 }
+.pm-milestones,
+.pm-risks-block,
+.pm-progress,
+.pm-empty { margin: 0 0 var(--space-4); }
+.pm-milestones .pm-list { margin: 0; padding: 0; list-style: none; }
+.pm-milestones .pm-list .pm-mile { margin: 0; }
+.pm-unread li { margin: 0; padding: 0; }
+.pm-risks tbody tr:nth-child(odd) { background: transparent; }
+.pm-grid .adestia-card { align-items: flex-start; text-align: left; margin: 0; }
+.pm-grid .adestia-card__title { font: inherit; font-weight: 600; margin: 0; }

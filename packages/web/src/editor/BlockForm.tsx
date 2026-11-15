@@ -71,7 +71,11 @@ export function BlockForm({ name, fields, lines, stale = false, locale, fresh = 
   const isTable = fields.line === 'table'
   const next = useRef(0)
   const wrap = (rows: readonly Row[]): Item[] => rows.map((row) => ({ id: next.current++, row }))
-  const first = useMemo(() => codec.read(lines), [codec, lines])
+  // A block just inserted holds one empty bullet (the server refuses a bodiless block): that is no line to keep.
+  const first = useMemo(
+    () => codec.read(fresh ? lines.filter((line) => !/^\s*[-*+]\s*$/.test(line)) : lines),
+    [codec, lines, fresh],
+  )
   const [items, setItems] = useState<Item[]>(() => {
     if (!fresh) return wrap(first.rows)
     const head = isTable ? first.rows.slice(0, 1) : []

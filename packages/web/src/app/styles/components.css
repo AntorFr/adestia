@@ -375,7 +375,7 @@ button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outli
    amber is only ever the owner's own `Amber`. */
 
 /* A card that is not a control: the same box, no hover lift, no pointer. */
-.adestia-card--static { cursor: default; min-height: 0; }
+.adestia-card--static { cursor: default; min-height: 0; text-align: left; align-items: flex-start; }
 .adestia-card--static:hover {
   transform: none;
   box-shadow: var(--shadow-sm);
@@ -406,7 +406,7 @@ button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outli
 
 /* Figure tile: a big number over its label. It folds by its CONTAINER's
    width, not the viewport's: the canvas narrows when the chat rail opens. */
-.adestia-figures { container-type: inline-size; }
+.adestia-figures { container-type: inline-size; margin: 0 0 var(--space-4); }
 .adestia-figure {
   display: flex;
   flex-direction: column;
@@ -417,7 +417,7 @@ button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outli
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
 }
-.adestia-figure__value { font: 700 var(--text-2xl)/1.15 var(--font-sans, inherit); overflow-wrap: anywhere; }
+.adestia-figure__value { font-size: var(--text-2xl); font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
 .adestia-figure__label { color: var(--text-muted); font-size: var(--text-sm); }
 .adestia-figure__caption { color: var(--text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
 .adestia-figures__row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }

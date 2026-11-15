@@ -44,6 +44,11 @@ export function useEditorSurface(
     say,
     forms: (name) =>
       galleryCards(latest.current.galleryPlugins ?? [], resolveLocale(latest.current.locale) === 'fr' ? 'fr' : 'en').find((card) => card.id === name)?.fields,
+    // A plugin block with variants and no form (`progress`) opens its settings when inserted from the gallery.
+    settingsOnInsert: (name) => {
+      const card = galleryCards(latest.current.galleryPlugins ?? [], resolveLocale(latest.current.locale) === 'fr' ? 'fr' : 'en').find((one) => one.id === name)
+      return card !== undefined && card.view !== undefined && card.fields === undefined
+    },
   }
 
   /*
