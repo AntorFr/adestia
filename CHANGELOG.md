@@ -826,6 +826,10 @@ branch and that `test:plugins` is replayed after a red vitest run.
 
 - **The repository now declares its local test level and a single-test replay** — `.sdlc.yaml` names `scripts/suite-locale.sh` (install, typecheck, lint and the unit tests without the browser and boot files, about 10 minutes) and `scripts/rejouer.sh` (replays only the named tests, and fails on a name that matches no test), so working phases no longer replay the whole suite. The attested suite is unchanged. Tooling only: nothing changes for users.
 
+## v0.97.17
+
+- **The CRLF note test on /planif now waits for all nine notes to be drawn** — the test that reads the at, enabled and until keys of a CRLF note waited for one title only, then read the whole canvas, so it turned red under the load of the full suite when a later note was not yet rendered. It now waits for every title of the list. No assertion is removed. A test-only fix: nothing changes for users.
+
 ## v0.98.0-adestia-pages.1
 
 - **The red vitest step of `epic/adestia-pages` is traced to three flaky tests** — the
