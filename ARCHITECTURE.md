@@ -1360,6 +1360,117 @@ suite does (AD-preuve-1). `scripts/suite-attestee.sh` is unchanged.
 *Rejected:* a hand-kept list of excluded files (it rots as browser tests are added); a second report
 format for the local level (names would drift from the attested suite).
 
+## Decisions of adestia-tests-hors-ecran
+
+### AD-ecran-1 — A screen test checks display; an effect is checked through its door
+
+A screen test is any test file that names `chromium` or `playwright`. Each one is classified in
+`docs/tests-ecran/<cluster>.md` (seven clusters, one table line per test, rule and format in
+`docs/tests-ecran/README.md`): `affichage` (stays on screen, whole), `effet` or `scindé` (what the
+server or a module does is proved by a named test without a browser; the screen test is then lightened or removed, which is done after the inventories, not by them: they say `gardé` until it is), `sans-porte` (no route, API or module exposes the effect: it stays on screen,
+with the reason). No display assertion is removed, and the product does not change. The out-of-screen
+tests are the `*-hors-ecran.test.*` files under `packages/server/test`, `packages/web/test` and
+`plugins/*/test`, plus `packages/web/test/besoin-pages-code.test.ts` and `plugins/planif/test/api-crlf-notes.test.js`, played by the local
+level. `scripts/tests-ecran.mjs`, played by `packages/server/test/tests-ecran-garde.test.ts`, fails on a
+screen file in no cluster, an effect that cites a missing test, a `sans-porte` without a reason, and a
+test of `docs/tests-ecran/existants.txt` that lost its line. A new screen test file must join a cluster. `sans-porte` has two senses, both said in the Reason column: an effect with no door (it stays on screen), or a test that drives no browser and is already out of screen (nothing to carry over; common in the `serveur` cluster).
+*Rejected:* deleting the slow screen tests (their display assertions are the only proof of what the
+user sees); a list of tests kept apart from the code (the guard reads the files instead).
+
+## Decisions of adestia-niveau-fiche
+
+Since rule R27 of the SDLC chain, a pod's work plays the local level plus the screen tests of the
+screens it touches, a feature's proof plays the *fiche* level (the suite minus the screen tests of
+untouched screens), and only an epic's end plays everything. Without the declarations below the
+chain plays the whole suite as proof and only the local level at work. Nothing in the product
+changes. A *screen test* is a test that drives a browser (the files `scripts/suite-locale.sh`
+already finds by grep: `playwright|chromium|launch.mjs` under `packages/*/test`); every other test
+is off-screen, whether it starts the server or not.
+
+### AD-niveaux-1 — One script computes the levels; `.sdlc.yaml` declares three more keys
+
+`.sdlc.yaml` `tests:` gains `ecrans: npm ci && node scripts/niveaux.mjs ecrans {base}`,
+`fiche: npm ci && node scripts/niveaux.mjs fiche {base}` and
+`rejouer: npm ci && scripts/rejouer.sh {tests}` (replacing `scripts/rejouer.sh {tests}`). `commande:`
+and `local:` are unchanged. `scripts/niveaux.mjs` (no dependency beyond the repository's own
+TypeScript) has three modes: `ecrans <base>` and `fiche <base>` play, `--lister` instead prints what
+they would play (touched screens, played and left-out screen-test files) and plays nothing: the
+tests and the README read that. Both write the same `resultats.xml` through
+`scripts/suite-rapport.mjs`, under the suite's test names. `ecrans` plays what `local:` plays
+plus the chosen screen tests (after the server and web builds, which the browser suites need);
+`fiche` is `scripts/suite-attestee.sh` with the left-out files excluded from the vitest step
+(`ADESTIA_EXCLURE_ECRANS`, a space-separated list the script reads; unset, the script is unchanged).
+A file that is not chosen is not run: it is excluded from the command line, never skipped,
+because a skipped test turns the level red.
+
+### AD-niveaux-2 — A file touches the screens whose entry imports it, transitively
+
+`scripts/ecrans.json` maps each screen to its entries: `"E-10": { "entrees": ["packages/web/src/app/McpServers.tsx"] }`
+for the screens of `docs/ecrans.md` (E-1 to E-21, E-32, E-33) and, for the plugin screens (E-22
+to E-31, loaded at runtime and imported by nothing), `"dossiers": ["plugins/todo/web/"]`. The
+tool resolves imports statically (TypeScript's `preProcessFile` on `.ts`, `.tsx`, `.js`; relative
+specifiers with the `.js`→`.ts[x]` mapping; `@antorfr/*` mapped to the sources of
+`packages/*/src`, as `tsconfig.base.json` does; CSS imports; dynamic `import()` with a literal)
+and, from the changed files of `{base}..HEAD` (`git diff --name-only`, deleted files included,
+renamed files by both names), keeps the screens whose entry reaches one of them, or whose
+`dossiers` contains one. Rules, all in `scripts/niveaux.mjs` (that is the
+"règle du produit" the chain asks to be inside the command); a file reached by an entry or a
+`dossiers` (rule 2) touches those screens even if rule 1 would call it off-screen, then the
+vitest setup, then rules 1 and 3:
+1. **Declared off-screen**, touching no screen: `packages/server/src/**`, `packages/drivers/**`,
+   `docs/**`, `*.md` at the root, `plugins/*/*.md`, `.agent/**`, `CHANGELOG.md`, `CLAUDE.md`, and any
+   `**/test/**` file that is not a screen test (an off-screen test cannot change a screen). Files under
+   `packages/web/src`, `packages/content` and `packages/schemas` are never listed here: the import
+   graph (rule 2) decides.
+2. **Imported by an entry**: touches exactly those screens.
+3. **Anything else**, including `packages/web/test/setup.ts` (the vitest setup, run before every test),
+   `packages/web/src/app/main.tsx`, and every file `App.tsx` imports directly that is not itself a
+   screen entry (`useRoute.ts`, the theme: the shell mounts every screen, though only `App.tsx`,
+   the entry of E-32, reaches them in the graph), the skins, `bench/**`, `vite.config.ts`,
+   `package.json` and the lockfile, the scripts, and a file the resolver cannot place: touches
+   **every** screen. In doubt, play.
+A changed screen-test file counts as touching the screens it declares (AD-niveaux-3).
+*Rejected:* a hand-kept list of file→screen (it rots); declaring screens in a header of each test
+file (the sibling feature `adestia-tests-hors-ecran` rewrites those files); treating the server
+as touching the screens it feeds (the chain's criterion is explicit: a server-only change touches
+none; the suite of the epic's end still plays everything).
+
+### AD-niveaux-3 — Each screen test declares its screens in the map; an undeclared one always plays
+
+`scripts/ecrans.json` also lists, under `"tests"`, each screen-test file with the screens it
+drives (`"packages/web/test/besoin-mcp-browser.test.ts": ["E-10", "E-33"]`), or `"toujours"` for a
+file that drives the whole shell (the sweep, the launcher, offline). A screen-test file found by
+the locale grep and absent from the map is played at both levels (in doubt, play), and
+`node scripts/niveaux.mjs --verifier` (and `bench/tests/niveaux-besoin.test.mjs`, run by hand with
+`node --test`, in no suite) fails naming it, so the map is completed when a browser test is added.
+A path in the map that does not exist fails the same check. `ecrans` plays the files whose screens meet the touched
+set plus the `toujours` ones **only when at least one screen is touched**; `fiche` leaves out
+the files whose screens are all untouched (a `toujours` file is never left out of `fiche`). Where
+a file drives screens through a shared harness (`charte-browser.ts`), the harness is not a test:
+it follows the graph like any file, imported by the tests, which are declared.
+
+### AD-niveaux-4 — `rejouer:` is self-contained, and replays a whole file
+
+`rejouer: npm ci && scripts/rejouer.sh {tests}` installs in a fresh extraction. Two changes to
+`scripts/rejouer.sh` and `scripts/rejouer-plan.mjs`: (1) a named test is replayed **with its whole
+file** (no `-t` filter; the report keeps only the named cases), so the neighbour that leaves a
+state behind is played too; a `node --test` plugin test likewise runs its file; (2) **no state
+kept in an ignored file between two passes**: the pass removes what it wrote (`.suite-attestee/rejouer`)
+and, when a named test is in a screen-test file, builds the server and web shell itself rather than
+relying on a `dist/` an earlier pass left. A name that matches no test still fails (never a green
+at zero test). `etape > typecheck|lint` still replays a step.
+
+### AD-niveaux-5 — The tag's check requires a description that begins with « niveau »
+
+Adestia sets no `tests-complets` status itself; it checks one at the tag. `docker-publish.yml`'s
+`attestation` job now accepts only `success niveau …` (the chain's loop), and its message names
+the missing level. `packages/server/test/preuve-attestee-ensemble.test.ts` marks its statuses
+`niveau suite · vert` instead of `vert`, and gains a case: a `success` whose description does not
+begin with « niveau » fails. `CLAUDE.md` (Code and commands) lists the four levels and
+`scripts/niveaux.mjs --lister`; the README of the repository states, beside the suite's duration,
+the duration of `ecrans` and `fiche` measured on three real `{base}`: a screen file (e.g.
+`McpServers.tsx`), a shared file (e.g. `useRoute.ts`), a server-only change.
+
 ## Decisions of adestia-acces-refuse
 
 An OIDC account that is in no allowed group used to meet a bare JSON 403 at `/auth/callback`, and
