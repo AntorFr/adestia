@@ -69,10 +69,10 @@ describe.skipIf(!playwright)('Project status model (B-30, P-20; E-3, E-36, E-4)'
       await page.waitForURL(/#\/page\/projet\/avancement/, { timeout: 15_000 })
       // Seed: five sub-pages in projet/, two finished (status clos), one due in the past and still open;
       // the page that carries the block is not counted.
-      await page.getByText('Finished').first().waitFor({ timeout: 20_000 })
+      await page.getByText('Progress', { exact: true }).first().waitFor({ timeout: 20_000 })
       const shown: string = await page.locator('.adestia-canvas, .adestia-shell').first().innerText()
       expect(shown).toContain('40 %')
-      expect(shown).toContain('2 of 5')
+      expect(shown).toContain('2 of 5 sub-pages done')
       expect(shown).toMatch(/1\s*\n\s*Late/)
       await context.close()
     } finally {
