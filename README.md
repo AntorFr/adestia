@@ -232,6 +232,24 @@ typecheck, lint, vitest without the browser test files, plugins; no build, guard
 `scripts/rejouer.sh "<test name>"` to replay named tests only (names as `resultats.xml` of an earlier run carries them, `<file> > <describe> > <test>` or just the test name; `etape > lint` replays a step; it needs `npm ci` first, and fails on a name that matches no test).
 Both write `resultats.xml` with the suite's test names. `scripts/suite-attestee.sh` (about 35 minutes) stays the proof (AD-preuve-1; the local level, AD-preuve-5). `local:` and `rejouer:` are read by the chain on `main` only; the scripts themselves run anywhere.
 
+Between the local level and the suite sit two levels that play only the screen tests of the screens the work
+touches (AD-niveaux-1 to 3): `node scripts/niveaux.mjs ecrans <base>` plays the local level plus those screen tests,
+`fiche` plays the whole suite minus the screen tests of untouched screens, and
+`node scripts/niveaux.mjs --lister ecrans|fiche <base>` prints what each would play and plays nothing.
+`<base>` is a commit; the changed files are `git diff <base> HEAD`, read against `scripts/ecrans.json`. Measured
+on a throwaway clone with its install done, one commit on top of `<base>` (Intel i5-13500, 18 threads, an idle machine;
+`npm ci` adds 14 s; the chain's pod is slower, the suite takes about 35 minutes there):
+
+| `<base>` → the change | screens touched | `ecrans` | `fiche` |
+|---|---|---|---|
+| a screen file (`packages/web/src/app/McpServers.tsx`) | the screens whose page imports it | 11m32s | 14m59s |
+| a shared file (`packages/web/src/app/useRoute.ts`) | all 33 | 19m12s | 21m22s\* |
+| server only (`packages/server/src/app.ts`) | none | 2m52s | 9m30s |
+
+\* A shared file leaves no screen test aside, so `fiche` played the whole suite there: 21m22s is the suite's own
+duration on this machine. That run ended with one red, `besoin-hors-ligne-bords` (the « B-19 » 502 case), which passes
+alone (4/4 in 17 s): a timing flake under load, unrelated to the change, not a level's fault.
+
 The web shell dispatches screens in `app/Canvas.tsx`; `CanvasHeader.tsx` owns the
 breadcrumb and phone return. `Home.tsx` composes `Brief` and `Domains`; the page
 editor delegates saving to `editor/useAutosave.ts` and reading to `editor/reader/`.
