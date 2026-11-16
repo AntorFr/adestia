@@ -236,8 +236,8 @@ Between the local level and the suite sit two levels that play only the screen t
 touches (AD-niveaux-1 to 3): `node scripts/niveaux.mjs ecrans <base>` plays the local level plus those screen tests,
 `fiche` plays the whole suite minus the screen tests of untouched screens, and
 `node scripts/niveaux.mjs --lister ecrans|fiche <base>` prints what each would play and plays nothing.
-`<base>` is a commit; the changed files are `git diff <base> HEAD`, read against `scripts/ecrans.json`. Measured
-on a throwaway clone with its install done, one commit on top of `<base>` (Intel i5-13500, 18 threads, an idle machine;
+`<base>` is a commit, the fork point from `main` (`git merge-base origin/main HEAD`); the changed files are `git diff <base> HEAD`, read against `scripts/ecrans.json`. Measured
+on a throwaway clone with its install done, one commit on top of `<base>` (Intel i5-13500, 18 threads, an idle machine, faster than the chain's pod, so these figures sit below the `~10 min` of the local level measured there;
 `npm ci` adds 14 s; the chain's pod is slower, the suite takes about 35 minutes there):
 
 | `<base>` → the change | screens touched | `ecrans` | `fiche` |

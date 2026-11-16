@@ -1292,15 +1292,17 @@ specifiers with the `.js`→`.ts[x]` mapping; `@antorfr/*` mapped to the sources
 `packages/*/src`, as `tsconfig.base.json` does; CSS imports; dynamic `import()` with a literal)
 and, from the changed files of `{base}..HEAD` (`git diff --name-only`, deleted files included,
 renamed files by both names), keeps the screens whose entry reaches one of them, or whose
-`dossiers` contains one. Rules, in this order, all in `scripts/niveaux.mjs` (that is the
-"règle du produit" the chain asks to be inside the command):
+`dossiers` contains one. Rules, all in `scripts/niveaux.mjs` (that is the
+"règle du produit" the chain asks to be inside the command); a file reached by an entry or a
+`dossiers` (rule 2) touches those screens even if rule 1 would call it off-screen, then the
+vitest setup, then rules 1 and 3:
 1. **Declared off-screen**, touching no screen: `packages/server/src/**`, `packages/drivers/**`,
-   `docs/**`, `*.md` at the root, `.agent/**`, `CHANGELOG.md`, `CLAUDE.md`, and any
+   `docs/**`, `*.md` at the root, `plugins/*/*.md`, `.agent/**`, `CHANGELOG.md`, `CLAUDE.md`, and any
    `**/test/**` file that is not a screen test (an off-screen test cannot change a screen). Files under
    `packages/web/src`, `packages/content` and `packages/schemas` are never listed here: the import
    graph (rule 2) decides.
 2. **Imported by an entry**: touches exactly those screens.
-3. **Anything else** (`packages/web/src/app/App.tsx` and `main.tsx`, which no screen imports; the
+3. **Anything else**, including `packages/web/test/setup.ts` (the vitest setup, run before every test) (`packages/web/src/app/App.tsx` and `main.tsx`, which no screen imports; the
    skins; `bench/**`; `vite.config.ts`; `package.json` and the lockfile; the scripts; a file the
    resolver cannot place): touches **every** screen. In doubt, play.
 A changed screen-test file counts as touching the screens it declares (AD-niveaux-3).
@@ -1314,9 +1316,10 @@ none; the suite of the epic's end still plays everything).
 `scripts/ecrans.json` also lists, under `"tests"`, each screen-test file with the screens it
 drives (`"packages/web/test/besoin-mcp-browser.test.ts": ["E-10", "E-33"]`), or `"toujours"` for a
 file that drives the whole shell (the sweep, the launcher, offline). A screen-test file found by
-the locale grep and absent from the map is played at both levels (in doubt, play), and a guard
-test fails naming it, so the map is completed when a browser test is added. A path in the map
-that does not exist fails the same guard. `ecrans` plays the files whose screens meet the touched
+the locale grep and absent from the map is played at both levels (in doubt, play), and
+`node scripts/niveaux.mjs --verifier` (and `bench/tests/niveaux-besoin.test.mjs`, run by hand with
+`node --test`, in no suite) fails naming it, so the map is completed when a browser test is added.
+A path in the map that does not exist fails the same check. `ecrans` plays the files whose screens meet the touched
 set plus the `toujours` ones **only when at least one screen is touched**; `fiche` leaves out
 the files whose screens are all untouched (a `toujours` file is never left out of `fiche`). Where
 a file drives screens through a shared harness (`charte-browser.ts`), the harness is not a test:
