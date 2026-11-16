@@ -46,6 +46,12 @@ describe('garde-fou des inventaires de tests d\'écran', () => {
     expect(verifier(await depot({ statut: 'vide', lignes: '' }))).toEqual([])
   })
 
+  it('accepte les cellules Test et Hors écran entre accents graves', async () => {
+    const ligne = `| \`${ECRAN} > affiche le fil\` | effet | \`${HORS} > supprime puis relit\` | retiré | |\n`
+    expect(verifier(await depot({ lignes: ligne }))).toEqual([])
+    expect(verifier(await depot({ lignes: `| \`${ECRAN} > affiche le fil\` | sans-porte | | | pas de route |\n` }))).toEqual([])
+  })
+
   it('est rouge sur un fichier d\'écran ajouté sans grappe', async () => {
     const r = await depot({ extra: { 'packages/web/test/nouveau.test.ts': `// ${NAVIGATEUR}\n` } })
     expect(verifier(r)).toEqual(['packages/web/test/nouveau.test.ts pilote un navigateur et n\'est dans aucune grappe'])

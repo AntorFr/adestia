@@ -50,7 +50,7 @@ export function lireCadre(root) {
   return { grappes, hors }
 }
 
-const cellules = (ligne) => ligne.trim().replace(/^\||\|$/g, '').split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, '|'))
+const cellules = (ligne) => ligne.trim().replace(/^\||\|$/g, '').split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, '|').replace(/^`+|`+$/g, ''))
 
 /** Reads docs/tests-ecran/<grappe>.md: its status and its rows. */
 export function lireInventaire(root, grappe) {
