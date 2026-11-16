@@ -32,3 +32,16 @@ for (const [name, run, message] of [
     assert.equal(q(s, '.adestia-loading'), null)
   })
 }
+
+test('hub: a Retry answered 404 gives the message and Retry like any other failure', async () => {
+  const s = boot({ locale: 'en' })
+  let answer = 404
+  globalThis.fetch = async () => (answer === 404 ? reply({}, 404) : reply({ workbooks: [] }))
+  await s.engine.routes.atelier()
+  assert.equal(q(s, '.adestia-empty__text').textContent, 'The Workshop is unavailable.')
+  answer = 200
+  press(s)
+  await s.settle(); await s.settle()
+  assert.equal(q(s, '.adestia-empty--state'), null)
+  assert.equal(q(s, '.adestia-loading'), null)
+})
