@@ -286,6 +286,20 @@ export default function createProjectBlocks(api) {
     // whether two labels fit side by side.
     const chart = useRef(null)
     const [width, setWidth] = useState(0)
+    // On a phone the bars cannot carry their labels (they ellipsise to "C…"):
+    // the same entries fold into the list, whole words. Drawing only — the
+    // file written is untouched.
+    const [narrow, setNarrow] = useState(
+      () => typeof matchMedia === 'function' && matchMedia('(max-width: 640px)').matches,
+    )
+    useEffect(() => {
+      if (typeof matchMedia !== 'function') return undefined
+      const query = matchMedia('(max-width: 640px)')
+      const follow = () => setNarrow(query.matches)
+      follow()
+      query.addEventListener?.('change', follow)
+      return () => query.removeEventListener?.('change', follow)
+    }, [])
     useEffect(() => {
       const node = chart.current
       if (!node || typeof ResizeObserver === 'undefined') return undefined
@@ -338,7 +352,7 @@ export default function createProjectBlocks(api) {
     const today = new Date().toISOString().slice(0, 10)
     // `view` is how the SAME entries are drawn, never what is written: the
     // file is byte for byte the same under either, and so is the walk.
-    if (attributes.view === 'list') {
+    if (attributes.view === 'list' || narrow) {
       return h('div', { className: 'pm-timeline pm-timeline--list' }, [
         timelineList(entries, today, openPage),
         leftover,

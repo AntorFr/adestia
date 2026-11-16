@@ -189,8 +189,8 @@ button.pm-timeline__span:hover {
 .pm-timeline__today::after {
   content: attr(data-label);
   position: absolute;
-  left: 3px;
-  bottom: -17px;
+  left: 5px;
+  bottom: -21px;
   font-size: var(--text-2xs);
   font-weight: 600;
   font-family: var(--font-mono);
@@ -431,6 +431,8 @@ button.pm-timeline__span:hover {
 .pm-timeline__row > .pm-timeline__owner { flex: none; min-width: 8rem; }
 .pm-timeline__row { padding: var(--space-2) 0; border-bottom: 1px solid var(--border); }
 .pm-timeline__row:last-child { border-bottom: 0; }
+.pm-timeline__row { flex-wrap: wrap; }
+.pm-timeline__name { white-space: normal; overflow-wrap: anywhere; }
 .pm-timeline__name {
   border: 0;
   background: none;
