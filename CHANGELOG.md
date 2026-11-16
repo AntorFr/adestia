@@ -834,3 +834,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
 
 - **The MCP "Remove" test now waits for signals instead of instant reads** — the test that removes an MCP server (B-20) read the disabled "Remove" button and the server list at one instant, so it turned red under the load of the full suite. It now waits for each state: the disabled button, the settings route and the list without the server. No assertion is removed. A test-only fix: nothing changes for users.
 
+## v0.97.19
+
+- **Screen tests no longer check what is not display** — every screen test is classified in `docs/tests-ecran/` (seven clusters, with its duration before the change), and the effects that need no browser (chat and charter server effects, pages file, save and feed effects, catalogue and MCP server removal, the shell's refusals, the plugins' Retry, the offline banner) are proven by `*-hors-ecran` tests that run without one. A guard test reads the inventories against the feature's exit criterion. Tests and documentation only: nothing changes for users.
+
