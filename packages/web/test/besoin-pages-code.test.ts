@@ -106,11 +106,12 @@ describe('the pages code (R-11, R-12)', () => {
 
   // app/App.tsx is left out: its App function is 267 lines today, so the bench test that names it
   // is already red; a red test cannot join the suite, and the product is not this task's to change.
-  for (const file of ['editor/Reader.tsx', 'editor/Editor.tsx', 'app/Home.tsx']) {
-    it(`holds no function longer than 250 lines in ${file}`, () => {
+
+  it('holds no function longer than 250 lines in Reader, Editor and Home', () => {
+    const long: string[] = []
+    for (const file of ['editor/Reader.tsx', 'editor/Editor.tsx', 'app/Home.tsx']) {
       const path = `${SRC}/${file}`
       const source = ts.createSourceFile(path, read(path), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
-      const long: string[] = []
       const visit = (node: ts.Node) => {
         if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node) || ts.isMethodDeclaration(node)) {
           const a = source.getLineAndCharacterOfPosition(node.getStart()).line
@@ -120,7 +121,7 @@ describe('the pages code (R-11, R-12)', () => {
         ts.forEachChild(node, visit)
       }
       visit(source)
-      expect(long).toEqual([])
-    })
-  }
+    }
+    expect(long).toEqual([])
+  })
 })
