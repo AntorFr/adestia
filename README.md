@@ -258,7 +258,27 @@ npm run build
 While working, play the local level instead of the whole suite: `scripts/suite-locale.sh` (about 10 minutes: install,
 typecheck, lint, vitest without the browser test files, plugins; no build, guards or boot), and
 `scripts/rejouer.sh "<test name>"` to replay named tests only (names as `resultats.xml` of an earlier run carries them, `<file> > <describe> > <test>` or just the test name; `etape > lint` replays a step; it needs `npm ci` first, and fails on a name that matches no test).
-Both write `resultats.xml` with the suite's test names. `scripts/suite-attestee.sh` (about 35 minutes) stays the proof (AD-preuve-1; the local level, AD-preuve-5). `local:` and `rejouer:` are read by the chain on `main` only; the scripts themselves run anywhere.
+Both write `resultats.xml` with the suite's test names. `scripts/suite-attestee.sh` (about 35 minutes) stays the proof (AD-preuve-1; the local level, AD-preuve-5). `local:`, `rejouer:`, `ecrans:` and `fiche:` are read by the chain on `main` only (they take effect after the merge); the scripts themselves run anywhere.
+
+Between the local level and the suite sit two levels that play only the screen tests of the screens the work
+touches (AD-niveaux-1 to 3): `node scripts/niveaux.mjs ecrans <base>` plays the local level plus those screen tests,
+`fiche` plays the whole suite minus the screen tests of untouched screens, and
+`node scripts/niveaux.mjs --lister ecrans|fiche <base>` prints what each would play and plays nothing (it reads the TypeScript compiler: run `npm ci` first; `--verifier` needs nothing). With an empty change (`<base>` = `HEAD`) no screen is touched: `ecrans` plays only the local level, `fiche` still plays the files that drive the whole shell.
+`<base>` is a commit, the fork point from `main` (`git merge-base origin/main HEAD`); the changed files are `git diff <base> HEAD`, read against `scripts/ecrans.json`. Measured
+on a throwaway clone with its install done, one commit on top of `<base>` (Intel i5-13500, 18 threads, an idle machine, faster than the chain's pod, so these figures sit below the `~10 min` of the local level measured there;
+`npm ci` adds 14 s; the chain's pod is slower, the suite takes about 35 minutes there):
+
+| `<base>` → the change | screens touched | `ecrans` | `fiche` |
+|---|---|---|---|
+| a screen file (`packages/web/src/app/McpServers.tsx`) | the screens whose page imports it | 11m32s | 14m59s |
+| a shared file (`packages/web/src/app/useRoute.ts`) | all 33 | 19m12s | 21m22s\* |
+| server only (`packages/server/src/app.ts`) | none | 2m52s | 9m30s |
+
+The first row was measured before `Canvas.tsx` (E-20) and `App.tsx` (E-32) were declared as entries, so it did not count the screen tests of those two screens; a change to `McpServers.tsx` now plays them too, and the figure is a little higher.
+
+\* A shared file leaves no screen test aside, so `fiche` played the whole suite there: 21m22s is the suite's own
+duration on this machine. That run ended with one red, `besoin-hors-ligne-bords` (the « B-19 » 502 case), which passes
+alone (4/4 in 17 s): a timing flake under load, unrelated to the change, not a level's fault.
 
 A test that loads a page in a browser checks what the user sees; what the server does is proved by its route, without a browser. Every screen test is classified in `docs/tests-ecran/` (rule: `docs/tests-ecran/README.md`; AD-ecran-1), and `node scripts/tests-ecran.mjs` checks the inventories. A new browser test file joins a cluster there, or that check fails.
 
