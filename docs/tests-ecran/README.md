@@ -117,7 +117,7 @@ ligne `sans-porte` n'a pas de raison ; un inventaire `complet` a perdu la ligne 
 - `packages/server/test/catalogues-ui-ensemble.test.ts`
 - `packages/server/test/qualite-serveur-ensemble.test.ts`
 
-Exception : quelques fichiers de la grappe `serveur` ne pilotent aucun navigateur (`bench-launcher`, une partie de `bench-besoin`) : ils y figurent parce que la fiche les listait, et leurs tests sont `sans-porte` avec la raison « déjà sans navigateur » (rien à reporter). Pour rejouer un test hors écran seul : `scripts/rejouer.sh "<nom>"`.
+`sans-porte` a deux sens, toujours dits dans la colonne `Raison` : (1) un effet qu'aucune route, API ni module n'expose hors écran, et le test reste entier à l'écran ; (2) un test qui ne pilote aucun navigateur (fichier de grappe qui ne nomme ni `chromium` ni `playwright`, ou test de lanceur, de route, d'arguments) : il est déjà hors écran, il n'y a rien à reporter, et sa ligne n'est pas un travail à faire. Cas surtout fréquent dans la grappe `serveur`. Pour rejouer un test hors écran seul : `scripts/rejouer.sh "<nom>"`. La cellule `Test` s'écrit avec ou sans accents graves ; le garde-fou accepte les deux. Les nombres de tests de `avant.md` (colonne Tests) comptent les cas que `node --test` et vitest rapportent, pas les lignes d'inventaire, qui suivent `existants.txt`.
 
 ## Hors inventaire
 

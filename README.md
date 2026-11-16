@@ -204,7 +204,7 @@ Adestia is a few hundred megabytes, and it is the burst that kills it. Raise
 ## Screen-test duration, before and after
 
 The tests that load a page in a browser take about 100 minutes, one file after the other (the whole attested
-suite is another measure, ~35 minutes, `.sdlc.yaml`). What is not display is now also proved by tests without a
+suite plays only two of the `bench/tests` files and runs vitest in parallel, so ~35 minutes, `.sdlc.yaml`: the two figures are not comparable). What is not display is now also proved by tests without a
 browser (`docs/tests-ecran/`), but **no screen test has been lightened or removed yet**: the lines classified
 `effet` or `scindé` all say `gardé` in the column « À l'écran » (none says `allégé` or `retiré`). The lightening comes after, test by test, once its
 out-of-screen test is replayed. The figures below are therefore two measures of the same screen tests: their
@@ -228,7 +228,7 @@ rounded sum of each file's measured time, so they can differ by one from `avant.
 - **Machine**: a pod of 18 cores (`nproc`) with Playwright and Chromium, as for `avant.md` (another pod of the same kind:
   `sdlc-adestia-tests-hors-ecran-durees-dev-1`).
 - **Same reds as before**: the files that were red or skipped on `main` still are (listed in `avant.md`); their time is
-  counted anyway. Per-file times: `docs/tests-ecran/avant.md`; the screen tests kept are the display ones.
+  counted anyway, and the command then exits 1 while still printing the table (expected on `main`; `avant.md` lists the causes). Per-file times: `docs/tests-ecran/avant.md`; the screen tests kept are the display ones.
 
 ## Status
 

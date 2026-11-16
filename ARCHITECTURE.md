@@ -1269,7 +1269,7 @@ tests are the `*-hors-ecran.test.*` files under `packages/server/test`, `package
 `plugins/*/test`, plus `packages/web/test/besoin-pages-code.test.ts` and `plugins/planif/test/api-crlf-notes.test.js`, played by the local
 level. `scripts/tests-ecran.mjs`, played by `packages/server/test/tests-ecran-garde.test.ts`, fails on a
 screen file in no cluster, an effect that cites a missing test, a `sans-porte` without a reason, and a
-test of `docs/tests-ecran/existants.txt` that lost its line. A new screen test file must join a cluster. A few files of the `serveur` cluster name no browser (`bench-launcher`): they are there because the fiche listed them, and each of their tests is `sans-porte` with the reason « already without a browser, nothing to carry over » — there `sans-porte` means nothing to do, not an effect that stays on screen.
+test of `docs/tests-ecran/existants.txt` that lost its line. A new screen test file must join a cluster. `sans-porte` has two senses, both said in the Reason column: an effect with no door (it stays on screen), or a test that drives no browser and is already out of screen (nothing to carry over; common in the `serveur` cluster).
 *Rejected:* deleting the slow screen tests (their display assertions are the only proof of what the
 user sees); a list of tests kept apart from the code (the guard reads the files instead).
 
