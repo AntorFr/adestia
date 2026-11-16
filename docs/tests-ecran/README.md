@@ -127,3 +127,20 @@ Gardes de la suite, qui nomment le navigateur sans en piloter un écran :
 - `bench/tests/bench-once.test.mjs` — garde de la suite (hors tranche des grappes)
 - `bench/tests/niveaux-besoin.test.mjs` — teste le script `scripts/niveaux.mjs` (node) ; `playwright` n'y est que dans une chaîne de fixture, aucun navigateur n'est lancé
 - `bench/tests/niveaux-ensemble.test.mjs` — idem : fixture en chaîne, aucun navigateur lancé
+
+Tests d'écran nés dans `epic/adestia-pages`, après l'inventaire par grappe : ils pilotent un navigateur et restent entiers à l'écran, mais leurs tests ne sont pas encore classés ligne à ligne (classement à faire, avec une grappe ; un fichier d'écran de plus n'entre dans aucune grappe sans que ses lignes y soient).
+
+- `packages/web/test/besoin-pages-structure-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/besoin-popover-bandeau-tardif-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/besoin-rouge-23-spinner-config.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/besoin-rouge-25-menu-rouage-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/complement-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/ensemble-pages-deplacer-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/ensemble-pages-deplacer-cartes-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/ensemble-pages-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/ensemble-pages-structure-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/galerie-formulaire-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/pages-structure-edition-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/recette-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/reglages-undo-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/verify-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
