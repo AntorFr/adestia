@@ -125,3 +125,5 @@ ligne `sans-porte` n'a pas de raison ; un inventaire `complet` a perdu la ligne 
 Gardes de la suite, qui nomment le navigateur sans en piloter un écran :
 
 - `bench/tests/bench-once.test.mjs` — garde de la suite (hors tranche des grappes)
+- `bench/tests/niveaux-besoin.test.mjs` — teste le script `scripts/niveaux.mjs` (node) ; `playwright` n'y est que dans une chaîne de fixture, aucun navigateur n'est lancé
+- `bench/tests/niveaux-ensemble.test.mjs` — idem : fixture en chaîne, aucun navigateur lancé

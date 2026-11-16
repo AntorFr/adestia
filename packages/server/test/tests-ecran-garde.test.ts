@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -6,12 +6,13 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { cleanTmp, tmpDir } from './support/tmp.js'
 
 // @ts-expect-error — a plain .mjs script, without declarations
-import { verifier } from '../../../scripts/tests-ecran.mjs'
+import { lireCadre, verifier } from '../../../scripts/tests-ecran.mjs'
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 afterEach(cleanTmp)
 
 const NAVIGATEUR = 'chrom' + 'ium' // the guard recognises a screen file by this word: keep it out of this file
+const NAVIGATEUR_RE = new RegExp(NAVIGATEUR + '|play' + 'wright')
 const ECRAN = 'packages/web/test/a-browser.test.ts'
 const HORS = 'packages/server/test/a-route.test.ts'
 
@@ -74,5 +75,13 @@ describe('garde-fou des inventaires de tests d\'écran', () => {
     const ligne = (raison: string) => `| ${ECRAN} > affiche le fil | sans-porte | | | ${raison} |\n`
     expect(verifier(await depot({ lignes: ligne('') }))).toHaveLength(1)
     expect(verifier(await depot({ lignes: ligne('le service worker ne vit que dans un navigateur') }))).toEqual([])
+  })
+
+  it('laisse hors inventaire les tests du script de niveaux, qui ne nomment le navigateur que dans une fixture', async () => {
+    for (const f of ['bench/tests/niveaux-besoin.test.mjs', 'bench/tests/niveaux-ensemble.test.mjs']) {
+      expect(readFileSync(join(root, f), 'utf8'), f).toMatch(NAVIGATEUR_RE)
+      expect(lireCadre(root).hors.has(f), f).toBe(true)
+      expect(verifier(root).filter((p: string) => p.includes(f)), f).toEqual([])
+    }
   })
 })

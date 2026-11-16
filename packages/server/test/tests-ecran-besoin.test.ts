@@ -91,8 +91,13 @@ describe('tests d\'écran hors écran — inventaire (docs/tests-ecran)', () => 
       .filter((f) => /(^|\/)test\/.*\.test\.(tsx?|mjs)$|^bench\/tests\/.*\.test\.mjs$/.test(f))
     const nomment = suivis.filter((f) => MOT.test(read(f)))
     const horsInventaire = nomment.filter((f) => !classes.has(f))
-    // the only declared exception: a guard of the suite that names the browser without driving a screen
-    expect(horsInventaire).toEqual(['bench/tests/bench-once.test.mjs'])
+    // the declared exceptions: files that name the browser without driving a screen (a guard of the
+    // suite; two tests of scripts/niveaux.mjs that only carry it in a fixture string)
+    expect(horsInventaire).toEqual([
+      'bench/tests/bench-once.test.mjs',
+      'bench/tests/niveaux-besoin.test.mjs',
+      'bench/tests/niveaux-ensemble.test.mjs',
+    ])
   })
 
   it('chaque ligne a une classe connue, et l\'affichage garde ses cellules de report vides', () => {
