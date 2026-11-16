@@ -32,7 +32,8 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 2
-      # tests-complets green on this commit, or on a parent of the same tree
+      # tests-complets green on this commit, its description beginning with « niveau »
+      # (`success niveau suite · …`; a bare `success` is refused), or on a parent of the same tree
       # (a merge commit has the content of the attested head).
       - name: Check the tests-complets attestation
         env:
@@ -43,9 +44,14 @@ jobs:
             [ "$(git rev-parse "$c^{tree}")" = "$arbre" ] || continue
             st=$(gh api "repos/$GITHUB_REPOSITORY/commits/$c/status" \
               --jq '.statuses[] | select(.context == "tests-complets") | .state + " " + .description' | head -1)
-            [ "${st%% *}" = success ] && { echo "Attestation sur $c : ${st#* }"; exit 0; }
+            if [ "${st%% *}" = success ]; then
+              case "${st#* }" in
+                niveau*) echo "Attestation sur $c : ${st#* }"; exit 0 ;;
+                *) manque="$c : success sans niveau (« ${st#* } »)" ;;
+              esac
+            fi
           done
-          echo "::error::Pas d'attestation tests-complets sur ce contenu : attester --publier, puis relancer."
+          echo "::error::Pas d'attestation tests-complets de niveau suite sur ce contenu${manque:+ ($manque)} : attester --publier, puis relancer."
           exit 1
 
   build:
