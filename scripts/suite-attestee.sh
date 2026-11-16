@@ -51,11 +51,19 @@ step build sh -c 'npm run build --workspace @antorfr/adestia-server && npm run b
 # Workers = the CPUs the cgroup grants, not the cores the host shows (12 against a quota of 3):
 # oversubscribed, the browser and jsdom suites exceed their timeouts. Even at the quota a
 # browser test takes ~5 s here, the vitest default: the timeout is raised on the command line.
+# ADESTIA_EXCLURE_ECRANS (set by `scripts/niveaux.mjs fiche`): screen-test files left out of the
+# vitest step, space-separated. A file left out is not run, never skipped. Unset or empty: unchanged.
+exclusions=""
+for f in ${ADESTIA_EXCLURE_ECRANS:-}; do
+  exclusions="$exclusions --exclude $f"
+done
+
 workers=$(nproc)
 if read -r quota period < /sys/fs/cgroup/cpu.max 2>/dev/null && [ "$quota" != max ]; then
   workers=$(( (quota + period - 1) / period ))
 fi
-step vitest env BENCH_FULL_SWEEP=1 ADESTIA_PATIENCE=4 npx vitest run --maxWorkers=$workers --testTimeout=30000 --hookTimeout=60000 --exclude '**/*.real.test.ts' --exclude '**/node_modules/**' --reporter=junit --outputFile="$out/vitest.xml"
+# shellcheck disable=SC2086
+step vitest env BENCH_FULL_SWEEP=1 ADESTIA_PATIENCE=4 npx vitest run --maxWorkers=$workers --testTimeout=30000 --hookTimeout=60000 --exclude '**/*.real.test.ts' --exclude '**/node_modules/**' $exclusions --reporter=junit --outputFile="$out/vitest.xml"
 step plugins npm run test:plugins -- --test-reporter=junit --test-reporter-destination="$out/plugins.xml"
 step guards node --test --test-reporter=junit --test-reporter-destination="$out/guards.xml" bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs
 
