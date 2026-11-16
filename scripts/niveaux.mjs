@@ -111,6 +111,9 @@ const horsEcran = (f) =>
   /^plugins\/[^/]+\/[^/]*\.md$/.test(f)
 // The vitest setup runs before every test, screen tests included.
 const partage = (f) => f === 'packages/web/test/setup.ts'
+// The shell that mounts every screen: what it imports directly and no screen owns (useRoute.ts, the
+// theme, the split) serves all of them, though only its own entry (E-32) reaches it in the graph.
+const COQUE = 'packages/web/src/app/App.tsx'
 
 export function calcul(changes, map = carte()) {
   const tous = Object.keys(map.ecrans)
@@ -125,11 +128,14 @@ export function calcul(changes, map = carte()) {
     if (ecrans === 'toujours' || !isFile(t)) continue
     racines.push({ ecrans, reach: closure([t], isTestPath) })
   }
+  const coque = new Set(isFile(COQUE) ? importsOf(COQUE) : [])
+  const entrees = new Set(Object.values(map.ecrans).flatMap((e) => e.entrees ?? []))
   const touches = new Set()
   const note = []
   for (const f of changes) {
     if (declares[f] === 'toujours') { tous.forEach((e) => touches.add(e)); continue }
     if (Array.isArray(declares[f])) { declares[f].forEach((e) => touches.add(e)); continue }
+    if (coque.has(f) && !entrees.has(f)) { tous.forEach((e) => touches.add(e)); continue }
     let placed = false
     for (const [id, e] of Object.entries(map.ecrans)) {
       if (e.dossiers?.some((d) => f.startsWith(d))) { touches.add(id); placed = true }

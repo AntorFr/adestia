@@ -1302,7 +1302,7 @@ vitest setup, then rules 1 and 3:
    `packages/web/src`, `packages/content` and `packages/schemas` are never listed here: the import
    graph (rule 2) decides.
 2. **Imported by an entry**: touches exactly those screens.
-3. **Anything else**, including `packages/web/test/setup.ts` (the vitest setup, run before every test) (`main.tsx`, which no screen imports; the
+3. **Anything else**, including what `app/App.tsx` imports directly and no screen entry owns (`useRoute.ts`, the shell hooks: they serve every screen), and `packages/web/test/setup.ts` (the vitest setup, run before every test) (`main.tsx`, which no screen imports; the
    skins; `bench/**`; `vite.config.ts`; `package.json` and the lockfile; the scripts; a file the
    resolver cannot place): touches **every** screen. In doubt, play.
 A changed screen-test file counts as touching the screens it declares (AD-niveaux-3).
