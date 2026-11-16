@@ -150,3 +150,52 @@ test('subproject: rows and cards keep working, cards wear the charter card', asy
     assert.ok(!draw(t.subproject, { path: 'p/root', pages, attributes: { view: 'rows' } }).includes('adestia-card'))
   } finally { restore() }
 })
+
+// Under a phone width the bars cannot carry their labels: the same entries fold
+// into the list (drawing only). A browser without matchMedia keeps the bars.
+async function withMedia(matches, fn) {
+  const had = Object.getOwnPropertyDescriptor(globalThis, 'matchMedia')
+  const asked = []
+  globalThis.matchMedia = (q) => { asked.push(q); return { matches, addEventListener() {}, removeEventListener() {} } }
+  try { return await fn(asked) } finally {
+    if (had) Object.defineProperty(globalThis, 'matchMedia', had); else delete globalThis.matchMedia
+  }
+}
+
+test('phone width: bars fold into the list, same entries and words, whole labels', async () => {
+  const { t, restore } = await tags()
+  try {
+    const wide = draw(t.timeline, queried('bars'))
+    await withMedia(true, (asked) => {
+      const html = draw(t.timeline, queried('bars'))
+      assert.ok(asked.some((q) => /max-width:\s*640px/.test(q)), 'the phone query is 640px')
+      assert.ok(html.includes('pm-timeline--list'))
+      assert.ok(!html.includes('pm-timeline__span'), 'no bar to ellipsise')
+      assert.equal(rows(html).length, 3)
+      assert.deepEqual(rows(html).map((r) => said(r)), rows(draw(t.timeline, queried('list'))).map((r) => said(r)))
+    })
+    assert.ok(wide.includes('pm-timeline__span'), 'without a phone query the bars stay')
+  } finally { restore() }
+})
+
+test('wide screen: matchMedia that does not match keeps the bars', async () => {
+  const { t, restore } = await tags()
+  try {
+    await withMedia(false, () => {
+      const html = draw(t.timeline, queried('bars'))
+      assert.ok(html.includes('pm-timeline__span'))
+      assert.ok(!html.includes('pm-timeline--list'))
+    })
+  } finally { restore() }
+})
+
+test('phone width: a late entry stays a dashed muted pill, no amber', async () => {
+  const { t, restore } = await tags()
+  try {
+    await withMedia(true, () => {
+      const [, , delta] = rows(draw(t.timeline, queried('bars')))
+      assert.match(delta, /adestia-state--late/)
+      assert.ok(!/amber/i.test(delta))
+    })
+  } finally { restore() }
+})
