@@ -1302,9 +1302,12 @@ vitest setup, then rules 1 and 3:
    `packages/web/src`, `packages/content` and `packages/schemas` are never listed here: the import
    graph (rule 2) decides.
 2. **Imported by an entry**: touches exactly those screens.
-3. **Anything else**, including `packages/web/test/setup.ts` (the vitest setup, run before every test) (`packages/web/src/app/App.tsx` and `main.tsx`, which no screen imports; the
-   skins; `bench/**`; `vite.config.ts`; `package.json` and the lockfile; the scripts; a file the
-   resolver cannot place): touches **every** screen. In doubt, play.
+3. **Anything else**, including `packages/web/test/setup.ts` (the vitest setup, run before every test),
+   `packages/web/src/app/main.tsx`, and every file `App.tsx` imports directly that is not itself a
+   screen entry (`useRoute.ts`, the theme: the shell mounts every screen, though only `App.tsx`,
+   the entry of E-32, reaches them in the graph), the skins, `bench/**`, `vite.config.ts`,
+   `package.json` and the lockfile, the scripts, and a file the resolver cannot place: touches
+   **every** screen. In doubt, play.
 A changed screen-test file counts as touching the screens it declares (AD-niveaux-3).
 *Rejected:* a hand-kept list of file→screen (it rots); declaring screens in a header of each test
 file (the sibling feature `adestia-tests-hors-ecran` rewrites those files); treating the server
