@@ -86,12 +86,11 @@ export function table(locale) {
         'No sub-project below this page — a project declares `type: project-management` in its header.':
           'Aucun sous-projet sous cette page — un projet se déclare avec « type: project-management » dans son entête.',
         'No page below this page yet.': 'Aucune page sous cette page pour l’instant.',
-        Finished: 'Terminées',
+        '%done of %total sub-pages done': '%done sous-pages terminées sur %total',
         Late: 'En retard',
         'Progress': 'Avancement',
         'Next due': 'Prochaine échéance',
         'Nothing is due': 'Rien à l’horizon',
-        '%done of %total': '%done sur %total',
         'No milestone yet. Use Edit data to add one.':
           'Aucun jalon pour l’instant. Utilisez Modifier les données pour en ajouter un.',
         'No risk recorded. Use Edit data to add one.':
@@ -655,6 +654,12 @@ export default function createProjectBlocks(api) {
       timeZone: 'UTC',
     })
 
+  /** "in 20 days", "today", "20 days ago": the distance from today to a date, in the reader's language. */
+  const distance = (isoDate) => {
+    const days = Math.round((Date.parse(`${isoDate}T00:00:00Z`) - Date.parse(`${today()}T00:00:00Z`)) / 86400000)
+    return new Intl.RelativeTimeFormat(api.locale, { numeric: 'auto' }).format(days, 'day')
+  }
+
   /** Lines the block cannot read: named under it, kept as written. */
   const unreadNote = (lines) =>
     lines.length === 0
@@ -673,8 +678,9 @@ export default function createProjectBlocks(api) {
     if (!index) return h('p', { className: 'pm-empty' }, t('Planning…'))
     const figures = progressOf(index, path === undefined ? '' : folderOf(path), depth, path, today())
     if (figures.total === 0) return h('p', { className: 'pm-empty' }, t('No page below this page yet.'))
-    const counted = t('%done of %total', { done: figures.done, total: figures.total })
-    const next = figures.next ? day(figures.next.due) : t('Nothing is due')
+    const next = figures.next ? figures.next.label : t('Nothing is due')
+    const nextWhen = figures.next ? distance(figures.next.due) : null
+    const counted = t('%done of %total sub-pages done', { done: figures.done, total: figures.total })
     if (view === 'bar') {
       return h('div', { className: 'pm-progress pm-progress--bar' }, [
         h('div', { className: 'pm-progress__head', key: 'head' }, [
@@ -698,20 +704,35 @@ export default function createProjectBlocks(api) {
         h(
           'p',
           { className: 'pm-progress__line', key: 'line' },
-          `${t('Late')}: ${figures.late} · ${t('Next due')}: ${next}`,
+          `${t('Late')}: ${figures.late} · ${t('Next due')}: ${next}${nextWhen ? ` (${nextWhen})` : ''}`,
         ),
       ])
     }
-    const tile = (label, value, caption, key) =>
+    const meter = h(
+      'div',
+      {
+        className: 'adestia-meter',
+        role: 'progressbar',
+        'aria-label': t('Progress'),
+        'aria-valuemin': 0,
+        'aria-valuemax': 100,
+        'aria-valuenow': figures.percent,
+        'aria-valuetext': counted,
+        key: 'm',
+      },
+      h('span', { className: 'adestia-meter__fill', style: { width: `${figures.percent}%` } }),
+    )
+    const tile = (label, value, caption, key, extra = null) =>
       h('div', { className: 'adestia-figure', key }, [
         h('span', { className: 'adestia-figure__value', key: 'v' }, value),
         h('span', { className: 'adestia-figure__label', key: 'l' }, label),
+        extra,
         caption ? h('span', { className: 'adestia-figure__caption', key: 'c' }, caption) : null,
       ])
     return h('div', { className: 'adestia-figures' }, h('div', { className: 'adestia-figures__row' }, [
-      tile(t('Finished'), `${figures.percent} %`, counted, 'done'),
+      tile(t('Progress'), `${figures.percent} %`, counted, 'done', meter),
       tile(t('Late'), String(figures.late), null, 'late'),
-      tile(t('Next due'), next, figures.next ? figures.next.label : null, 'next'),
+      tile(t('Next due'), next, nextWhen, 'next'),
     ]))
   }
 

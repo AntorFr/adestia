@@ -421,7 +421,7 @@ button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outli
 .adestia-figure__label { color: var(--text-muted); font-size: var(--text-sm); }
 .adestia-figure__caption { color: var(--text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
 .adestia-figures__row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
-@container (max-width: 30rem) {
+@container (max-width: 20rem) {
   .adestia-figures__row { grid-template-columns: minmax(0, 1fr); }
 }
 

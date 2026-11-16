@@ -71,11 +71,10 @@ export function BlockForm({ name, fields, lines, stale = false, locale, fresh = 
   const isTable = fields.line === 'table'
   const next = useRef(0)
   const wrap = (rows: readonly Row[]): Item[] => rows.map((row) => ({ id: next.current++, row }))
-  // A block just inserted holds one empty bullet (the server refuses a bodiless block): that is no line to keep.
-  const first = useMemo(
-    () => codec.read(fresh ? lines.filter((line) => !/^\s*[-*+]\s*$/.test(line)) : lines),
-    [codec, lines, fresh],
-  )
+  // A block holds one empty bullet while it has no data (the server refuses a bodiless block, and a page
+  // made from a template starts so): that is no line to keep, fresh or not. Kept, it would stay a list of its own
+  // beside the written rows, and the file would swap its bullets for `*`.
+  const first = useMemo(() => codec.read(lines.filter((line) => !/^\s*[-*+]\s*$/.test(line))), [codec, lines])
   const [items, setItems] = useState<Item[]>(() => {
     if (!fresh) return wrap(first.rows)
     const head = isTable ? first.rows.slice(0, 1) : []
