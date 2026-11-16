@@ -26,7 +26,7 @@ export default async function scenario() {
         if (width < 820 && await page.locator('.adestia-shell').getAttribute('data-screen') !== 'canvas') {
           await page.locator('.adestia-chat__header').getByRole('button', { name: /^(Open apps|Ouvrir les apps)$/ }).click()
         }
-        await page.waitForSelector(name === 'liste' ? '.pm-timeline__row' : '.pm-timeline__span', { timeout: 15_000 })
+        await page.waitForSelector(name === 'liste' || width < 640 ? '.pm-timeline__row' : '.pm-timeline__span', { timeout: 15_000 })
         await page.waitForTimeout(500)
         const amber = await page.evaluate(() => [...document.querySelectorAll('.pm-timeline *')].filter((n) => /warning/.test(n.className)).length)
         console.log(`${width} ${theme} ${name}: amber-in-timeline=${amber}`)
