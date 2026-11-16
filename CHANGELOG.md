@@ -838,3 +838,6 @@ branch and that `test:plugins` is replayed after a red vitest run.
 
 - **The repository now declares its screens and a "fiche" test level** — `scripts/ecrans.json` maps each screen to the files that serve it and to its tests, and `scripts/niveaux.mjs` reads the files a feature changes against that map. The `ecrans` level plays the local level plus the tests of the touched screens; the `fiche` level plays the whole suite minus the screen tests of untouched screens, so a feature's proof no longer replays screens it does not touch. `node scripts/niveaux.mjs --lister` prints what a level would play, and `--verifier` checks the map. The full attested suite is unchanged. Tooling only: nothing changes for users.
 
+## v0.97.20
+
+- **Screen tests no longer check what is not display** — every screen test is classified in `docs/tests-ecran/` (seven clusters, with its duration before the change), and the effects that need no browser (chat and charter server effects, pages file, save and feed effects, catalogue and MCP server removal, the shell's refusals, the plugins' Retry, the offline banner) are proven by `*-hors-ecran` tests that run without one. A guard test reads the inventories against the feature's exit criterion. Tests and documentation only: nothing changes for users.
