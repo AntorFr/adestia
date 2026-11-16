@@ -47,7 +47,8 @@ ligne `sans-porte` n'a pas de raison ; un inventaire `complet` a perdu la ligne 
 ## Durée
 
 `avant.md` : la durée de chaque fichier d'écran avant tout allègement, mesurée par
-`scripts/mesurer-tests-ecran.sh`.
+`scripts/mesurer-tests-ecran.mjs`. La durée « après », par grappe et au total, est dans le `README.md` du dépôt
+(section « Screen-test duration, before and after »), mesurée par la même commande.
 
 ## Grappes
 

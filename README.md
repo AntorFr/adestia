@@ -201,6 +201,32 @@ Set the `limit` from the table, not from what the pod uses at rest: an idle
 Adestia is a few hundred megabytes, and it is the burst that kills it. Raise
 `maxConcurrentTurns` and the memory limit together, never one alone.
 
+## Screen-test duration, before and after
+
+The tests that load a page in a browser take about 100 minutes, one file after the other. Moving what is
+not display to tests without a browser (`docs/tests-ecran/`) shortened that by about 4 minutes in all, which
+is about the noise between two runs of the same code: do not read it as a gain per cluster. The one cluster
+that grew (bench-plugins-shell, +190 s) had no test removed; its files ran slower on this run.
+
+| Cluster | Before (`main`, `docs/tests-ecran/avant.md`) | After (this branch) | Difference |
+|---|---|---|---|
+| web-chat-charte | 1297 s (21 min 37 s) | 1295 s (21 min 35 s) | -2 s |
+| web-hors-ligne-acces | 282 s (4 min 42 s) | 252 s (4 min 12 s) | -29 s |
+| web-mcp-pages | 454 s (7 min 34 s) | 372 s (6 min 12 s) | -81 s |
+| bench-chat | 583 s (9 min 43 s) | 378 s (6 min 18 s) | -206 s |
+| bench-pages | 1523 s (25 min 23 s) | 1426 s (23 min 46 s) | -97 s |
+| bench-plugins-shell | 1222 s (20 min 22 s) | 1413 s (23 min 33 s) | +190 s |
+| serveur | 900 s (15 min 0 s) | 873 s (14 min 33 s) | -27 s |
+| **total** | **6260 s (104 min 20 s)** | **6009 s (100 min 9 s)** | **-252 s** |
+
+- **Command**: `node scripts/mesurer-tests-ecran.mjs --sortie <dir>` after `npm ci` and `npm run build`, one file at a time,
+  the attested suite's options (`BENCH_FULL_SWEEP=1 ADESTIA_PATIENCE=4`, `--maxWorkers=1` for vitest, `node --test` for `.mjs`).
+  The time is that of the whole command, startup included. `--grappe <name>` measures one cluster.
+- **Machine**: a pod of 18 cores (`nproc`) with Playwright and Chromium, as for `avant.md` (another pod of the same kind:
+  `sdlc-adestia-tests-hors-ecran-durees-dev-1`).
+- **Same reds as before**: the files that were red or skipped on `main` still are (listed in `avant.md`); their time is
+  counted anyway. Per-file times: `docs/tests-ecran/avant.md`; the screen tests kept are the display ones.
+
 ## Status
 
 **Early, and running.** The screens are checked in a real browser (`bench/`) and
