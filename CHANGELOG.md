@@ -965,7 +965,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
   pre-release behind the latest tag. Tests only: nothing changes for users (task
   `rouge-adestia-pages-12`).
 
-## Unreleased
+## v0.98.0
 
 - **Block gallery** — In the editor bar, **Add block** (shown while editing, absent on a
   read-only page) opens a sheet of cards, grouped and searchable, for every core block and
