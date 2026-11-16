@@ -87,7 +87,7 @@ const SCREENS = [
   { id: 'E-28', name: 'parcours', seed: 'plugins', route: '/parcours/balades/assets/val-sans-retour.parcours.json', proof: '.parcours.pc-ready .pc-map' },
   { id: 'E-29', name: 'meals', seed: 'plugins', route: '/page/sante/septembre', proof: '.meals .meals-frise .meals-card' },
   { id: 'E-30', name: 'scan', seed: 'plugins', shell: 'chat', open: scan, proof: '.scan-overlay' },
-  { id: 'E-31', name: 'project-management', seed: 'plugins', route: '/page/renovation/INDEX', proof: '.pm-timeline .pm-timeline__chart' },
+  { id: 'E-31', name: 'project-management', seed: 'plugins', route: '/page/renovation/INDEX', proof: '.pm-timeline .pm-timeline__chart, .pm-timeline .pm-timeline__list' },
 ]
 
 // ── gestures ────────────────────────────────────────────────────────────────

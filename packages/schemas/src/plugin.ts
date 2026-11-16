@@ -111,11 +111,18 @@ export interface PluginGalleryEntry {
   readonly view?: PluginGalleryView
 }
 
-/** The four line formats that exist, one codec each in the shell (AD-forms-1). */
-export const GALLERY_LINE_FORMATS = ['label-value-caption', 'label-range', 'label-value', 'table'] as const
+/** The line formats that exist, one codec each in the shell (AD-forms-1, AD-etat-projet-2). */
+export const GALLERY_LINE_FORMATS = [
+  'label-value-caption',
+  'label-range',
+  'label-value',
+  'table',
+  'label-date-done',
+  'label-level-owner',
+] as const
 export type PluginGalleryLine = (typeof GALLERY_LINE_FORMATS)[number]
 
-export const GALLERY_COLUMN_KINDS = ['text', 'number', 'date', 'link'] as const
+export const GALLERY_COLUMN_KINDS = ['text', 'number', 'date', 'link', 'check', 'choice'] as const
 type PluginGalleryColumnKind = (typeof GALLERY_COLUMN_KINDS)[number]
 
 export interface PluginGalleryColumn {
@@ -235,6 +242,14 @@ export interface PluginManifest {
    * still appears, under its identifier.
    */
   readonly gallery?: Readonly<Record<string, PluginGalleryEntry>>
+
+  /**
+   * Page seeds this plugin ships (AD-36), as paths under its folder, each
+   * `templates/<name>.md`. Absent means none. The seed's own frontmatter
+   * (`template:` — name, image, description) is read by the shell from the
+   * file, served by the plugin's static route; nothing is restated here.
+   */
+  readonly templates?: readonly string[]
 
   /**
    * Frontmatter `type:` values this plugin's own code dispatches on — e.g. a

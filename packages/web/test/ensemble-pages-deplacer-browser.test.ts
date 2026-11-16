@@ -399,7 +399,7 @@ describe.skipIf(!playwright)('adestia-pages-deplacer, from the need', () => {
         // A block with fields opens its data form on insertion (P-17 step 4): Cancel keeps the provisional body,
         // and the sheet must be gone before the gallery is opened again.
         const form = page.locator('.adestia-sheet').filter({ hasText: '— data' })
-        if (['Figures', 'List', 'Table', 'Timeline'].includes(name)) {
+        if (['Figures', 'List', 'Table', 'Timeline', 'Milestones', 'Risks'].includes(name)) {
           await form.waitFor({ timeout: 10_000 })
           await form.getByRole('button', { name: 'Cancel' }).click()
           await form.waitFor({ state: 'detached', timeout: 10_000 })
@@ -557,7 +557,7 @@ describe.skipIf(!playwright)('adestia-pages-deplacer, from the need', () => {
       expect(flat.map((c) => c.name), 'identifiers shown as names').not.toContain('timeline')
       expect(flat.map((c) => c.name)).not.toContain('subproject')
       const project = groups.find((g) => g.group === 'Project')
-      expect(project?.cards.map((c) => c.name).sort()).toEqual(['Sub-projects', 'Timeline'])
+      expect(project?.cards.map((c) => c.name).sort()).toEqual(['Milestones', 'Progress', 'Risks', 'Sub-projects', 'Timeline'])
       await shot(page, 'galerie-projet')
       await context.close()
     }, 90_000)

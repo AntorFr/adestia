@@ -1010,3 +1010,16 @@ branch and that `test:plugins` is replayed after a red vitest run.
   **Apply** is one change (one undo step); **Cancel**, ✕, Escape and the scrim drop it. A row left
   alone is written back byte for byte, and a line the form cannot read stays where it was, listed
   under "Kept as written". In `en` and `fr`.
+- **Project blocks, page models** — `project-management` gains three blocks: `progress` (the share
+  of the pages below finished, how many are late, what falls due next; tiles or one bar),
+  `milestones` (`- Label: 2026-11-20 — done`, each done, next, late or planned) and `risks`
+  (`- Label: High — Marc`, a level of High, Medium or Low). All three are in the gallery under
+  **Project**; `milestones` and `risks` open their data form after an insertion, whose Done
+  (check) and Level (choice) columns are new kinds of the form contract. An empty block says so and
+  names **Edit data**; a line nobody can read is kept and named under the block. `timeline` gains
+  `view=bars|list` (the written file is the same bytes either way) and `subproject` is redrawn on
+  the charter's card and pill. **New from template** (E-3, sheet E-36) creates a page from a model
+  a plugin ships through the manifest's `templates` key; `project-management` ships **Project
+  status** (a summary, a band of progress and milestones beside risks, then a timeline, with no
+  date written in advance). `GET /api/pages/index` also answers `writableFolders`, the folders
+  where a page can be written, so the button is drawn only there.

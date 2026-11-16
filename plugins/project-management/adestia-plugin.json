@@ -12,7 +12,7 @@
       "project-status": {
         "kind": "choice",
         "label": "Project status",
-        "help": "How the project is GOING, and only while it is under way \u2014 a project waiting or closed says that instead.",
+        "help": "How the project is GOING, and only while it is under way — a project waiting or closed says that instead.",
         "values": [
           "Green",
           "Amber",
@@ -32,7 +32,7 @@
   "vocabulary": {
     "subproject": {
       "content": "empty",
-      "description": "The sub-projects below this page, each with where it stands \u2014 its `project-status` while it is under way, its lifecycle status when that has something more urgent to say.",
+      "description": "The sub-projects below this page, each with where it stands — its `project-status` while it is under way, its lifecycle status when that has something more urgent to say.",
       "attributes": {
         "depth": {
           "values": [
@@ -83,6 +83,59 @@
             "children"
           ],
           "default": "children"
+        },
+        "view": {
+          "values": [
+            "bars",
+            "list"
+          ],
+          "default": "bars"
+        }
+      }
+    },
+    "progress": {
+      "content": "empty",
+      "description": "How far the pages below this page are: the share finished, how many are late and what falls due next.",
+      "attributes": {
+        "depth": {
+          "values": [
+            "children",
+            "subtree"
+          ],
+          "default": "children"
+        },
+        "view": {
+          "values": [
+            "tiles",
+            "bar"
+          ],
+          "default": "tiles"
+        }
+      }
+    },
+    "milestones": {
+      "content": "flow",
+      "description": "Milestones written one per line — `- Label: 2026-11-20`, with `— done` once reached — each marked done, next, late or planned.",
+      "attributes": {
+        "view": {
+          "values": [
+            "list",
+            "cards"
+          ],
+          "default": "list"
+        }
+      }
+    },
+    "risks": {
+      "content": "flow",
+      "description": "Risks written one per line — `- Label: High — Marc` — with a level of High, Medium or Low and an optional owner.",
+      "attributes": {
+        "view": {
+          "values": [
+            "table",
+            "cards"
+          ],
+          "default": "table"
         }
       }
     }
@@ -111,14 +164,166 @@
       },
       "image": "./web/gallery/timeline.svg",
       "group": "Project",
+      "view": {
+        "values": [
+          "bars",
+          "list"
+        ],
+        "default": "bars"
+      },
       "fields": {
         "line": "label-range",
         "columns": [
-          { "key": "label", "kind": "text", "label": { "en": "Phase", "fr": "Phase" }, "required": true },
-          { "key": "start", "kind": "date", "label": { "en": "Start", "fr": "Début" } },
-          { "key": "due", "kind": "date", "label": { "en": "Due", "fr": "Échéance" }, "required": true }
+          {
+            "key": "label",
+            "kind": "text",
+            "label": {
+              "en": "Phase",
+              "fr": "Phase"
+            },
+            "required": true
+          },
+          {
+            "key": "start",
+            "kind": "date",
+            "label": {
+              "en": "Start",
+              "fr": "Début"
+            }
+          },
+          {
+            "key": "due",
+            "kind": "date",
+            "label": {
+              "en": "Due",
+              "fr": "Échéance"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    "progress": {
+      "name": {
+        "en": "Progress",
+        "fr": "Avancement"
+      },
+      "line": {
+        "en": "How far the pages below are, and what is late.",
+        "fr": "Où en sont les pages de dessous, et ce qui est en retard."
+      },
+      "image": "./web/gallery/progress.svg",
+      "group": "Project",
+      "view": {
+        "values": [
+          "tiles",
+          "bar"
+        ],
+        "default": "tiles"
+      }
+    },
+    "milestones": {
+      "name": {
+        "en": "Milestones",
+        "fr": "Jalons"
+      },
+      "line": {
+        "en": "Dated milestones, each done, next, late or planned.",
+        "fr": "Des jalons datés : fait, prochain, en retard ou prévu."
+      },
+      "image": "./web/gallery/milestones.svg",
+      "group": "Project",
+      "view": {
+        "values": [
+          "list",
+          "cards"
+        ],
+        "default": "list"
+      },
+      "fields": {
+        "line": "label-date-done",
+        "columns": [
+          {
+            "key": "label",
+            "kind": "text",
+            "label": {
+              "en": "Milestone",
+              "fr": "Jalon"
+            },
+            "required": true
+          },
+          {
+            "key": "date",
+            "kind": "date",
+            "label": {
+              "en": "Date",
+              "fr": "Date"
+            },
+            "required": true
+          },
+          {
+            "key": "done",
+            "kind": "check",
+            "label": {
+              "en": "Done",
+              "fr": "Fait"
+            }
+          }
+        ]
+      }
+    },
+    "risks": {
+      "name": {
+        "en": "Risks",
+        "fr": "Risques"
+      },
+      "line": {
+        "en": "Risks with a level and an owner.",
+        "fr": "Des risques avec un niveau et un responsable."
+      },
+      "image": "./web/gallery/risks.svg",
+      "group": "Project",
+      "view": {
+        "values": [
+          "table",
+          "cards"
+        ],
+        "default": "table"
+      },
+      "fields": {
+        "line": "label-level-owner",
+        "columns": [
+          {
+            "key": "label",
+            "kind": "text",
+            "label": {
+              "en": "Risk",
+              "fr": "Risque"
+            },
+            "required": true
+          },
+          {
+            "key": "level",
+            "kind": "choice",
+            "label": {
+              "en": "Level",
+              "fr": "Niveau"
+            },
+            "required": true
+          },
+          {
+            "key": "owner",
+            "kind": "text",
+            "label": {
+              "en": "Owner",
+              "fr": "Responsable"
+            }
+          }
         ]
       }
     }
-  }
+  },
+  "templates": [
+    "templates/project-status.md"
+  ]
 }

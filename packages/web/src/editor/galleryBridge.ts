@@ -20,6 +20,9 @@ import { editorBlocks, pmId } from './vocabulary.js'
 
 const DEFAULT_BODY: Record<string, string> = {
   figures: '- Label: 0',
+  // One empty bullet: the block is never saved bodiless, and the form opens on one empty row (E-35).
+  milestones: '-',
+  risks: '-',
   table: '| A | B |\n| --- | --- |\n| 1 | 2 |',
 }
 

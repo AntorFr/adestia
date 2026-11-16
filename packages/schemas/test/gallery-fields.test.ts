@@ -11,7 +11,7 @@ const columns = [{ key: 'label', kind: 'text', label: 'Label', required: true }]
 const read = (extra: object) => parsePluginManifest({ ...base, gallery: { bench: { ...entry, ...extra } } }, 'workbench').gallery?.['bench']
 
 describe('gallery fields and view (AD-forms-1, AD-35)', () => {
-  it('accepts the project-management manifest with the timeline fields and no view', () => {
+  it('accepts the project-management manifest with the timeline fields and its bars|list view', () => {
     const path = fileURLToPath(new URL('../../../plugins/project-management/adestia-plugin.json', import.meta.url))
     const m = parsePluginManifest(JSON.parse(readFileSync(path, 'utf8')), 'project-management')
     const timeline = m.gallery?.['timeline']
@@ -21,7 +21,7 @@ describe('gallery fields and view (AD-forms-1, AD-35)', () => {
       ['start', 'date'],
       ['due', 'date'],
     ])
-    expect(timeline?.view).toBeUndefined()
+    expect(timeline?.view).toEqual({ values: ['bars', 'list'], default: 'bars' })
   })
 
   it('ignores a fields naming an unknown line format, without error, keeping the card', () => {

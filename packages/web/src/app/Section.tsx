@@ -15,7 +15,7 @@
  * leads somewhere else, then what is live, then what is done.
  */
 
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 
 import { isFinished, toneOf } from '@antorfr/adestia-content'
 
@@ -39,6 +39,8 @@ export interface SectionProps {
   readonly ready?: boolean
   /** The shell's translator; identity in English. */
   readonly t?: (key: string) => string
+  /** A control for the header's right edge (E-3's New from template); drawn only when given. */
+  readonly headerAction?: ReactNode
 }
 
 function text(value: unknown): string | undefined {
@@ -198,6 +200,7 @@ export function Section({
   openPage,
   ready = true,
   t = (key) => key,
+  headerAction,
 }: SectionProps) {
   const rooms = subsectionsOf(entries, path)
   const all = pagesIn(entries, path)
@@ -308,6 +311,7 @@ export function Section({
             </ul>
           )}
         </div>
+        {headerAction}
       </header>
 
       {rooms.length > 0 && (

@@ -65,6 +65,8 @@ export interface EditorEnv {
   readonly say?: Say | undefined
   /** The form a block declares for its lines (`fields`), absent for a block with none (E-35). */
   readonly forms?: ((name: string) => PluginGalleryFields | undefined) | undefined
+  /** Whether a block inserted from the gallery opens its settings (E-6) because it has no form to open. */
+  readonly settingsOnInsert?: ((name: string) => boolean) | undefined
   /** The editor's translator: the bar, the settings and the notes speak the instance's language. */
   readonly t?: ((key: string) => string) | undefined
 }
@@ -198,6 +200,7 @@ class DirectiveView implements NodeView {
     // Neighbours moved without this view being told: read the ends again when it is reached.
     this.dom.addEventListener(OPEN_FORM, () => {
       if (this.env.forms?.(this.name)) this.openForm(true)
+      else if (this.env.settingsOnInsert?.(this.name)) this.setOpen(true)
     })
     this.dom.addEventListener('pointerover', () => this.syncMove())
     this.dom.addEventListener('focusin', () => this.syncMove())

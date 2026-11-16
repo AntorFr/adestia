@@ -1,0 +1,34 @@
+---
+title: Plusieurs lignes
+type: project-management
+---
+
+:::progress
+:::
+
+:::progress{view="bar"}
+:::
+
+:::milestones
+- Cadrage: 2026-10-13 — done
+- Maquette: 2026-11-07
+- Livraison: 2026-11-26
+- Mise en service d’une installation au nom volontairement très long pour vérifier le retour à la ligne: 2026-12-27
+:::
+
+:::risks
+- Fournisseur unique: High — Marc
+- Budget: medium — Léa
+- Météo: Low
+- Un risque dont le libellé est très long pour voir comment il passe à la ligne sur un téléphone: High — Jean-Baptiste Longuenom
+:::
+
+:::milestones{view="cards"}
+- Cadrage: 2026-10-13 — done
+- Livraison: 2026-11-26
+:::
+
+:::risks{view="cards"}
+- Budget: Medium — Léa
+- Fournisseur: High
+:::

@@ -28,7 +28,9 @@ import {
 import type { FastifyInstance } from 'fastify'
 
 import { parseFrontmatter, splitFrontmatter } from '../frontmatter.js'
+import type { DiscoveredPlugin } from '../extensions.js'
 import { gated } from '../io.js'
+import { writableFolders } from '../writable-folders.js'
 import { revisionOf, safePagePath, titleOf, type PageContent, type PageInfo } from '../pages.js'
 import {
   candidatesOf,
@@ -54,6 +56,8 @@ export interface PagesOptions {
    * what an instance that declared no language honestly means.
    */
   readonly locale?: string | undefined
+  /** Plugins discovered; the ACTIVE ones' `absorbs` leave the writable folders. */
+  readonly plugins?: readonly DiscoveredPlugin[] | undefined
 }
 /**
  * The store a `?store=` qualifier names, or undefined.
@@ -250,7 +254,15 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
     // exactly as it does with the plain list: a card needs a LABEL to be
     // suffixed and a HUE for its rim, and a store carrying nothing still has
     // to reach the legend.
-    return multi ? { entries: out, stores: table() } : { entries: out }
+    // Computed on every call, never cached: a folder made read-only, or a
+    // plugin switched on, must show on the next index.
+    const absorbed = (options.plugins ?? [])
+      .filter((plugin) => plugin.active)
+      .flatMap((plugin) => plugin.manifest.absorbs ?? [])
+    const folders = await writableFolders(stores, absorbed, order)
+    return multi
+      ? { entries: out, stores: table(), writableFolders: folders }
+      : { entries: out, writableFolders: folders }
   })
 
   app.get<{ Params: { '*': string }; Querystring: { store?: string } }>(
