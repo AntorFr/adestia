@@ -127,7 +127,8 @@ describe.skipIf(!playwright)('blocs projet: progress, milestones, risks', () => 
         const words = seen.pills.map((p: { text: string }) => p.text)
         for (const w of ['Done', 'Late', 'Next', 'Planned', 'High', 'Medium', 'Low']) expect(words, w).toContain(w)
         for (const p of seen.pills) expect(p.icon, `${p.text}: an icon beside the word`).toBe(1)
-        expect(seen.bars).toEqual(['62'])
+        // the Progress tile's meter and the page's own view=bar: both read 62
+        expect(seen.bars).toEqual(['62', '62'])
         expect(seen.amber).toBe(false)
         expect(seen.overflow, 'no horizontal scroll of the page').toBe(false)
         await context.close()

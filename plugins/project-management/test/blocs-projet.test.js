@@ -48,8 +48,14 @@ test('progress bar: a progressbar with the right numbers; tiles: three figures',
     assert.match(said(bar), /2 of 4/)
     const tiles = draw(t.progress, { path: 'p/plan.md', pages })
     assert.equal(tiles.split('class="adestia-figure"').length - 1, 3)
-    assert.ok(!tiles.includes('progressbar'))
+    assert.equal(tiles.split('role="progressbar"').length - 1, 1, 'the Progress tile holds the meter')
+    assert.match(tiles, /aria-valuenow="50"/)
+    assert.match(said(tiles), /Progress/)
+    assert.match(said(tiles), /2 of 4 sub-pages done/)
+    assert.doesNotMatch(said(tiles), /Finished/)
     assert.match(said(tiles), /1\nLate/)
+    assert.match(said(tiles), /p\/d\.md|d\.md/)
+    assert.match(said(tiles), /in \d+ days/)
   } finally { restore() }
 })
 
