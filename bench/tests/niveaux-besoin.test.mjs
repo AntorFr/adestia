@@ -37,6 +37,8 @@ const E9_E10 = [
   'packages/web/test/besoin-chargements-browser.test.ts',
   'packages/web/test/besoin-charte-browser.test.ts',
   'packages/web/test/besoin-charte-comportement.test.ts',
+  'packages/web/test/besoin-hors-ligne-bords.test.ts',
+  'packages/web/test/besoin-hors-ligne-flux.test.ts',
   'packages/web/test/besoin-hors-ligne-browser.test.ts',
   'packages/web/test/besoin-mcp-browser.test.ts',
   'packages/web/test/ensemble-hors-ligne-browser.test.ts',
@@ -53,15 +55,15 @@ before(() => {
 })
 after(() => rmSync(tmp, { recursive: true, force: true }))
 
-test('McpServers.tsx seul : exactement E-9 et E-10, et les fichiers d\'écran de ces écrans', () => {
-  // Casserait si le parcours des imports n'était pas transitif (E-9 importe McpServers via Preferences),
+test('McpServers.tsx seul : exactement E-9 E-10 E-20 E-32 (pages qui l\'importent, même transitivement), et les fichiers d\'écran de ces écrans', () => {
+  // Casserait si le parcours des imports n'était pas transitif (E-9 importe McpServers via Preferences, E-20 Canvas via Preferences, E-32 App via Canvas),
   // ou s'il remontait à Settings.tsx (que McpServers importe, pas l'inverse), ou s'il jouait tout.
   reset()
   appendFileSync(join(repo, 'packages/web/src/app/McpServers.tsx'), '\n// touched\n')
   commit('mcp')
   const r = niveaux('--lister', 'ecrans', base)
   assert.equal(r.status, 0, r.stderr)
-  assert.equal(touches(r.stdout), 'E-9 E-10')
+  assert.equal(touches(r.stdout), 'E-9 E-10 E-20 E-32')
   assert.deepEqual(lignes(r.stdout, 'fichiers d\'écran joués').sort(), E9_E10)
   const laisses = lignes(r.stdout, 'fichiers d\'écran laissés de côté')
   assert.ok(laisses.includes('packages/web/test/besoin-chat-browser.test.ts'))
@@ -132,7 +134,7 @@ test('fiche : la suite attestée reçoit exactement les fichiers laissés de cô
   const lf = lignes(niveaux('--lister', 'fiche', base).stdout, 'fichiers d\'écran laissés de côté')
   const ex = /EXCLURE=\[([^\]]*)\]/.exec(f.stdout)[1].split(' ').filter(Boolean)
   assert.deepEqual(ex.sort(), [...lf].sort())
-  assert.equal(ex.length, 12)
+  assert.equal(ex.length, 10)
   assert.ok(!ex.includes('packages/web/test/besoin-mcp-browser.test.ts'))
   const e = niveaux('ecrans', base)
   const jo = /JOUER=\[([^\]]*)\]/.exec(e.stdout)[1].split(' ').filter(Boolean)
