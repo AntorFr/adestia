@@ -16,9 +16,9 @@ export default async function seed({ workspace, base, onClose }) {
   const subs = [
     ['cadrage', 'Cadrage', 'clos', -40, -30],
     ['maquette', 'Maquette', 'clos', -30, -10],
-    ['developpement', 'Développement', '"en cours"', -10, 20],
-    ['recette', 'Recette', '"en cours"', 15, 35],
-    ['retard', 'Dossier en retard', '"en cours"', -30, -3],
+    ['developpement', 'Développement', 'en cours', -10, 20],
+    ['recette', 'Recette', 'en cours', 15, 35],
+    ['retard', 'Dossier en retard', 'en cours', -30, -3],
   ]
   // One folder per test that creates a page: a page created in a folder is itself a page of that folder.
   for (const folder of ['projet', 'pris', ...Array.from({ length: 12 }, (_, i) => `p${i + 1}`)]) {
@@ -27,8 +27,9 @@ export default async function seed({ workspace, base, onClose }) {
     }
   }
   await mkdir(join(workspace, 'pages/neuf'), { recursive: true }) // a folder held by the store, with no page in it
-  await p('vide/une.md', { title: 'Une', type: 'fiche' }, 'x')
-  await put(workspace, 'lecture/gele/a.md', page({ title: 'Gelée', type: 'fiche' }, 'x'))
+  // Same bytes as pages the corpus of packages/content already holds (it keeps one copy of every page a seed writes).
+  const seule = (offset) => page({ title: 'Seule page', type: 'fiche', due: day(offset) }, 'Une.')
+  await put(workspace, 'lecture/gele/seule.md', seule(10))
   await chmod(join(workspace, 'lecture/gele'), 0o555)
   onClose(async () => {
     await chmod(join(workspace, 'lecture/gele'), 0o755).catch(() => undefined)

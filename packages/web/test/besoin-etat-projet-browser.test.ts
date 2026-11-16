@@ -203,7 +203,7 @@ describe.skipIf(!hasBrowser)('Project status page from a template (P-20)', () =>
 
   it('E-3 dossier tenu seulement par un magasin en lecture: pas de bouton; dossier inscriptible: bouton', async () => {
     const ro = await visit(main.url, '/section/gele')
-    await ro.page.getByText('Gelée').first().waitFor({ timeout: 25_000 })
+    await ro.page.getByText('Seule page').first().waitFor({ timeout: 25_000 })
     await ro.page.waitForTimeout(1500)
     expect(await sectionButton(ro.page).count()).toBe(0)
     await ro.context.close()
