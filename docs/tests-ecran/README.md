@@ -134,12 +134,15 @@ Tests d'écran nés dans `epic/adestia-pages`, après l'inventaire par grappe : 
 - `packages/web/test/besoin-popover-bandeau-tardif-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/besoin-rouge-23-spinner-config.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/besoin-rouge-25-menu-rouage-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/blocs-projet-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/complement-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/ensemble-pages-deplacer-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/ensemble-pages-deplacer-cartes-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/ensemble-pages-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/ensemble-pages-structure-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/etat-projet-gabarit-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/galerie-formulaire-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/nouveau-modele-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/pages-structure-edition-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/recette-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/reglages-undo-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
