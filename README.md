@@ -203,12 +203,15 @@ Adestia is a few hundred megabytes, and it is the burst that kills it. Raise
 
 ## Screen-test duration, before and after
 
-The tests that load a page in a browser take about 100 minutes, one file after the other. Moving what is
-not display to tests without a browser (`docs/tests-ecran/`) shortened that by about 4 minutes in all, which
-is about the noise between two runs of the same code: do not read it as a gain per cluster. The one cluster
-that grew (bench-plugins-shell, +190 s) had no test removed; its files ran slower on this run.
+The tests that load a page in a browser take about 100 minutes, one file after the other (the whole attested
+suite is another measure, ~35 minutes, `.sdlc.yaml`). What is not display is now also proved by tests without a
+browser (`docs/tests-ecran/`), but **no screen test has been lightened or removed yet**: the lines classified
+`effet` or `scindé` all say `gardé` in the column « À l'écran » (none says `allégé` or `retiré`). The lightening comes after, test by test, once its
+out-of-screen test is replayed. The figures below are therefore two measures of the same screen tests: their
+difference (about 4 minutes in all, -206 s to +190 s per cluster) is the spread between two runs of unchanged tests, not a gain per cluster. Seconds are the
+rounded sum of each file's measured time, so they can differ by one from `avant.md`.
 
-| Cluster | Before (`main`, `docs/tests-ecran/avant.md`) | After (this branch) | Difference |
+| Cluster | Before (`main`, `docs/tests-ecran/avant.md`) | After (measured on the feature branch, screen tests unchanged) | Difference |
 |---|---|---|---|
 | web-chat-charte | 1297 s (21 min 37 s) | 1295 s (21 min 35 s) | -2 s |
 | web-hors-ligne-acces | 282 s (4 min 42 s) | 252 s (4 min 12 s) | -29 s |
@@ -257,6 +260,8 @@ While working, play the local level instead of the whole suite: `scripts/suite-l
 typecheck, lint, vitest without the browser test files, plugins; no build, guards or boot), and
 `scripts/rejouer.sh "<test name>"` to replay named tests only (names as `resultats.xml` of an earlier run carries them, `<file> > <describe> > <test>` or just the test name; `etape > lint` replays a step; it needs `npm ci` first, and fails on a name that matches no test).
 Both write `resultats.xml` with the suite's test names. `scripts/suite-attestee.sh` (about 35 minutes) stays the proof (AD-preuve-1; the local level, AD-preuve-5). `local:` and `rejouer:` are read by the chain on `main` only; the scripts themselves run anywhere.
+
+A test that loads a page in a browser checks what the user sees; what the server does is proved by its route, without a browser. Every screen test is classified in `docs/tests-ecran/` (rule: `docs/tests-ecran/README.md`; AD-ecran-1), and `node scripts/tests-ecran.mjs` checks the inventories. A new browser test file joins a cluster there, or that check fails.
 
 The web shell dispatches screens in `app/Canvas.tsx`; `CanvasHeader.tsx` owns the
 breadcrumb and phone return. `Home.tsx` composes `Brief` and `Domains`; the page

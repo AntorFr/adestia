@@ -117,6 +117,8 @@ ligne `sans-porte` n'a pas de raison ; un inventaire `complet` a perdu la ligne 
 - `packages/server/test/catalogues-ui-ensemble.test.ts`
 - `packages/server/test/qualite-serveur-ensemble.test.ts`
 
+Exception : quelques fichiers de la grappe `serveur` ne pilotent aucun navigateur (`bench-launcher`, une partie de `bench-besoin`) : ils y figurent parce que la fiche les listait, et leurs tests sont `sans-porte` avec la raison « déjà sans navigateur » (rien à reporter). Pour rejouer un test hors écran seul : `scripts/rejouer.sh "<nom>"`.
+
 ## Hors inventaire
 
 Gardes de la suite, qui nomment le navigateur sans en piloter un écran :

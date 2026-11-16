@@ -1256,6 +1256,23 @@ suite does (AD-preuve-1). `scripts/suite-attestee.sh` is unchanged.
 *Rejected:* a hand-kept list of excluded files (it rots as browser tests are added); a second report
 format for the local level (names would drift from the attested suite).
 
+## Decisions of adestia-tests-hors-ecran
+
+### AD-ecran-1 — A screen test checks display; an effect is checked through its door
+
+A screen test is any test file that names `chromium` or `playwright`. Each one is classified in
+`docs/tests-ecran/<cluster>.md` (seven clusters, one table line per test, rule and format in
+`docs/tests-ecran/README.md`): `affichage` (stays on screen, whole), `effet` or `scindé` (what the
+server or a module does is proved by a named test without a browser; the screen test is then lightened or removed, which is done after the inventories, not by them: they say `gardé` until it is), `sans-porte` (no route, API or module exposes the effect: it stays on screen,
+with the reason). No display assertion is removed, and the product does not change. The out-of-screen
+tests are the `*-hors-ecran.test.*` files under `packages/server/test`, `packages/web/test` and
+`plugins/*/test`, plus `packages/web/test/besoin-pages-code.test.ts` and `plugins/planif/test/api-crlf-notes.test.js`, played by the local
+level. `scripts/tests-ecran.mjs`, played by `packages/server/test/tests-ecran-garde.test.ts`, fails on a
+screen file in no cluster, an effect that cites a missing test, a `sans-porte` without a reason, and a
+test of `docs/tests-ecran/existants.txt` that lost its line. A new screen test file must join a cluster. A few files of the `serveur` cluster name no browser (`bench-launcher`): they are there because the fiche listed them, and each of their tests is `sans-porte` with the reason « already without a browser, nothing to carry over » — there `sans-porte` means nothing to do, not an effect that stays on screen.
+*Rejected:* deleting the slow screen tests (their display assertions are the only proof of what the
+user sees); a list of tests kept apart from the code (the guard reads the files instead).
+
 ## Decisions of adestia-acces-refuse
 
 An OIDC account that is in no allowed group used to meet a bare JSON 403 at `/auth/callback`, and
