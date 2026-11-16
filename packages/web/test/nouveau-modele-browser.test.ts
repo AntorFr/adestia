@@ -20,7 +20,7 @@ describe.skipIf(!playwright)('New from template (E-3 button, E-36 sheet)', () =>
   let browser: Awaited<ReturnType<typeof newBrowser>>
   beforeAll(async () => {
     instance = await launch('etat-projet-feuille', '', 'en')
-    without = await launch('etat-projet-blocs', '', 'en')
+    without = await launch('etat-projet-gabarit-sans-plugin', '', 'en')
     browser = await newBrowser()
   }, 240_000)
   afterAll(async () => {
