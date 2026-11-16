@@ -162,8 +162,18 @@ describe('the attestation job of docker-publish', () => {
     // red if the job stops reading the own status of the commit
     const d = repo()
     const head = commit(d, 'b.txt', 'b\n')
-    mark(head, 'tests-complets|success|vert')
+    mark(head, 'tests-complets|success|niveau suite · vert')
     expect(play(d).status).toBe(0)
+  })
+
+  it('fails on a success whose description does not begin with « niveau »', () => {
+    // red if the job goes back to accepting any green tests-complets
+    const d = repo()
+    const head = commit(d, 'b.txt', 'b\n')
+    mark(head, 'tests-complets|success|vert')
+    const r = play(d)
+    expect(r.status).toBe(1)
+    expect(r.stdout).toMatch(/sans niveau/)
   })
 
   it('fails on a commit without any status', () => {
@@ -189,7 +199,7 @@ describe('the attestation job of docker-publish', () => {
     run(d, 'checkout', '-q', 'main')
     run(d, 'merge', '-q', '--no-ff', '-m', 'merge', 'feat')
     expect(run(d, 'rev-parse', 'HEAD')).not.toBe(attested)
-    mark(attested, 'tests-complets|success|vert')
+    mark(attested, 'tests-complets|success|niveau suite · vert')
     expect(play(d).status).toBe(0)
   })
 
@@ -201,8 +211,8 @@ describe('the attestation job of docker-publish', () => {
     run(d, 'checkout', '-q', 'main')
     const mainHead = commit(d, 'c.txt', 'c\n')
     run(d, 'merge', '-q', '--no-ff', '-m', 'merge', 'feat')
-    mark(attested, 'tests-complets|success|vert')
-    mark(mainHead, 'tests-complets|success|vert')
+    mark(attested, 'tests-complets|success|niveau suite · vert')
+    mark(mainHead, 'tests-complets|success|niveau suite · vert')
     expect(play(d).status).toBe(1)
   })
 
@@ -210,7 +220,7 @@ describe('the attestation job of docker-publish', () => {
     // red if the job accepts a green status from an ancestor with other content
     const d = repo()
     const prev = commit(d, 'b.txt', 'b\n')
-    mark(prev, 'tests-complets|success|vert')
+    mark(prev, 'tests-complets|success|niveau suite · vert')
     commit(d, 'c.txt', 'c\n')
     expect(play(d).status).toBe(1)
   })

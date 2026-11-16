@@ -11,7 +11,7 @@
  *   because refusing loses the file and rewriting loses the content.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { Indexed } from '@antorfr/adestia-content'
 
 import { Attachments } from './Attachments.js'
@@ -197,6 +197,52 @@ export interface EditorProps {
   ) => () => void
 }
 
+/** The block gallery of an editor: its open state, its cards, and what a choice does. */
+function useBlockGallery(
+  host: RefObject<HTMLDivElement | null>,
+  editing: boolean,
+  galleryPlugins: EditorProps['galleryPlugins'],
+  locale: string,
+) {
+  const [gallery, setGallery] = useState(false)
+  const lang = resolveLocale(locale) === 'fr' ? 'fr' : 'en'
+  // Only blocks the editor can write: a card for a block with no node is a dead end.
+  const cards = useMemo(() => {
+    const known = new Set(editorBlocks().map((spec) => spec.name))
+    return galleryCards(galleryPlugins ?? [], lang).filter((card) => known.has(card.id))
+  }, [galleryPlugins, lang])
+  // "Browse" in the `/` menu asks from inside the surface.
+  useEffect(() => {
+    const element = host.current
+    if (!editing || !element) return undefined
+    const open = () => setGallery(true)
+    element.addEventListener(OPEN_GALLERY, open)
+    return () => element.removeEventListener(OPEN_GALLERY, open)
+  }, [editing, host])
+  useEffect(() => {
+    if (!editing) setGallery(false)
+  }, [editing])
+  const choose = (name: string, view?: string) => {
+    setGallery(false)
+    insertFromGallery(host.current, name, view)
+  }
+  return { gallery, setGallery, cards, choose }
+}
+
+/*
+ * Announced on CHANGE, not on every render: the callback is written inline
+ * by its caller, so a plain dependency on it would fire this on each pass
+ * and put the caller in a loop of its own making.
+ */
+function useAnnounced(editing: boolean, onEditing: EditorProps['onEditing']) {
+  const announced = useRef<boolean | undefined>(undefined)
+  useEffect(() => {
+    if (announced.current === editing) return
+    announced.current = editing
+    onEditing?.(editing)
+  }, [editing, onEditing])
+}
+
 export function Editor(props: EditorProps) {
   const {
     page,
@@ -235,40 +281,9 @@ export function Editor(props: EditorProps) {
   )
   const { dropping, events } = usePageDrop({ ...props, t }, editing)
 
-  const [gallery, setGallery] = useState(false)
-  const lang = resolveLocale(locale) === 'fr' ? 'fr' : 'en'
-  // Only blocks the editor can write: a card for a block with no node is a dead end.
-  const cards = useMemo(() => {
-    const known = new Set(editorBlocks().map((spec) => spec.name))
-    return galleryCards(galleryPlugins ?? [], lang).filter((card) => known.has(card.id))
-  }, [galleryPlugins, lang])
-  // "Browse" in the `/` menu asks from inside the surface.
-  useEffect(() => {
-    const element = host.current
-    if (!editing || !element) return undefined
-    const open = () => setGallery(true)
-    element.addEventListener(OPEN_GALLERY, open)
-    return () => element.removeEventListener(OPEN_GALLERY, open)
-  }, [editing, host])
-  useEffect(() => {
-    if (!editing) setGallery(false)
-  }, [editing])
-  const choose = (name: string, view?: string) => {
-    setGallery(false)
-    insertFromGallery(host.current, name, view)
-  }
+  const { gallery, setGallery, cards, choose } = useBlockGallery(host, editing, galleryPlugins, locale)
 
-  /*
-   * Announced on CHANGE, not on every render: the callback is written inline
-   * by its caller, so a plain dependency on it would fire this on each pass
-   * and put the caller in a loop of its own making.
-   */
-  const announced = useRef<boolean | undefined>(undefined)
-  useEffect(() => {
-    if (announced.current === editing) return
-    announced.current = editing
-    onEditing?.(editing)
-  }, [editing, onEditing])
+  useAnnounced(editing, onEditing)
 
   // Leaving a page leaves its edit mode behind: arriving somewhere new in
   // writing posture is a posture nobody chose — unless the caller says this
@@ -321,6 +336,23 @@ export function Editor(props: EditorProps) {
     }
     if ((await save()).kind === 'saved') setEditing(false)
   }, [dirty, save])
+
+  const reader = (
+    <Reader
+      markdown={markdown}
+      path={page.path}
+      {...(page.store ? { store: page.store } : {})}
+      {...(page.fields ? { fields: page.fields } : {})}
+      {...(openPage ? { openPage } : {})}
+      {...(blocks ? { blocks } : {})}
+      {...(vocabulary ? { vocabulary } : {})}
+      {...(pages ? { pages } : {})}
+      {...(stores ? { stores } : {})}
+      fetchImpl={fetchImpl}
+      locale={locale}
+      t={t}
+    />
+  )
 
   return (
     <section
@@ -430,37 +462,11 @@ export function Editor(props: EditorProps) {
           >
             {/* The page's own body, for the layout to place. Rendered here so
                 a plugin never has to know how this instance draws markdown. */}
-            <Reader
-              markdown={markdown}
-              path={page.path}
-              {...(page.store ? { store: page.store } : {})}
-              {...(page.fields ? { fields: page.fields } : {})}
-              {...(openPage ? { openPage } : {})}
-              {...(blocks ? { blocks } : {})}
-              {...(vocabulary ? { vocabulary } : {})}
-              {...(pages ? { pages } : {})}
-          {...(stores ? { stores } : {})}
-              fetchImpl={fetchImpl}
-              locale={locale}
-              t={t}
-            />
+            {reader}
           </Layout>
         </PluginBoundary>
       ) : (
-        <Reader
-          markdown={markdown}
-          path={page.path}
-          {...(page.store ? { store: page.store } : {})}
-          {...(page.fields ? { fields: page.fields } : {})}
-          {...(openPage ? { openPage } : {})}
-          {...(blocks ? { blocks } : {})}
-          {...(vocabulary ? { vocabulary } : {})}
-          {...(pages ? { pages } : {})}
-          {...(stores ? { stores } : {})}
-          fetchImpl={fetchImpl}
-          locale={locale}
-          t={t}
-        />
+        reader
       )}
 
       {/* Not while writing: the strip is what the page CARRIES, and a list of

@@ -1,0 +1,1067 @@
+# Tests d'écran existants, avant tout allègement : '<fichier> > <nom JUnit>', un par ligne. Les lignes d'un inventaire complet les recouvrent.
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin skippy > draws no native grey control in the rail, the question or the sheet, light and dark, desk and phone
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin skippy > draws every icon as a Lucide svg and no glyph or emoji in its place
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin skippy > closes and removes with one form, the x icon
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin skippy > keeps an en instance free of French in strings, labels and titles
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin skippy > keeps an fr instance free of English in strings, labels and titles
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin skippy > wears a focus ring on the control Tab reaches first in the rail
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin skippy > reaches AA contrast on the text of the thread, the question and the sheet
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin skippy > offers targets of at least 24 × 24 px and a header that stays on one row inside the screen
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin alfred > draws no native grey control in the rail, the question or the sheet, light and dark, desk and phone
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin alfred > draws every icon as a Lucide svg and no glyph or emoji in its place
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin alfred > closes and removes with one form, the x icon
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin alfred > keeps an en instance free of French in strings, labels and titles
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin alfred > keeps an fr instance free of English in strings, labels and titles
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin alfred > wears a focus ring on the control Tab reaches first in the rail
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin alfred > reaches AA contrast on the text of the thread, the question and the sheet
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin alfred > offers targets of at least 24 × 24 px and a header that stays on one row inside the screen
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin nestor > draws no native grey control in the rail, the question or the sheet, light and dark, desk and phone
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin nestor > draws every icon as a Lucide svg and no glyph or emoji in its place
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin nestor > closes and removes with one form, the x icon
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin nestor > keeps an en instance free of French in strings, labels and titles
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin nestor > keeps an fr instance free of English in strings, labels and titles
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin nestor > wears a focus ring on the control Tab reaches first in the rail
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin nestor > reaches AA contrast on the text of the thread, the question and the sheet
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin nestor > offers targets of at least 24 × 24 px and a header that stays on one row inside the screen
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin dobby > draws no native grey control in the rail, the question or the sheet, light and dark, desk and phone
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin dobby > draws every icon as a Lucide svg and no glyph or emoji in its place
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin dobby > closes and removes with one form, the x icon
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin dobby > keeps an en instance free of French in strings, labels and titles
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin dobby > keeps an fr instance free of English in strings, labels and titles
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin dobby > wears a focus ring on the control Tab reaches first in the rail
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin dobby > reaches AA contrast on the text of the thread, the question and the sheet
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > skin dobby > offers targets of at least 24 × 24 px and a header that stays on one row inside the screen
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > a first message with no open conversation creates one, and the reply shows whole, in order
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > shows a collapsible tool trace: closed by default, two calls, done and failed told in words
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > says "1 tool call" for a single call
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > shows the engine error on the turn, in an alert, beside the text it had streamed
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > turns Send into Stop while a turn runs, holds a message sent meanwhile, and ends on Stop
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > shows the context pill once a turn has reported its weight
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > lists the models in the header, and keeps the chosen one in this browser as adestia.model
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > opens the conversation list with the list icon, starts a draft with plus, and archives from the list entry
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > marks an unread conversation with a dot that is not colour alone, and reading clears it
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > opens conversations as tabs on a desk, closes one with the x icon without archiving it, and reorders by drag
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > has no tabs on a phone: the list is the only navigation and it is full width
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > narrows the model picker and the pill at 360 px without pushing the buttons out
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > spaces the pill evenly from its neighbours at 360 and 390 px, the picker yielding alone
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > pads a bubble holding only an error as evenly above as below
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the rail, with a model list (seed chat-rail) > names attached files in the tray and removes one with the x icon
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2 — the empty list and the absent model picker (seed empty) > says "No conversation yet." in an empty state when the instance has none
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2/P-3 — the question and the ceremony (seed chat-permission, permissions ask) > asks with three answers when the engine offered a lasting rule, blocks the composer, and frees it after an answer
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2/P-3 — the question and the ceremony (seed chat-permission, permissions ask) > offers no Always and says why when the engine proposed no rule
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2/P-3 — the question and the ceremony (seed chat-permission, permissions ask) > posts the refusal and frees the composer when the user presses Refuse
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2/P-3 — the question and the ceremony (seed chat-permission, permissions ask) > draws the four signature states with their icon and a text label, and the deadline while pending
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2/P-3 — the question and the ceremony (seed chat-permission, permissions ask) > opens the ceremony in one sheet with one close control and Open in a tab, and Escape returns the focus to Sign
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2/P-3 — the question and the ceremony (seed chat-permission, permissions ask) > closes the ceremony with its close control too
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2/P-3 — the question and the ceremony (seed chat-permission, permissions ask) > turns the ceremony into a bottom sheet on a phone
+packages/web/test/besoin-chat-browser.test.ts > chat — E-16, E-17, E-18 through a browser (B-7, B-8, B-10; P-2, P-3) > P-2/P-3 — the question and the ceremony (seed chat-permission, permissions ask) > without embed, Sign opens a tab and the card then offers "I signed it"
+packages/web/test/besoin-chat-narrow-browser.test.ts > chat revérification — narrow header and error-only bubble (E-16) > skin skippy > keeps one equal, visible gap between header items and a readable picker at 360 to 400 px
+packages/web/test/besoin-chat-narrow-browser.test.ts > chat revérification — narrow header and error-only bubble (E-16) > skin alfred > keeps one equal, visible gap between header items and a readable picker at 360 to 400 px
+packages/web/test/besoin-chat-narrow-browser.test.ts > chat revérification — narrow header and error-only bubble (E-16) > skin nestor > keeps one equal, visible gap between header items and a readable picker at 360 to 400 px
+packages/web/test/besoin-chat-narrow-browser.test.ts > chat revérification — narrow header and error-only bubble (E-16) > skin dobby > keeps one equal, visible gap between header items and a readable picker at 360 to 400 px
+packages/web/test/besoin-chat-narrow-browser.test.ts > chat revérification — narrow header and error-only bubble (E-16) > pads the seeded error-only bubble evenly above and below (light, 1440px)
+packages/web/test/besoin-chat-narrow-browser.test.ts > chat revérification — narrow header and error-only bubble (E-16) > pads the seeded error-only bubble evenly above and below (dark, 1440px)
+packages/web/test/besoin-chat-narrow-browser.test.ts > chat revérification — narrow header and error-only bubble (E-16) > pads the seeded error-only bubble evenly above and below (light, 390px)
+packages/web/test/besoin-chat-narrow-browser.test.ts > chat revérification — narrow header and error-only bubble (E-16) > pads the seeded error-only bubble evenly above and below (dark, 360px)
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage skippy, langue en > 'E-4' > E-4 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage skippy, langue en > 'E-4' > E-4 en erreur 500 : le message du serveur et Retry, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage skippy, langue en > 'E-11' > E-11 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage skippy, langue en > 'E-11' > E-11 en erreur 500 : le message du serveur et Retry, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage skippy, langue en > 'E-13' > E-13 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage skippy, langue en > 'E-13' > E-13 en erreur 500 : le message du serveur et Retry, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage skippy, langue fr > 'E-4' > E-4 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage skippy, langue fr > 'E-4' > E-4 en erreur 500 : le message du serveur et Réessayer, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage skippy, langue fr > 'E-11' > E-11 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage skippy, langue fr > 'E-11' > E-11 en erreur 500 : le message du serveur et Réessayer, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage skippy, langue fr > 'E-13' > E-13 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage skippy, langue fr > 'E-13' > E-13 en erreur 500 : le message du serveur et Réessayer, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage alfred, langue fr > 'E-4' > E-4 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage alfred, langue fr > 'E-4' > E-4 en erreur 500 : le message du serveur et Réessayer, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage alfred, langue fr > 'E-11' > E-11 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage alfred, langue fr > 'E-11' > E-11 en erreur 500 : le message du serveur et Réessayer, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage alfred, langue fr > 'E-13' > E-13 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage alfred, langue fr > 'E-13' > E-13 en erreur 500 : le message du serveur et Réessayer, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage nestor, langue en > 'E-4' > E-4 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage nestor, langue en > 'E-4' > E-4 en erreur 500 : le message du serveur et Retry, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage nestor, langue en > 'E-11' > E-11 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage nestor, langue en > 'E-11' > E-11 en erreur 500 : le message du serveur et Retry, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage nestor, langue en > 'E-13' > E-13 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage nestor, langue en > 'E-13' > E-13 en erreur 500 : le message du serveur et Retry, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage dobby, langue fr > 'E-4' > E-4 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage dobby, langue fr > 'E-4' > E-4 en erreur 500 : le message du serveur et Réessayer, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage dobby, langue fr > 'E-11' > E-11 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage dobby, langue fr > 'E-11' > E-11 en erreur 500 : le message du serveur et Réessayer, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage dobby, langue fr > 'E-13' > E-13 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage dobby, langue fr > 'E-13' > E-13 en erreur 500 : le message du serveur et Réessayer, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage alfred, langue en > 'E-4' > E-4 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage alfred, langue en > 'E-4' > E-4 en erreur 500 : le message du serveur et Retry, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage alfred, langue en > 'E-11' > E-11 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage alfred, langue en > 'E-11' > E-11 en erreur 500 : le message du serveur et Retry, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage alfred, langue en > 'E-13' > E-13 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage alfred, langue en > 'E-13' > E-13 en erreur 500 : le message du serveur et Retry, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage nestor, langue fr > 'E-4' > E-4 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage nestor, langue fr > 'E-4' > E-4 en erreur 500 : le message du serveur et Réessayer, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage nestor, langue fr > 'E-11' > E-11 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage nestor, langue fr > 'E-11' > E-11 en erreur 500 : le message du serveur et Réessayer, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage nestor, langue fr > 'E-13' > E-13 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage nestor, langue fr > 'E-13' > E-13 en erreur 500 : le message du serveur et Réessayer, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage dobby, langue en > 'E-4' > E-4 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage dobby, langue en > 'E-4' > E-4 en erreur 500 : le message du serveur et Retry, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage dobby, langue en > 'E-11' > E-11 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage dobby, langue en > 'E-11' > E-11 en erreur 500 : le message du serveur et Retry, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage dobby, langue en > 'E-13' > E-13 montre la ligne de chargement avant ses données, sans bouton, puis les données la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > habillage dobby, langue en > 'E-13' > E-13 en erreur 500 : le message du serveur et Retry, et Réessayer recharge et affiche les données
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-3 : la ligne de chargement remplace l'état vide tant que l'index n'a pas répondu, sans Réessayer ; les cartes la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-3 : index en erreur 500, la ligne de chargement reste (jamais l'état vide) et aucun bouton Réessayer n'apparaît
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-9 : la ligne de chargement s'affiche au-dessus des tuiles, qui restent dessinées, sans Réessayer ; elle part quand les lectures ont répondu
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-9 : une lecture en erreur 500 laisse les tuiles, ni message ni bouton, et la ligne de chargement s'en va
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-11 : liste en erreur 500 sans phrase du serveur, la phrase générique « Request failed (500) »
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-4 : erreur 500 sans phrase du serveur, ou sans réponse, jamais un « fetch failed » brut, et Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-8 : serveur injoignable sur une page, Réessayer recharge la page
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-8 : une page refusée en 404 n'a pas de bouton Retry
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-8 : une page refusée en 401 n'a pas de bouton Retry
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-8 : une page refusée en 403 n'a pas de bouton Retry
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-8 : une vraie page absente (404 du serveur) n'a pas de bouton Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > Réessayer ne peut pas être pressé deux fois : le bloc d'échec cède la place à la ligne de chargement, une seule requête part
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > Réessayer s'active au clavier
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-4 : de page en page, la première reste à l'écran sans ligne de chargement jusqu'à ce que la seconde réponde
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-4 : si la seconde page échoue, le bloc d'échec remplace la première
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-4 : un clic ultérieur remplace le précédent, la page affichée est la dernière demandée
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-11 : la liste en 404 reste « ce moteur n'a pas ce dossier », sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-11 : ouvrir un élément dont la lecture échoue en 500 montre le bloc d'échec à sa place, la liste reste atteignable, et Réessayer affiche l'élément
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-11 : un élément ouvert refusé en 404 a le message, sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-11 : un élément ouvert refusé en 401 a le message, sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-11 : un élément ouvert refusé en 403 a le message, sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-11 : ouvrir un élément dont la lecture est lente montre la ligne de chargement à sa place
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-11 : la liste inaccessible (serveur muet) dit « The server is not responding » avec Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-13 : ouvrir un élément dont la lecture échoue en 500 montre le bloc d'échec à sa place, la liste reste atteignable, et Réessayer affiche l'élément
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-13 : un élément ouvert refusé en 404 a le message, sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-13 : un élément ouvert refusé en 401 a le message, sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-13 : un élément ouvert refusé en 403 a le message, sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-13 : ouvrir un élément dont la lecture est lente montre la ligne de chargement à sa place
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > E-13 : la liste inaccessible (serveur muet) dit « The server is not responding » avec Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue en > les classes du bloc d'échec et de la ligne de chargement sont celles que la doc nomme
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-3 : la ligne de chargement remplace l'état vide tant que l'index n'a pas répondu, sans Réessayer ; les cartes la remplacent
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-3 : index en erreur 500, la ligne de chargement reste (jamais l'état vide) et aucun bouton Réessayer n'apparaît
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-9 : la ligne de chargement s'affiche au-dessus des tuiles, qui restent dessinées, sans Réessayer ; elle part quand les lectures ont répondu
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-9 : une lecture en erreur 500 laisse les tuiles, ni message ni bouton, et la ligne de chargement s'en va
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-11 : liste en erreur 500 sans phrase du serveur, la phrase générique « Request failed (500) »
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-4 : erreur 500 sans phrase du serveur, ou sans réponse, jamais un « fetch failed » brut, et Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-8 : serveur injoignable sur une page, Réessayer recharge la page
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-8 : une page refusée en 404 n'a pas de bouton Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-8 : une page refusée en 401 n'a pas de bouton Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-8 : une page refusée en 403 n'a pas de bouton Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-8 : une vraie page absente (404 du serveur) n'a pas de bouton Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > Réessayer ne peut pas être pressé deux fois : le bloc d'échec cède la place à la ligne de chargement, une seule requête part
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > Réessayer s'active au clavier
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-4 : de page en page, la première reste à l'écran sans ligne de chargement jusqu'à ce que la seconde réponde
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-4 : si la seconde page échoue, le bloc d'échec remplace la première
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-4 : un clic ultérieur remplace le précédent, la page affichée est la dernière demandée
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-11 : la liste en 404 reste « ce moteur n'a pas ce dossier », sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-11 : ouvrir un élément dont la lecture échoue en 500 montre le bloc d'échec à sa place, la liste reste atteignable, et Réessayer affiche l'élément
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-11 : un élément ouvert refusé en 404 a le message, sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-11 : un élément ouvert refusé en 401 a le message, sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-11 : un élément ouvert refusé en 403 a le message, sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-11 : ouvrir un élément dont la lecture est lente montre la ligne de chargement à sa place
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-11 : la liste inaccessible (serveur muet) dit « Le serveur ne répond pas » avec Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-13 : ouvrir un élément dont la lecture échoue en 500 montre le bloc d'échec à sa place, la liste reste atteignable, et Réessayer affiche l'élément
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-13 : un élément ouvert refusé en 404 a le message, sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-13 : un élément ouvert refusé en 401 a le message, sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-13 : un élément ouvert refusé en 403 a le message, sans Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-13 : ouvrir un élément dont la lecture est lente montre la ligne de chargement à sa place
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > E-13 : la liste inaccessible (serveur muet) dit « Le serveur ne répond pas » avec Réessayer
+packages/web/test/besoin-chargements-browser.test.ts > B-18 · chargement et Réessayer des écrans du shell > langue fr > les classes du bloc d'échec et de la ligne de chargement sont celles que la doc nomme
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin skippy > draws no native grey control on E-1, E-9 to E-15, E-19 and E-21, light and dark, desk and phone
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin skippy > shows Lucide icons and no glyph on the controls of these screens
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin skippy > keeps an en instance free of French in the chrome of these screens
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin skippy > keeps an fr instance free of English in the chrome of these screens
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin skippy > wears a focus ring on the control Tab reaches first, on every screen
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin skippy > reaches AA contrast (4.5:1, 3:1 for large text) on the text these screens draw
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin alfred > draws no native grey control on E-1, E-9 to E-15, E-19 and E-21, light and dark, desk and phone
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin alfred > shows Lucide icons and no glyph on the controls of these screens
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin alfred > keeps an en instance free of French in the chrome of these screens
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin alfred > keeps an fr instance free of English in the chrome of these screens
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin alfred > wears a focus ring on the control Tab reaches first, on every screen
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin alfred > reaches AA contrast (4.5:1, 3:1 for large text) on the text these screens draw
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin nestor > draws no native grey control on E-1, E-9 to E-15, E-19 and E-21, light and dark, desk and phone
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin nestor > shows Lucide icons and no glyph on the controls of these screens
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin nestor > keeps an en instance free of French in the chrome of these screens
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin nestor > keeps an fr instance free of English in the chrome of these screens
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin nestor > wears a focus ring on the control Tab reaches first, on every screen
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin nestor > reaches AA contrast (4.5:1, 3:1 for large text) on the text these screens draw
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin dobby > draws no native grey control on E-1, E-9 to E-15, E-19 and E-21, light and dark, desk and phone
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin dobby > shows Lucide icons and no glyph on the controls of these screens
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin dobby > keeps an en instance free of French in the chrome of these screens
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin dobby > keeps an fr instance free of English in the chrome of these screens
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin dobby > wears a focus ring on the control Tab reaches first, on every screen
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > skin dobby > reaches AA contrast (4.5:1, 3:1 for large text) on the text these screens draw
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > speaks skippy's placeholder and greeting in the instance's language, en and fr
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > speaks alfred's placeholder and greeting in the instance's language, en and fr
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > speaks nestor's placeholder and greeting in the instance's language, en and fr
+packages/web/test/besoin-charte-browser.test.ts > charter — the settings and entry screens through a browser (B-6, B-7, B-8, B-10) > speaks dobby's placeholder and greeting in the instance's language, en and fr
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-9 settings mosaic > keeps four tiles in the order MCP servers, Instructions, Configuration, Delegations, each with its Lucide icon, the Configuration tile included (Q-21)
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-10 MCP servers > shows each health tone with an icon, and says nothing wired in the shared empty state when none is
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-10 MCP servers > marks a read-only declaration with the lock icon (docs/ecrans.md: delivered / read-only = lock)
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-11 instructions and its name sheet (Q-20) > asks the name of a new skill in a sheet, not a native prompt; Escape closes it and creates nothing
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-11 instructions and its name sheet (Q-20) > closes the name sheet with Enter on an empty name and creates nothing
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-11 instructions and its name sheet (Q-20) > draws the name sheet as the shared 520 px centred panel on a desk
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-11 instructions and its name sheet (Q-20) > marks a delivered file read-only with the lock icon
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-12 catalogue pop-in on the shared sheet > is one dialog over one scrim; Escape closes it and gives the focus back to the Catalogues button
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-12 catalogue pop-in on the shared sheet > closes on a click on the scrim, outside the panel
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-12 catalogue pop-in on the shared sheet > keeps the focus inside the panel however many times Tab is pressed
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-12 catalogue pop-in on the shared sheet > is a centred 520 px panel on a desk
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-12 catalogue pop-in on the shared sheet > is a full-width bottom sheet on a phone
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-13 delegations > gives each state chip an icon and says nothing delegated in the shared empty state when the list is empty
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-14 configuration > shows a spinner row before the form while the settings load (Q-23), then the form
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-14 configuration > carries the tile colour on its not-exposed render, as its siblings do
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-14 configuration > carries the tile colour on its read-error render
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-14 configuration > draws Save as accent, Discard as ghost, and after a save Restart now as danger
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-14 configuration > marks the restart-pending line with the rotate-ccw icon (docs/ecrans.md: restart pending = rotate-ccw)
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-15 cog menu > offers System, Light and Dark as a radiogroup of icon buttons, one checked, and Dark changes the colour scheme
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-15 cog menu > hides Sign out when the instance has no sign-in, and shows it under OIDC
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-15 cog menu > closes on Escape and returns the focus to the cog; a click outside closes it too
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-19 problems band > is absent when nothing is wrong, an icon per kind when something is
+packages/web/test/besoin-charte-comportement.test.ts > charter — behaviour of the shared components on the settings and entry screens > E-1 and E-21 gates > draws the signed-out gate with a lock icon and an accent sign-in control
+packages/web/test/besoin-tours.test.ts > B-21 — the owner sets the simultaneous turns (E-14) > owner saves 5: the restart is announced, the file holds 5, the restarted limiter carries 5
+packages/web/test/besoin-tours.test.ts > B-21 — the owner sets the simultaneous turns (E-14) > owner saves 5 in French: same outcome, French words
+packages/web/test/besoin-tours.test.ts > B-21 — the owner sets the simultaneous turns (E-14) > the two bounds, 1 and 16, are accepted and written
+packages/web/test/besoin-tours.test.ts > B-21 — the owner sets the simultaneous turns (E-14) > 17 is refused in the field, and nothing is written
+packages/web/test/besoin-tours.test.ts > B-21 — the owner sets the simultaneous turns (E-14) > 0 is refused in the field, and nothing is written
+packages/web/test/besoin-tours.test.ts > B-21 — the owner sets the simultaneous turns (E-14) > 17 is refused in French as well, the field showing an error
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > langue en > écran 'E-9' > serveur coupé : le bandeau apparaît en tête du corps du canevas, au-dessus de l'écran ; serveur relancé : il disparaît seul
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > langue en > écran 'E-11' > serveur coupé : le bandeau apparaît en tête du corps du canevas, au-dessus de l'écran ; serveur relancé : il disparaît seul
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > langue fr > écran 'E-9' > serveur coupé : le bandeau apparaît en tête du corps du canevas, au-dessus de l'écran ; serveur relancé : il disparaît seul
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > langue fr > écran 'E-11' > serveur coupé : le bandeau apparaît en tête du corps du canevas, au-dessus de l'écran ; serveur relancé : il disparaît seul
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > habillage skippy, en, light, desk > lisible sur son habillage, sans troncature, avec un fond opaque ; collé sous l'en-tête quand E-14 est défilé jusqu'au bas
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > habillage alfred, fr, dark, phone > lisible sur son habillage, sans troncature, avec un fond opaque ; collé sous l'en-tête quand E-14 est défilé jusqu'au bas
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > habillage nestor, en, dark, desk > lisible sur son habillage, sans troncature, avec un fond opaque ; collé sous l'en-tête quand E-14 est défilé jusqu'au bas
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > habillage dobby, fr, light, phone > lisible sur son habillage, sans troncature, avec un fond opaque ; collé sous l'en-tête quand E-14 est défilé jusqu'au bas
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > téléphone, chat plein écran : le bandeau est au-dessus de l'en-tête du rail, et part quand le serveur répond
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > 320 px en français : le texte n'est pas tronqué, sort de sa place sans la dépasser, au-dessus de « Problèmes »
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > E-14 attend le redémarrage (en) > le bandeau se montre dès qu'une sonde échoue, au-dessus de « Coming back… », et les deux partent quand l'instance répond
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > E-14 attend le redémarrage (fr) > le bandeau se montre dès qu'une sonde échoue, au-dessus de « Retour en cours… », et les deux partent quand l'instance répond
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > un serveur vivant dont on plie les réponses > tous les appels /api/ échouent, la sonde /api/health aussi : le bandeau apparaît ; la sonde repasse : il part seul, sans recharger
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > un serveur vivant dont on plie les réponses > un appel unique qui échoue alors que le serveur répond : aucun bandeau
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > un serveur vivant dont on plie les réponses > une réponse 401 (sign-in) est une réponse du serveur : aucun bandeau
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > un serveur vivant dont on plie les réponses > une réponse 403 (refused) est une réponse du serveur : aucun bandeau
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > un serveur vivant dont on plie les réponses > une réponse 500 (server error) est une réponse du serveur : aucun bandeau
+packages/web/test/besoin-hors-ligne-browser.test.ts > B-19 · le bandeau « le serveur ne répond pas » > un serveur vivant dont on plie les réponses > sous la porte fatale E-1 (premier chargement sans serveur), le bandeau n'est jamais dessiné
+packages/web/test/besoin-hors-ligne-bords.test.ts > B-19 · bords du bandeau « le serveur ne répond pas » > un 502 sur un appel /api/ alors que la sonde échoue : le bandeau apparaît ; la sonde repasse : il part seul
+packages/web/test/besoin-hors-ligne-bords.test.ts > B-19 · bords du bandeau « le serveur ne répond pas » > un 503 sur un appel /api/ alors que la sonde échoue : le bandeau apparaît ; la sonde repasse : il part seul
+packages/web/test/besoin-hors-ligne-bords.test.ts > B-19 · bords du bandeau « le serveur ne répond pas » > un 504 sur un appel /api/ alors que la sonde échoue : le bandeau apparaît ; la sonde repasse : il part seul
+packages/web/test/besoin-hors-ligne-bords.test.ts > B-19 · bords du bandeau « le serveur ne répond pas » > une sonde qui ne répond jamais compte comme un échec : le bandeau apparaît sous 8 s
+packages/web/test/besoin-hors-ligne-flux.test.ts > B-19 · le flux d'événements et le signal « hors ligne » du navigateur > le flux d'événements tombe et la sonde échoue : le bandeau apparaît ; la sonde répond : il part seul
+packages/web/test/besoin-hors-ligne-flux.test.ts > B-19 · le flux d'événements et le signal « hors ligne » du navigateur > le navigateur se dit hors ligne alors que le serveur répond : aucun bandeau
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > nominal : on coupe le serveur, le bandeau vient ; on le relance, il part seul > accueil : apparaît sans recharger, laisse l’écran dessous, repart seul
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > nominal : on coupe le serveur, le bandeau vient ; on le relance, il part seul > réglages MCP (E-10) : apparaît sans recharger, laisse l’écran dessous, repart seul
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > nominal : on coupe le serveur, le bandeau vient ; on le relance, il part seul > il revient à la coupure suivante (pas un bandeau à usage unique)
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > nominal : on coupe le serveur, le bandeau vient ; on le relance, il part seul > en français : « Le serveur ne répond pas »
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > bords : il décale l’écran sans le couvrir, et reste en vue > bureau : le bandeau est au-dessus du contenu, qui reste cliquable
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > bords : il décale l’écran sans le couvrir, et reste en vue > E-14 défilé jusqu’au bas : le bandeau reste à l’écran, collé sous l’en-tête du canevas
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > bords : il décale l’écran sans le couvrir, et reste en vue > téléphone, canevas montré : le bandeau est en tête du corps du canevas
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > bords : il décale l’écran sans le couvrir, et reste en vue > téléphone, chat montré : le bandeau est au-dessus de l’en-tête du chat, une seule fois
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > bords : il décale l’écran sans le couvrir, et reste en vue > 320 px en français : le texte tient dans la largeur, sans coupure
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > chaque habillage, clair et sombre : lisible, fond opaque > alfred light
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > chaque habillage, clair et sombre : lisible, fond opaque > alfred dark
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > chaque habillage, clair et sombre : lisible, fond opaque > dobby light
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > chaque habillage, clair et sombre : lisible, fond opaque > dobby dark
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > chaque habillage, clair et sombre : lisible, fond opaque > nestor light
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > chaque habillage, clair et sombre : lisible, fond opaque > nestor dark
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > chaque habillage, clair et sombre : lisible, fond opaque > skippy light
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > chaque habillage, clair et sombre : lisible, fond opaque > skippy dark
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > échec : « Coming back… » (E-14) > le bandeau se montre dès que la sonde échoue, au-dessus de « Coming back… », et les deux partent quand l’instance répond
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > exclusions : pas de bandeau quand le serveur répond > serveur sain, rien ne se passe : aucun bandeau
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > exclusions : pas de bandeau quand le serveur répond > un appel isolé du shell qui échoue (connexion coupée) alors que le serveur répond : aucun bandeau
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > exclusions : pas de bandeau quand le serveur répond > un appel qui répond 500 : le serveur est là, aucun bandeau
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > exclusions : pas de bandeau quand le serveur répond > l’événement navigateur « offline » seul (VPN tombé côté navigateur, serveur vivant) n’allume rien
+packages/web/test/ensemble-hors-ligne-browser.test.ts > B-19 : le bandeau « serveur ne répond pas », vu de l’extérieur > exclusions : pas de bandeau quand le serveur répond > première charge sans serveur : la porte fatale E-1 reste, aucun bandeau
+packages/web/test/ensemble-acces-refuse-browser.test.ts > un compte hors des groupes autorisés (feature adestia-acces-refuse) > voit une page à la charte qui nomme le compte, sans JSON brut, avec « Se déconnecter »
+packages/web/test/ensemble-acces-refuse-browser.test.ts > un compte hors des groupes autorisés (feature adestia-acces-refuse) > n'obtient aucune session : l'API de l'instance répond 401 et la page ne montre pas le shell
+packages/web/test/ensemble-acces-refuse-browser.test.ts > un compte hors des groupes autorisés (feature adestia-acces-refuse) > sur un téléphone, la page tient dans la largeur et le bouton est entièrement visible
+packages/web/test/ensemble-acces-refuse-browser.test.ts > un compte hors des groupes autorisés (feature adestia-acces-refuse) > en anglais, le bouton s'appelle « Sign out »
+packages/web/test/ensemble-acces-refuse-browser.test.ts > un compte hors des groupes autorisés (feature adestia-acces-refuse) > « Se déconnecter » ferme la session du fournisseur : il redemande le compte au lieu de reconnecter Visiteur, et alice entre normalement
+packages/web/test/ensemble-acces-refuse-browser.test.ts > un compte hors des groupes autorisés (feature adestia-acces-refuse) > après la déconnexion, recharger ne ramène pas la page « refusé » : le cookie de refus est effacé
+packages/web/test/ensemble-acces-refuse-browser.test.ts > un compte hors des groupes autorisés (feature adestia-acces-refuse) > sans end_session_endpoint, le repli amène quand même au choix d'un autre compte, et alice entre
+packages/web/test/ensemble-acces-refuse-browser.test.ts > sans compte refusé > un navigateur neuf voit la porte « Se connecter », pas la page « refusé »
+packages/web/test/ensemble-acces-refuse-browser.test.ts > sans compte refusé > un cookie de refus forgé ne fait afficher aucun nom
+packages/web/test/ensemble-acces-refuse-browser.test.ts > sans compte refusé > un compte autorisé entre sans voir la page « refusé »
+packages/web/test/ensemble-acces-refuse-browser.test.ts > sans compte refusé > la déconnexion d'un compte autorisé (menu des réglages) ferme aussi la session du fournisseur
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · skippy/en/desk/light : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · skippy/en/desk/dark : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · skippy/en/phone/light : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · skippy/en/phone/dark : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · skippy/fr/desk/light : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · skippy/fr/desk/dark : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · skippy/fr/phone/light : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · skippy/fr/phone/dark : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · alfred/en/desk/light : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · alfred/en/desk/dark : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · alfred/en/phone/light : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · alfred/en/phone/dark : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · alfred/fr/desk/light : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · alfred/fr/desk/dark : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · alfred/fr/phone/light : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · alfred/fr/phone/dark : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · nestor/en/desk/light : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · nestor/en/desk/dark : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · nestor/en/phone/light : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · nestor/en/phone/dark : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · nestor/fr/desk/light : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · nestor/fr/desk/dark : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · nestor/fr/phone/light : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · nestor/fr/phone/dark : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · dobby/en/desk/light : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · dobby/en/desk/dark : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · dobby/en/phone/light : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · dobby/en/phone/dark : Remove ouvre « Remove server? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · dobby/fr/desk/light : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · dobby/fr/desk/dark : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · dobby/fr/phone/light : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-20 nominal · dobby/fr/phone/dark : Remove ouvre « Supprimer le serveur ? » nommant le serveur, Annuler et Supprimer, le focus sur Annuler
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-20 : le bouton Annuler garde le serveur : aucun DELETE, brouillon intact, focus rendu à Remove
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-20 : Escape garde le serveur : aucun DELETE, brouillon intact, focus rendu à Remove
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-20 : Entrée sur Annuler (le focus initial) garde le serveur : aucun DELETE, brouillon intact, focus rendu à Remove
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-20 : la croix ✕ garde le serveur : aucun DELETE, brouillon intact, focus rendu à Remove
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-20 : un clic sur le voile garde le serveur : aucun DELETE, brouillon intact, focus rendu à Remove
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-20 : Tab reste dans la feuille, et recharger la page l'annule
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-20 : un nom de 64 lettres se replie dans la feuille sur un téléphone, sans être tronqué ni déborder
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-20 : Supprimer envoie un DELETE, la feuille se ferme aussitôt, le bouton Supprimer de E-10 est grisé en attendant, puis la liste revient sans le serveur et avec les autres
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-20 : un DELETE en erreur 500 : feuille fermée, le message du serveur dans l'alerte de la barre, déclaration gardée, Supprimer redemande, et une seconde confirmation retire
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-20 : un DELETE sans réponse (serveur coupé) : feuille fermée, une alerte non vide dans la barre, serveur gardé
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-20 : un serveur en lecture seule (déclaré dans la configuration) n'a pas de bouton Supprimer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-18 E-10 (base) : liste en attente : le titre reste, la ligne « Loading… » dessous, ni tuiles ni « None wired yet » ni « Add a server » ; la réponse les remplace
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-18 E-10 (empty) : liste en attente : le titre reste, la ligne « Loading… » dessous, ni tuiles ni « None wired yet » ni « Add a server » ; la réponse les remplace
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-18 E-10 : un serveur ouvert attend sa déclaration : ligne de chargement, ni éditeur ni barre d'actions ; la réponse les amène
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-18 E-10 (base) : lecture en erreur 500 : le titre, le message du serveur et Retry, ni tuiles ni « None wired yet » ; Réessayer remet la ligne de chargement, refait une requête, puis la liste
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-18 E-10 (empty) : lecture en erreur 500 : le titre, le message du serveur et Retry, ni tuiles ni « None wired yet » ; Réessayer remet la ligne de chargement, refait une requête, puis la liste
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-18 E-10 : erreur 500 sans phrase du serveur : « request failed (500) » traduit, jamais un « fetch failed » brut
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-18 E-10 : serveur sans réponse : le bloc d'échec avec Réessayer, pas de ligne de chargement ni de liste ; Réessayer ramène la liste quand le serveur répond
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-18 E-10 : la santé (/api/mcp/status) en attente puis en erreur n'a ni ligne de chargement, ni message, ni Réessayer ; les tuiles restent
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-18 E-10 : après Supprimer, la relecture de la liste ne montre jamais de ligne de chargement, et si elle échoue c'est en silence
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue en > B-18 E-10 : un serveur ouvert dont le nom n'est pas dans les déclarations (retiré ailleurs) montre la liste, sans état neuf
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-20 : le bouton Annuler garde le serveur : aucun DELETE, brouillon intact, focus rendu à Supprimer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-20 : Escape garde le serveur : aucun DELETE, brouillon intact, focus rendu à Supprimer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-20 : Entrée sur Annuler (le focus initial) garde le serveur : aucun DELETE, brouillon intact, focus rendu à Supprimer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-20 : la croix ✕ garde le serveur : aucun DELETE, brouillon intact, focus rendu à Supprimer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-20 : un clic sur le voile garde le serveur : aucun DELETE, brouillon intact, focus rendu à Supprimer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-20 : Tab reste dans la feuille, et recharger la page l'annule
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-20 : un nom de 64 lettres se replie dans la feuille sur un téléphone, sans être tronqué ni déborder
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-20 : Supprimer envoie un DELETE, la feuille se ferme aussitôt, le bouton Supprimer de E-10 est grisé en attendant, puis la liste revient sans le serveur et avec les autres
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-20 : un DELETE en erreur 500 : feuille fermée, le message du serveur dans l'alerte de la barre, déclaration gardée, Supprimer redemande, et une seconde confirmation retire
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-20 : un DELETE sans réponse (serveur coupé) : feuille fermée, une alerte non vide dans la barre, serveur gardé
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-20 : un serveur en lecture seule (déclaré dans la configuration) n'a pas de bouton Supprimer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-18 E-10 (base) : liste en attente : le titre reste, la ligne « Chargement… » dessous, ni tuiles ni « Aucun branché » ni « Ajouter un serveur » ; la réponse les remplace
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-18 E-10 (empty) : liste en attente : le titre reste, la ligne « Chargement… » dessous, ni tuiles ni « Aucun branché » ni « Ajouter un serveur » ; la réponse les remplace
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-18 E-10 : un serveur ouvert attend sa déclaration : ligne de chargement, ni éditeur ni barre d'actions ; la réponse les amène
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-18 E-10 (base) : lecture en erreur 500 : le titre, le message du serveur et Réessayer, ni tuiles ni « Aucun branché » ; Réessayer remet la ligne de chargement, refait une requête, puis la liste
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-18 E-10 (empty) : lecture en erreur 500 : le titre, le message du serveur et Réessayer, ni tuiles ni « Aucun branché » ; Réessayer remet la ligne de chargement, refait une requête, puis la liste
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-18 E-10 : erreur 500 sans phrase du serveur : « request failed (500) » traduit, jamais un « fetch failed » brut
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-18 E-10 : serveur sans réponse : le bloc d'échec avec Réessayer, pas de ligne de chargement ni de liste ; Réessayer ramène la liste quand le serveur répond
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-18 E-10 : la santé (/api/mcp/status) en attente puis en erreur n'a ni ligne de chargement, ni message, ni Réessayer ; les tuiles restent
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-18 E-10 : après Supprimer, la relecture de la liste ne montre jamais de ligne de chargement, et si elle échoue c'est en silence
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > langue fr > B-18 E-10 : un serveur ouvert dont le nom n'est pas dans les déclarations (retiré ailleurs) montre la liste, sans état neuf
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · skippy/en/desk : chargement puis échec avec Retry
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · skippy/en/phone : chargement puis échec avec Retry
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · skippy/fr/desk : chargement puis échec avec Réessayer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · skippy/fr/phone : chargement puis échec avec Réessayer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · alfred/en/desk : chargement puis échec avec Retry
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · alfred/en/phone : chargement puis échec avec Retry
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · alfred/fr/desk : chargement puis échec avec Réessayer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · alfred/fr/phone : chargement puis échec avec Réessayer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · nestor/en/desk : chargement puis échec avec Retry
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · nestor/en/phone : chargement puis échec avec Retry
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · nestor/fr/desk : chargement puis échec avec Réessayer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · nestor/fr/phone : chargement puis échec avec Réessayer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · dobby/en/desk : chargement puis échec avec Retry
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · dobby/en/phone : chargement puis échec avec Retry
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · dobby/fr/desk : chargement puis échec avec Réessayer
+packages/web/test/besoin-mcp-browser.test.ts > B-20 et B-18 (E-10) · retirer un serveur MCP avec confirmation, voir son chargement > B-18 E-10 · dobby/fr/phone : chargement puis échec avec Réessayer
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / en > racine_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / en > page_en_dossier_garde_son_dossier
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / en > racine_fil_ariane_accueil_ramene_a_la_racine
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / en > page_absente_a_la_racine_renvoie_a_accueil
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / en > page_absente_en_dossier_renvoie_au_dossier_au_dessus
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / en > diagnostic_de_page_dans_la_langue_de_linstance
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / en > reglages_de_bloc_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / en > reglages_de_bloc_suivent_leur_ancre_sous_lentete
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / en > sections_crlf_lisent_les_memes_champs_que_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / en > section_crlf_filtre_par_facette
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / en > collection_crlf_groupe_comme_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / en > planif_lit_les_champs_dune_note_crlf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / fr > racine_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / fr > page_en_dossier_garde_son_dossier
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / fr > racine_fil_ariane_accueil_ramene_a_la_racine
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / fr > page_absente_a_la_racine_renvoie_a_accueil
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / fr > page_absente_en_dossier_renvoie_au_dossier_au_dessus
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / fr > diagnostic_de_page_dans_la_langue_de_linstance
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / fr > reglages_de_bloc_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / fr > reglages_de_bloc_suivent_leur_ancre_sous_lentete
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / fr > sections_crlf_lisent_les_memes_champs_que_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / fr > section_crlf_filtre_par_facette
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / fr > collection_crlf_groupe_comme_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > skippy / fr > planif_lit_les_champs_dune_note_crlf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / en > racine_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / en > page_en_dossier_garde_son_dossier
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / en > racine_fil_ariane_accueil_ramene_a_la_racine
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / en > page_absente_a_la_racine_renvoie_a_accueil
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / en > page_absente_en_dossier_renvoie_au_dossier_au_dessus
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / en > diagnostic_de_page_dans_la_langue_de_linstance
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / en > reglages_de_bloc_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / en > reglages_de_bloc_suivent_leur_ancre_sous_lentete
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / en > sections_crlf_lisent_les_memes_champs_que_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / en > section_crlf_filtre_par_facette
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / en > collection_crlf_groupe_comme_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / en > planif_lit_les_champs_dune_note_crlf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / fr > racine_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / fr > page_en_dossier_garde_son_dossier
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / fr > racine_fil_ariane_accueil_ramene_a_la_racine
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / fr > page_absente_a_la_racine_renvoie_a_accueil
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / fr > page_absente_en_dossier_renvoie_au_dossier_au_dessus
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / fr > diagnostic_de_page_dans_la_langue_de_linstance
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / fr > reglages_de_bloc_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / fr > reglages_de_bloc_suivent_leur_ancre_sous_lentete
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / fr > sections_crlf_lisent_les_memes_champs_que_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / fr > section_crlf_filtre_par_facette
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / fr > collection_crlf_groupe_comme_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > alfred / fr > planif_lit_les_champs_dune_note_crlf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / en > racine_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / en > page_en_dossier_garde_son_dossier
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / en > racine_fil_ariane_accueil_ramene_a_la_racine
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / en > page_absente_a_la_racine_renvoie_a_accueil
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / en > page_absente_en_dossier_renvoie_au_dossier_au_dessus
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / en > diagnostic_de_page_dans_la_langue_de_linstance
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / en > reglages_de_bloc_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / en > reglages_de_bloc_suivent_leur_ancre_sous_lentete
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / en > sections_crlf_lisent_les_memes_champs_que_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / en > section_crlf_filtre_par_facette
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / en > collection_crlf_groupe_comme_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / en > planif_lit_les_champs_dune_note_crlf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / fr > racine_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / fr > page_en_dossier_garde_son_dossier
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / fr > racine_fil_ariane_accueil_ramene_a_la_racine
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / fr > page_absente_a_la_racine_renvoie_a_accueil
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / fr > page_absente_en_dossier_renvoie_au_dossier_au_dessus
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / fr > diagnostic_de_page_dans_la_langue_de_linstance
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / fr > reglages_de_bloc_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / fr > reglages_de_bloc_suivent_leur_ancre_sous_lentete
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / fr > sections_crlf_lisent_les_memes_champs_que_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / fr > section_crlf_filtre_par_facette
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / fr > collection_crlf_groupe_comme_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > nestor / fr > planif_lit_les_champs_dune_note_crlf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / en > racine_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / en > page_en_dossier_garde_son_dossier
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / en > racine_fil_ariane_accueil_ramene_a_la_racine
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / en > page_absente_a_la_racine_renvoie_a_accueil
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / en > page_absente_en_dossier_renvoie_au_dossier_au_dessus
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / en > diagnostic_de_page_dans_la_langue_de_linstance
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / en > reglages_de_bloc_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / en > reglages_de_bloc_suivent_leur_ancre_sous_lentete
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / en > sections_crlf_lisent_les_memes_champs_que_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / en > section_crlf_filtre_par_facette
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / en > collection_crlf_groupe_comme_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / en > planif_lit_les_champs_dune_note_crlf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / fr > racine_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / fr > page_en_dossier_garde_son_dossier
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / fr > racine_fil_ariane_accueil_ramene_a_la_racine
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / fr > page_absente_a_la_racine_renvoie_a_accueil
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / fr > page_absente_en_dossier_renvoie_au_dossier_au_dessus
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / fr > diagnostic_de_page_dans_la_langue_de_linstance
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / fr > reglages_de_bloc_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / fr > reglages_de_bloc_suivent_leur_ancre_sous_lentete
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / fr > sections_crlf_lisent_les_memes_champs_que_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / fr > section_crlf_filtre_par_facette
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / fr > collection_crlf_groupe_comme_lf
+packages/web/test/besoin-pages-browser.test.ts > pages tranche, from the need > dobby / fr > planif_lit_les_champs_dune_note_crlf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / en > page_profonde_fil_ariane_nomme_ses_deux_dossiers
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / en > racine_en_edition_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / en > lecture_seule_dit_quun_bloc_a_besoin_de_contenu_dans_la_langue
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / en > sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / en > reglages_de_bloc_en_haut_de_page_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / en > editeur_montre_les_champs_dune_page_crlf_comme_ceux_de_sa_jumelle_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / en > planif_lit_at_enabled_et_until_dune_note_crlf_comme_ceux_dune_note_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / fr > page_profonde_fil_ariane_nomme_ses_deux_dossiers
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / fr > racine_en_edition_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / fr > lecture_seule_dit_quun_bloc_a_besoin_de_contenu_dans_la_langue
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / fr > sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / fr > reglages_de_bloc_en_haut_de_page_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / fr > editeur_montre_les_champs_dune_page_crlf_comme_ceux_de_sa_jumelle_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > skippy / fr > planif_lit_at_enabled_et_until_dune_note_crlf_comme_ceux_dune_note_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / en > page_profonde_fil_ariane_nomme_ses_deux_dossiers
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / en > racine_en_edition_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / en > lecture_seule_dit_quun_bloc_a_besoin_de_contenu_dans_la_langue
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / en > sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / en > reglages_de_bloc_en_haut_de_page_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / en > editeur_montre_les_champs_dune_page_crlf_comme_ceux_de_sa_jumelle_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / en > planif_lit_at_enabled_et_until_dune_note_crlf_comme_ceux_dune_note_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / fr > page_profonde_fil_ariane_nomme_ses_deux_dossiers
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / fr > racine_en_edition_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / fr > lecture_seule_dit_quun_bloc_a_besoin_de_contenu_dans_la_langue
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / fr > sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / fr > reglages_de_bloc_en_haut_de_page_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / fr > editeur_montre_les_champs_dune_page_crlf_comme_ceux_de_sa_jumelle_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > alfred / fr > planif_lit_at_enabled_et_until_dune_note_crlf_comme_ceux_dune_note_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / en > page_profonde_fil_ariane_nomme_ses_deux_dossiers
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / en > racine_en_edition_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / en > lecture_seule_dit_quun_bloc_a_besoin_de_contenu_dans_la_langue
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / en > sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / en > reglages_de_bloc_en_haut_de_page_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / en > editeur_montre_les_champs_dune_page_crlf_comme_ceux_de_sa_jumelle_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / en > planif_lit_at_enabled_et_until_dune_note_crlf_comme_ceux_dune_note_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / fr > page_profonde_fil_ariane_nomme_ses_deux_dossiers
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / fr > racine_en_edition_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / fr > lecture_seule_dit_quun_bloc_a_besoin_de_contenu_dans_la_langue
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / fr > sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / fr > reglages_de_bloc_en_haut_de_page_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / fr > editeur_montre_les_champs_dune_page_crlf_comme_ceux_de_sa_jumelle_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > nestor / fr > planif_lit_at_enabled_et_until_dune_note_crlf_comme_ceux_dune_note_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / en > page_profonde_fil_ariane_nomme_ses_deux_dossiers
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / en > racine_en_edition_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / en > lecture_seule_dit_quun_bloc_a_besoin_de_contenu_dans_la_langue
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / en > sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / en > reglages_de_bloc_en_haut_de_page_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / en > editeur_montre_les_champs_dune_page_crlf_comme_ceux_de_sa_jumelle_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / en > planif_lit_at_enabled_et_until_dune_note_crlf_comme_ceux_dune_note_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / fr > page_profonde_fil_ariane_nomme_ses_deux_dossiers
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / fr > racine_en_edition_fil_ariane_sans_dossier_invente
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / fr > lecture_seule_dit_quun_bloc_a_besoin_de_contenu_dans_la_langue
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / fr > sauvegarde_refusee_dit_le_diagnostic_dans_la_langue_et_garde_lediteur
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / fr > reglages_de_bloc_en_haut_de_page_ne_recouvrent_ni_entete_ni_bandeaux
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / fr > editeur_montre_les_champs_dune_page_crlf_comme_ceux_de_sa_jumelle_lf
+packages/web/test/besoin-pages-ensemble-browser.test.ts > pages tranche, second pass from the need > dobby / fr > planif_lit_at_enabled_et_until_dune_note_crlf_comme_ceux_dune_note_lf
+bench/tests/chat-besoin.test.mjs > a finished turn, a tool trace, an error and a question all show in full
+bench/tests/chat-besoin.test.mjs > the tool trace opens on its toggle and names the two tools it ran
+bench/tests/chat-besoin.test.mjs > E-17: the question offers the three answers as drawn buttons, only « always » in accent, with the alert icon
+bench/tests/chat-besoin.test.mjs > E-17: while the question waits, a typed message cannot be sent
+bench/tests/chat-besoin.test.mjs > no Unicode glyph or emoji stands for an icon in the rail, the question, the cards or the sheet
+bench/tests/chat-besoin.test.mjs > every icon-only control of the rail has an accessible name and a tooltip
+bench/tests/chat-besoin.test.mjs > the rail speaks one language: no word of the other one in text, labels, tooltips or alt
+bench/tests/chat-besoin.test.mjs > the new-conversation control and the three answers speak the instance language
+bench/tests/chat-besoin.test.mjs > every close control of the rail and of the sheet is the same x icon
+bench/tests/chat-besoin.test.mjs > the tab archive control carries the archive icon, the tab close control the x
+bench/tests/chat-besoin.test.mjs > at 360 px the rail stays inside the screen with every control at least 24 px, in both themes
+bench/tests/chat-besoin.test.mjs > the header carries the skin's own name
+bench/tests/chat-besoin.test.mjs > the question, the trace and the bubbles are legible in both themes (4.5:1)
+bench/tests/chat-besoin.test.mjs > P-3: a thread of signatures shows pending, signed, denied, expired and standing cards with icon and words
+bench/tests/chat-besoin.test.mjs > P-3: the pending card says « until » in the instance language and a grant says it is a standing authorisation
+bench/tests/chat-besoin.test.mjs > the signature cards speak one language in both themes and both sizes
+bench/tests/chat-besoin.test.mjs > the signature cards and the Sign button are legible in both themes (4.5:1)
+bench/tests/chat-besoin.test.mjs > E-18: Sign opens the sheet (origin with lock, Open in a tab, one close x), Escape closes it and returns the focus to Sign
+bench/tests/chat-besoin.test.mjs > E-18: the close control closes the sheet; on a phone it is a bottom sheet
+bench/tests/chat-besoin.test.mjs > E-17: answering « Refuse » closes the question and frees the composer
+bench/tests/chat-besoin.test.mjs > an archived conversation leaves the list
+bench/tests/chat-besoin.test.mjs > E-16: with no conversation the list says so, in the instance language, through the shared empty state
+bench/tests/chat-besoin.test.mjs > E-13: an opened delegation shows its words and its tool trace, and no signature card
+bench/tests/chat-besoin.test.mjs > no token is used in chat.css, conversations.css or attachments.css without being defined
+bench/tests/chat-besoin.test.mjs > no colour is written outside a var() fallback in the three sheets
+bench/tests/chat-besoin.test.mjs > no font size or radius is written as a literal in the three sheets
+bench/tests/chat-besoin.test.mjs > no chat source calls fetchImpl( directly
+bench/tests/chat-besoin.test.mjs > toMessage is defined once in packages/web/src
+bench/tests/chat-besoin.test.mjs > Chat, useConversations and Composer hold no function longer than 250 lines
+bench/tests/chat-besoin.test.mjs > a real Claude turn
+bench/tests/chat-chargements-besoin.test.mjs > B-18 nominal: while the list has not answered it shows Loading, never the empty sentence, and the rows come after
+bench/tests/chat-chargements-besoin.test.mjs > B-18 failure: a 500 on the list says the server's error with Retry; Retry shows Loading alone, then the rows
+bench/tests/chat-chargements-besoin.test.mjs > B-18 failure bords: without a server message the locale sentence with the status; a Retry that fails again brings the failure back; one press, one fetch
+bench/tests/chat-chargements-besoin.test.mjs > B-18 bords: a list that answered empty shows the empty sentence and neither Loading nor Retry
+bench/tests/chat-chargements-besoin.test.mjs > B-18 exclusion: a 403 on the list draws no Failure and no Retry in the chat
+bench/tests/chat-chargements-besoin.test.mjs > B-18 nominal thread: opening a stored conversation shows Loading in the thread, not the welcome nor bubbles, then the messages
+bench/tests/chat-chargements-besoin.test.mjs > B-18 thread failure: a 500 on the thread says it with Retry and leaves the composer unable to send; Retry reads again and frees it
+bench/tests/chat-chargements-besoin.test.mjs > B-18 thread failure bords: the locale sentence without a server message; a 403 draws no Retry
+bench/tests/chat-chargements-besoin.test.mjs > B-22 nominal: each message carrying the mark gets one note line directly above it, with the locale text, and nothing else does
+bench/tests/chat-chargements-besoin.test.mjs > B-22 bords: a reload draws the same lines; a conversation with no mark draws none
+bench/tests/chat-chargements-besoin.test.mjs > B-22 exclusion: a plain turn in an unmarked conversation draws no line, live or after the thread is read again
+bench/tests/chat-chargements-besoin.test.mjs > B-22 extreme content: on a phone the line wraps and its text is never cut, the page does not scroll sideways
+bench/tests/chat-correctifs-besoin.test.mjs > desk light: the limit is said in en under the refused message, readable
+bench/tests/chat-correctifs-besoin.test.mjs > desk dark: the limit is said in en under the refused message, readable
+bench/tests/chat-correctifs-besoin.test.mjs > phone light: the limit is said in en under the refused message, readable
+bench/tests/chat-correctifs-besoin.test.mjs > phone dark: the limit is said in en under the refused message, readable
+bench/tests/chat-correctifs-besoin.test.mjs > desk light: the limit is said in fr under the refused message, readable
+bench/tests/chat-correctifs-besoin.test.mjs > desk dark: the limit is said in fr under the refused message, readable
+bench/tests/chat-correctifs-besoin.test.mjs > phone light: the limit is said in fr under the refused message, readable
+bench/tests/chat-correctifs-besoin.test.mjs > phone dark: the limit is said in fr under the refused message, readable
+bench/tests/chat-correctifs-besoin.test.mjs > it survives the reread, and a second send at once is refused the same way, one line, both messages kept
+bench/tests/chat-correctifs-besoin.test.mjs > it goes when another conversation opens, and at the next send that is accepted
+bench/tests/chat-correctifs-besoin.test.mjs > another HTTP refusal keeps the server's own text, and says nothing about the turn limit
+bench/tests/chat-correctifs-besoin.test.mjs > no answer from the server leaves an error line under the sent message and keeps the message
+bench/tests/chat-correctifs-besoin.test.mjs > with maxConcurrentTurns 2 the line says 2
+bench/tests/chat-correctifs-besoin.test.mjs > while its turn runs, the sent bubble names the file with a paperclip icon and carries no 📎 character
+bench/tests/chat-correctifs-besoin.test.mjs > a 500 with a JSON body and no message: the tray says it in en, with no English or browser wording left
+bench/tests/chat-correctifs-besoin.test.mjs > a 500 with an empty body: the tray says it in en, with no English or browser wording left
+bench/tests/chat-correctifs-besoin.test.mjs > a 500 with a JSON body and no message: the tray says it in fr, with no English or browser wording left
+bench/tests/chat-correctifs-besoin.test.mjs > a 500 with an empty body: the tray says it in fr, with no English or browser wording left
+bench/tests/chat-correctifs-besoin.test.mjs > the transcript opens, its text is there, and no signature card nor Sign button is drawn
+bench/tests/chat-correctifs-besoin.test.mjs > control: the chat of the instance's own user still draws its signature cards
+bench/tests/chat-correctifs-besoin.test.mjs > the home's ask bar puts the cursor in the chat field and keeps the draft
+bench/tests/chat-correctifs-besoin.test.mjs > adestia-composer--busy is either absent from the sources or has a style rule
+bench/tests/chat-correctifs-besoin.test.mjs > adestia-sheet__close is either absent from the sources or has a style rule
+bench/tests/chat-correctifs-besoin.test.mjs > adestia-sheet__origin is either absent from the sources or has a style rule
+bench/tests/chat-correctifs-besoin.test.mjs > the unreleased section names the race of the chat, the refused turn and the sent attachment
+bench/tests/chat-correctifs-course.test.mjs > with the first POST still pending, the second message shows held and is not posted as a turn
+bench/tests/chat-p2-besoin.test.mjs > the measuring tool refuses a 300-line function (control)
+bench/tests/chat-p2-besoin.test.mjs > Chat, useConversations and Composer hold no function over 250 lines
+bench/tests/chat-p2-besoin.test.mjs > the first message of a draft creates the conversation, then posts the turn
+bench/tests/chat-p2-besoin.test.mjs > while a turn runs Stop replaces Send, a second message is held, and after Stop it is sent
+bench/tests/chat-p2-besoin.test.mjs > the model picked in the header is kept in this browser as adestia.model
+bench/tests/chat-p2-besoin.test.mjs > the context pill shows 150k after a turn that weighs 150k tokens
+bench/tests/chat-p2-besoin.test.mjs > a reply that ends while another draft is open leaves an Unread dot on its tab
+bench/tests/chat-p2-gestes-besoin.test.mjs > step 7: a picked file shows in the tray by name and its remove control takes it away
+bench/tests/chat-p2-gestes-besoin.test.mjs > step 7: two files make two chips, and sending empties the tray
+bench/tests/chat-p2-gestes-besoin.test.mjs > step 7: a refused upload says so in the tray and attaches nothing
+bench/tests/chat-p2-gestes-besoin.test.mjs > step 9: closing a tab keeps the conversation in the list, and plus opens a new draft
+bench/tests/chat-p2-gestes-besoin.test.mjs > step 9: dragging a tab before another reorders them and the order is remembered
+bench/tests/chat-p2-gestes-besoin.test.mjs > the refused turn answers 429, says why under its message, and the composer is free again
+bench/tests/chat-p2-gestes-besoin.test.mjs > there is no tab strip, and the list icon opens the conversations and a pick opens one
+bench/tests/chat-session-perdue-besoin.test.mjs > B-22 real Claude, sessions gone: the next turn succeeds on the same conversation and the line sits above its reply
+bench/tests/chat-session-perdue-besoin.test.mjs > B-22 real Claude, sessions kept: a plain restart draws no line
+bench/tests/diagnostics-phone-besoin.test.mjs > E-4 · a diagnostic reads « line N » on one row, with its message beside it
+bench/tests/diagnostics-phone-besoin.test.mjs > E-4 · bord: a three-digit line number stays on one row too
+bench/tests/pages-besoin.test.mjs > B-8 · home: no word of the other language on a en instance
+bench/tests/pages-besoin.test.mjs > B-7 · home: no browser-native control and no glyph used as an icon
+bench/tests/pages-besoin.test.mjs > B-8 · section: no word of the other language on a en instance
+bench/tests/pages-besoin.test.mjs > B-7 · section: no browser-native control and no glyph used as an icon
+bench/tests/pages-besoin.test.mjs > B-8 · reader: no word of the other language on a en instance
+bench/tests/pages-besoin.test.mjs > B-7 · reader: no browser-native control and no glyph used as an icon
+bench/tests/pages-besoin.test.mjs > B-8 · readonly: no word of the other language on a en instance
+bench/tests/pages-besoin.test.mjs > B-7 · readonly: no browser-native control and no glyph used as an icon
+bench/tests/pages-besoin.test.mjs > B-8 · collection: no word of the other language on a en instance
+bench/tests/pages-besoin.test.mjs > B-7 · collection: no browser-native control and no glyph used as an icon
+bench/tests/pages-besoin.test.mjs > B-8 · missing: no word of the other language on a en instance
+bench/tests/pages-besoin.test.mjs > B-7 · missing: no browser-native control and no glyph used as an icon
+bench/tests/pages-besoin.test.mjs > B-8 · inactive: no word of the other language on a en instance
+bench/tests/pages-besoin.test.mjs > B-7 · inactive: no browser-native control and no glyph used as an icon
+bench/tests/pages-besoin.test.mjs > B-8 · editor: no word of the other language on a en instance
+bench/tests/pages-besoin.test.mjs > B-7 · editor: no browser-native control and no glyph used as an icon
+bench/tests/pages-besoin.test.mjs > B-8 · properties: no word of the other language on a en instance
+bench/tests/pages-besoin.test.mjs > B-7 · properties: no browser-native control and no glyph used as an icon
+bench/tests/pages-besoin.test.mjs > B-8 · blocksettings: no word of the other language on a en instance
+bench/tests/pages-besoin.test.mjs > B-7 · blocksettings: no browser-native control and no glyph used as an icon
+bench/tests/pages-besoin.test.mjs > B-8 · slash: no word of the other language on a en instance
+bench/tests/pages-besoin.test.mjs > B-7 · slash: no browser-native control and no glyph used as an icon
+bench/tests/pages-besoin.test.mjs > B-7 · home: a tile without an authored icon shows a sprite icon, not a character
+bench/tests/pages-besoin.test.mjs > B-7 · home: every control reached by Tab shows a focus indicator
+bench/tests/pages-besoin.test.mjs > B-7 · section: every control reached by Tab shows a focus indicator
+bench/tests/pages-besoin.test.mjs > B-7 · collection: every control reached by Tab shows a focus indicator
+bench/tests/pages-besoin.test.mjs > P-4 · home: Ctrl K and Meta K and a click on the ask bar put the cursor in the composer
+bench/tests/pages-besoin.test.mjs > P-4 · home: the brief shows its four entries under its heading, and an entry opens its target
+bench/tests/pages-besoin.test.mjs > P-4 · home: the refresh control asks the agent for a fresh brief in the instance language
+bench/tests/pages-besoin.test.mjs > Q-23 · home: while the first index request is pending, a status row says Loading and the greeting stays
+bench/tests/pages-besoin.test.mjs > Q-23 · home: when the index request fails the loading ends and the Settings tile is drawn
+bench/tests/pages-besoin.test.mjs > P-4 · home: Arrange switches the mosaic to arranging and the same control ends it
+bench/tests/pages-besoin.test.mjs > P-11 · an address whose app is not active falls through to Home
+bench/tests/pages-besoin.test.mjs > P-4 · section: exactly five pages show no search field; facet chips filter by state and toggle back
+bench/tests/pages-besoin.test.mjs > P-4 · section: past five pages a search field appears; a miss shows the shared empty state
+bench/tests/pages-besoin.test.mjs > P-4 · section: finished pages are folded, closed, under a summary
+bench/tests/pages-besoin.test.mjs > P-4 · the breadcrumb walks back up and Home leads to the landing canvas
+bench/tests/pages-besoin.test.mjs > P-5 · reader: typed blocks are drawn with their titles and content, and a wikilink opens its page
+bench/tests/pages-besoin.test.mjs > P-5 · reader: a lost wikilink is not a link
+bench/tests/pages-besoin.test.mjs > P-5 · reader: a block that asks for an absent plugin says so in an inline note with the shared form
+bench/tests/pages-besoin.test.mjs > P-5 · reader: a page the vocabulary refuses opens read-only with a lock, its raw source and its diagnostics
+bench/tests/pages-besoin.test.mjs > P-5 · reader: the attachments strip lists files the body does not show
+bench/tests/pages-besoin.test.mjs > P-5 · reader: when the agent writes the page the open text is refreshed in place, without a reload
+bench/tests/pages-besoin.test.mjs > P-5 · missing page: a 404 names the path, uses file-question, and the link leads to the folder above
+bench/tests/pages-besoin.test.mjs > P-5 · missing page: a 403 (out of reach) shows lock and does not say the page does not exist
+bench/tests/pages-besoin.test.mjs > P-5 · missing page: a 401 (session) shows lock and does not say the page does not exist
+bench/tests/pages-besoin.test.mjs > P-5 · missing page: a 500 (server error) shows circle-alert and does not say the page does not exist
+bench/tests/pages-besoin.test.mjs > P-5 · missing page: the three failures say three different things
+bench/tests/pages-besoin.test.mjs > P-11 · inactive app: the shared empty state with a plug icon says the app is not active, and Home leads home
+bench/tests/pages-besoin.test.mjs > P-5 · collection: members are grouped in facet cards with count chips; the page counts them
+bench/tests/pages-besoin.test.mjs > P-5 · collection: the ask button (plus icon) sends the agent a request; absent when the collection has no into:
+bench/tests/pages-besoin.test.mjs > P-5 · collection: a facet whose members are all finished shows the shared empty state with a check
+bench/tests/pages-besoin.test.mjs > P-6 · editor: typing saves by itself after a pause, to the file, and Done returns to reading
+bench/tests/pages-besoin.test.mjs > P-6 · editor: when the agent wrote the file meanwhile, a warning says so, the editor keeps the text and nothing more is saved
+bench/tests/pages-besoin.test.mjs > P-6 · editor: the slash menu offers the blocks that have a body, and not app
+bench/tests/pages-besoin.test.mjs > P-6 · page properties: a popover over the frontmatter; Escape closes it and returns focus to its settings control
+bench/tests/pages-besoin.test.mjs > P-6 · page properties: editing the title rewrites the frontmatter and keeps the lines it does not know
+bench/tests/pages-besoin.test.mjs > P-6 · block settings: Escape closes the popover and focus returns to the block's settings control; the form edits the block
+bench/tests/pages-besoin.test.mjs > P-6 · E-5 and E-6 on a 360 px phone stay inside the viewport with 8 px margins
+bench/tests/pages-besoin.test.mjs > P-4 · on a phone the canvas header returns to the conversation
+bench/tests/pages-besoin.test.mjs > P-4 · on a desk the canvas header has no Chat return
+bench/tests/pages-besoin.test.mjs > B-8 · home: no word of the other language on a fr instance
+bench/tests/pages-besoin.test.mjs > B-8 · section: no word of the other language on a fr instance
+bench/tests/pages-besoin.test.mjs > B-8 · reader: no word of the other language on a fr instance
+bench/tests/pages-besoin.test.mjs > B-8 · readonly: no word of the other language on a fr instance
+bench/tests/pages-besoin.test.mjs > B-8 · collection: no word of the other language on a fr instance
+bench/tests/pages-besoin.test.mjs > B-8 · missing: no word of the other language on a fr instance
+bench/tests/pages-besoin.test.mjs > B-8 · inactive: no word of the other language on a fr instance
+bench/tests/pages-besoin.test.mjs > B-8 · editor: no word of the other language on a fr instance
+bench/tests/pages-besoin.test.mjs > B-8 · properties: no word of the other language on a fr instance
+bench/tests/pages-besoin.test.mjs > B-8 · blocksettings: no word of the other language on a fr instance
+bench/tests/pages-besoin.test.mjs > B-8 · slash: no word of the other language on a fr instance
+bench/tests/pages-besoin.test.mjs > Q-23 · home: nothing held, loading has ended: the Settings tile and the shared empty state with a folder-open icon show
+bench/tests/pages-besoin.test.mjs > B-9 · the back above a plugin says Home with a chevron, and goes to the landing canvas
+bench/tests/pages-besoin.test.mjs > B-9 · opening a task keeps the shell back (Home) beside the plugin's own back, which names where it leads
+bench/tests/pages-besoin.test.mjs > reader.css: no colour outside a var() fallback
+bench/tests/pages-besoin.test.mjs > reader.css: no literal font size
+bench/tests/pages-besoin.test.mjs > reader.css: no literal radius
+bench/tests/pages-besoin.test.mjs > reader.css: no outline: none without a replacement ring in the same rule
+bench/tests/pages-besoin.test.mjs > editor.css: no colour outside a var() fallback
+bench/tests/pages-besoin.test.mjs > editor.css: no literal font size
+bench/tests/pages-besoin.test.mjs > editor.css: no literal radius
+bench/tests/pages-besoin.test.mjs > editor.css: no outline: none without a replacement ring in the same rule
+bench/tests/pages-besoin.test.mjs > home.css: no colour outside a var() fallback
+bench/tests/pages-besoin.test.mjs > home.css: no literal font size
+bench/tests/pages-besoin.test.mjs > home.css: no literal radius
+bench/tests/pages-besoin.test.mjs > home.css: no outline: none without a replacement ring in the same rule
+bench/tests/pages-besoin.test.mjs > mobile.css: no colour outside a var() fallback
+bench/tests/pages-besoin.test.mjs > mobile.css: no literal font size
+bench/tests/pages-besoin.test.mjs > mobile.css: no literal radius
+bench/tests/pages-besoin.test.mjs > mobile.css: no outline: none without a replacement ring in the same rule
+bench/tests/pages-besoin.test.mjs > missing-page.css: no colour outside a var() fallback
+bench/tests/pages-besoin.test.mjs > missing-page.css: no literal font size
+bench/tests/pages-besoin.test.mjs > missing-page.css: no literal radius
+bench/tests/pages-besoin.test.mjs > missing-page.css: no outline: none without a replacement ring in the same rule
+bench/tests/pages-besoin.test.mjs > prettify and folderOf are defined once in packages/web/src
+bench/tests/pages-besoin.test.mjs > no fetchImpl( call in the pages files outside the shared request helper
+bench/tests/pages-besoin.test.mjs > Reader.tsx, Editor.tsx, App.tsx and Home.tsx hold no function longer than 250 lines
+bench/tests/pages-verify.test.mjs > P-4 · home shows &quot;Loading…&quot; in a status row and keeps the greeting while the index is pending, then the content
+bench/tests/pages-verify.test.mjs > P-4 · home leaves the loading state when the index request fails, and still draws a Settings tile
+bench/tests/pages-verify.test.mjs > P-4 · Ctrl+K puts the cursor in the composer; the ask bar says Ctrl K off Apple platforms
+bench/tests/pages-verify.test.mjs > P-4 · the ask bar labels its shortcut ⌘K on a Mac and Meta+K focuses the composer
+bench/tests/pages-verify.test.mjs > P-4 · the brief is headed &quot;Highlights&quot;, shows at most four entries, and its refresh sends &quot;Refresh my highlights&quot;
+bench/tests/pages-verify.test.mjs > P-4 · Domains leaves the home/ folder out and always ends with the Settings tile
+bench/tests/pages-verify.test.mjs > P-4 · Arrange then Done keep the tiles and leave arranging mode
+bench/tests/pages-verify.test.mjs > P-4 · a section of five pages has no search field, a sixth page makes it appear, and a miss shows an empty state
+bench/tests/pages-verify.test.mjs > P-5 · a page answered 404 shows the missing-page state, names its path, uses file-question and links to the folder above
+bench/tests/pages-verify.test.mjs > P-5 · a page answered 403 shows the missing-page state, names its path, uses lock and links to the folder above
+bench/tests/pages-verify.test.mjs > P-5 · a page answered 401 shows the missing-page state, names its path, uses lock and links to the folder above
+bench/tests/pages-verify.test.mjs > P-5 · a page answered 500 shows the missing-page state, names its path, uses circle-alert and links to the folder above
+bench/tests/pages-verify.test.mjs > P-11 · an app without a view says it is not active, offers Home, and Home leads to the landing canvas
+bench/tests/pages-verify.test.mjs > P-11 · a route no plugin owns falls through to the landing canvas
+bench/tests/pages-verify.test.mjs > P-6 · typing saves after a pause, the status goes Saving… then Saved, and the file holds the text
+bench/tests/pages-verify.test.mjs > P-6 · when the agent wrote the file meanwhile, the editor stays open, says &quot;The agent changed this page. Reload to see its version.&quot; and the user's text is not saved
+bench/tests/pages-verify.test.mjs > P-6 · Escape and an outside click close page properties and block settings, and focus returns to the settings control
+bench/tests/pages-verify.test.mjs > P-6 · Done returns to the reading mode of the same page
+bench/tests/pages-verify.test.mjs > P-4 · home shows &quot;Chargement…&quot; in a status row and keeps the greeting while the index is pending, then the content
+bench/tests/pages-verify.test.mjs > P-4 · the brief is headed &quot;À la une&quot;, shows at most four entries, and its refresh sends &quot;Rafraîchis ma une&quot;
+bench/tests/pages-verify.test.mjs > P-6 · when the agent wrote the file meanwhile, the editor stays open, says &quot;(fr)&quot; and the user's text is not saved
+bench/tests/pages-verify.test.mjs > B-8 · home: the chrome speaks en only
+bench/tests/pages-verify.test.mjs > B-7 · home: no browser-grey control and no typographic glyph standing for an icon
+bench/tests/pages-verify.test.mjs > B-8 · section: the chrome speaks en only
+bench/tests/pages-verify.test.mjs > B-7 · section: no browser-grey control and no typographic glyph standing for an icon
+bench/tests/pages-verify.test.mjs > B-8 · reader: the chrome speaks en only
+bench/tests/pages-verify.test.mjs > B-7 · reader: no browser-grey control and no typographic glyph standing for an icon
+bench/tests/pages-verify.test.mjs > B-8 · collection: the chrome speaks en only
+bench/tests/pages-verify.test.mjs > B-7 · collection: no browser-grey control and no typographic glyph standing for an icon
+bench/tests/pages-verify.test.mjs > B-8 · missing: the chrome speaks en only
+bench/tests/pages-verify.test.mjs > B-7 · missing: no browser-grey control and no typographic glyph standing for an icon
+bench/tests/pages-verify.test.mjs > B-8 · inactive: the chrome speaks en only
+bench/tests/pages-verify.test.mjs > B-7 · inactive: no browser-grey control and no typographic glyph standing for an icon
+bench/tests/pages-verify.test.mjs > B-8 · editor: the chrome speaks en only
+bench/tests/pages-verify.test.mjs > B-7 · editor: no browser-grey control and no typographic glyph standing for an icon
+bench/tests/pages-verify.test.mjs > B-7 · keyboard focus is visible on every control Tab reaches in the home, a section and the reader
+bench/tests/pages-verify.test.mjs > B-8 · home: the chrome speaks fr only
+bench/tests/pages-verify.test.mjs > B-8 · section: the chrome speaks fr only
+bench/tests/pages-verify.test.mjs > B-8 · reader: the chrome speaks fr only
+bench/tests/pages-verify.test.mjs > B-8 · collection: the chrome speaks fr only
+bench/tests/pages-verify.test.mjs > B-8 · missing: the chrome speaks fr only
+bench/tests/pages-verify.test.mjs > B-8 · inactive: the chrome speaks fr only
+bench/tests/pages-verify.test.mjs > B-8 · editor: the chrome speaks fr only
+bench/tests/pages-verify.test.mjs > B-10 · home does not scroll sideways at 360 px
+bench/tests/pages-verify.test.mjs > B-10 · section does not scroll sideways at 360 px
+bench/tests/pages-verify.test.mjs > B-10 · reader does not scroll sideways at 360 px
+bench/tests/pages-verify.test.mjs > B-10 · missing does not scroll sideways at 360 px
+bench/tests/pages-verify.test.mjs > P-4 · on a phone the canvas header says Chat, named &quot;Back to the chat&quot;, and returns to the conversation
+bench/tests/pages-verify.test.mjs > P-6 · at 360 px the page-properties popover stays inside the viewport with an 8 px margin
+bench/tests/pages-verify.test.mjs > the shell's back above the todo plugin says Home, has a chevron, and leads home
+bench/tests/pages-verify.test.mjs > the shell's back above the todo plugin says Accueil, has a chevron, and leads home
+bench/tests/pages-verify.test.mjs > reader.css: no colour outside a var() fallback, no literal font size, no literal radius, no bare outline: none
+bench/tests/pages-verify.test.mjs > editor.css: no colour outside a var() fallback, no literal font size, no literal radius, no bare outline: none
+bench/tests/pages-verify.test.mjs > home.css: no colour outside a var() fallback, no literal font size, no literal radius, no bare outline: none
+bench/tests/pages-verify.test.mjs > mobile.css: no colour outside a var() fallback, no literal font size, no literal radius, no bare outline: none
+bench/tests/pages-verify.test.mjs > missing-page.css: no colour outside a var() fallback, no literal font size, no literal radius, no bare outline: none
+bench/tests/pages-verify.test.mjs > prettify and folderOf are defined once in packages/web/src
+bench/tests/pages-verify.test.mjs > no fetchImpl( call in the pages files outside the shared request helper
+bench/tests/pages-verify.test.mjs > Reader.tsx, Editor.tsx, App.tsx and Home.tsx hold no function longer than 250 lines
+bench/tests/page-suivie-besoin.test.mjs > B-17 · reading: when the agent rewrites the page, the new text appears with no action and the old one is gone
+bench/tests/page-suivie-besoin.test.mjs > B-17 · reading: the agent rewrites twice in a row, the last text is the one shown
+bench/tests/page-suivie-besoin.test.mjs > B-17 · reading: a write to another page does not change the open one
+bench/tests/page-suivie-besoin.test.mjs > B-17 · reading a page of the second store: it is refreshed too
+bench/tests/page-suivie-besoin.test.mjs > B-17 · reading: the agent deletes the page, E-8 shows and names the path
+bench/tests/page-suivie-besoin.test.mjs > B-17 · reading: the agent moves the page away, E-8 shows
+bench/tests/page-suivie-besoin.test.mjs > B-17 · editing: the agent writes, the banner rises, the typed text stays, no refresh replaces it
+bench/tests/page-suivie-besoin.test.mjs > B-17 · editing: the banner has role status, comes before the editor text and sits below the title
+bench/tests/page-suivie-besoin.test.mjs > B-17 · editing: Reload shows the agent’s version, the banner goes, the typed text is replaced
+bench/tests/page-suivie-besoin.test.mjs > B-17 · editing: the user’s own save raises no banner
+bench/tests/page-suivie-besoin.test.mjs > B-17 · editing: with the banner up, a save the server refuses leaves the typed text, the editor and the banner
+bench/tests/page-suivie-besoin.test.mjs > B-17 · editing: the agent writes three times, there is still one banner
+bench/tests/page-suivie-besoin.test.mjs > B-17 · editing: Done with the banner up and nothing typed closes the editor and shows the agent’s version
+bench/tests/page-suivie-besoin.test.mjs > B-17 · editing: the agent deletes the page, the banner rises and the text stays; Reload leads to E-8
+bench/tests/page-suivie-besoin.test.mjs > B-17 · editing: the banner says exactly « The page changed. » with « Reload »
+bench/tests/page-suivie-besoin.test.mjs > B-17 · phone: the banner keeps the page column width and Reload stays reachable under the sentence
+bench/tests/page-suivie-besoin.test.mjs > B-17 · editing: the banner says « La page a changé. » with « Recharger », no English left
+bench/tests/page-suivie-besoin.test.mjs > B-17 · watch off, reading: the agent rewrites, nothing moves
+bench/tests/page-suivie-besoin.test.mjs > B-17 · watch off, reading: the agent deletes the page, nothing moves
+bench/tests/page-suivie-besoin.test.mjs > B-17 · watch off, editing: the agent writes, no banner
+bench/tests/page-suivie-complement-besoin.test.mjs > B-17 · editing a page of the second store: the agent writes, the banner rises, the typed text stays
+bench/tests/page-suivie-complement-besoin.test.mjs > B-17 · editing: the agent moves the page, the banner rises first and the text stays; Reload leads to E-8
+bench/tests/page-suivie-complement-besoin.test.mjs > B-17 · editing: Done with the banner up and a refused save keeps the editor open, the typed text and the banner
+bench/tests/page-suivie-suites-besoin.test.mjs > B-17 · editing: after the user’s own save, the agent writes and the banner rises, the typed text stays
+bench/tests/page-suivie-suites-besoin.test.mjs > B-17 · editing: after Reload, a second write by the agent raises the banner again
+bench/tests/plugins-besoin.test.mjs > todo: the task sheet back is named « Todo » and returns to the list
+bench/tests/plugins-besoin.test.mjs > todo: opening a task keeps the shell back and the plugin back, with two different names
+bench/tests/plugins-besoin.test.mjs > journal: the entries back is named « Journals » / « Journaux » and leads to the list of journals
+bench/tests/plugins-besoin.test.mjs > journal: the add button toggles by icons, not by + and × characters
+bench/tests/plugins-besoin.test.mjs > atelier: the bench mode exit says « Leave the bench mode », Escape closes it, focus returns to its button
+bench/tests/plugins-besoin.test.mjs > atelier: no French in english (and no english in french) on the hub, the workbook tabs and the bench mode
+bench/tests/plugins-besoin.test.mjs > atelier: a piece opens a sheet with the shared shape, a close icon named « Close », Escape returns the focus to the piece
+bench/tests/plugins-besoin.test.mjs > voyages: a card opens the shared sheet; × named « Close », Escape, scrim and the footer button close it; focus returns to the card
+bench/tests/plugins-besoin.test.mjs > voyages: the sheet closes with the view — leaving the trip while it is open leaves no dialog on the page
+bench/tests/plugins-besoin.test.mjs > voyages: no French in english (and no english in french) on the hub, the trip and its sheet
+bench/tests/plugins-besoin.test.mjs > voyages sheet (light): the scrim is the shell's and the panel is a centred card at desk width
+bench/tests/plugins-besoin.test.mjs > voyages sheet (dark): the scrim is the shell's and the panel is a centred card at desk width
+bench/tests/plugins-besoin.test.mjs > voyages sheet on a phone (820 px down): a bottom sheet whose head and close button stay in view
+bench/tests/plugins-besoin.test.mjs > meals: a dish opens the shared sheet with a close icon (« Close »), Escape closes it and the card has the focus
+bench/tests/plugins-besoin.test.mjs > parcours: the walking HUD exit is named « Leave walking mode » and the map is where it was; Escape leaves too
+bench/tests/plugins-besoin.test.mjs > parcours: no French in english (and no english in french) on the map page and in the walking HUD
+bench/tests/plugins-besoin.test.mjs > scan: the camera overlay says Cancel / Add to message in the instance language and closes on Escape
+bench/tests/plugins-besoin.test.mjs > listening post: the search clear control is named « Clear » / « Effacer », and the dismiss button keeps its word
+bench/tests/plugins-besoin.test.mjs > listening post (fr): the source line says « Dans vos flux », never « tes flux »
+bench/tests/plugins-besoin.test.mjs > todo list: every word is in the instance's language (en)
+bench/tests/plugins-besoin.test.mjs > planif: every word is in the instance's language (en)
+bench/tests/plugins-besoin.test.mjs > journal list: every word is in the instance's language (en)
+bench/tests/plugins-besoin.test.mjs > listening post: every word is in the instance's language (en)
+bench/tests/plugins-besoin.test.mjs > meals page: every word is in the instance's language (en)
+bench/tests/plugins-besoin.test.mjs > project-management page: every word is in the instance's language (en)
+bench/tests/plugins-besoin.test.mjs > project-management planning: every word is in the instance's language (en)
+bench/tests/plugins-besoin.test.mjs > todo task sheet and journal entry: every word is in the instance language
+bench/tests/plugins-besoin.test.mjs > todo list: every word is in the instance's language (fr)
+bench/tests/plugins-besoin.test.mjs > planif: every word is in the instance's language (fr)
+bench/tests/plugins-besoin.test.mjs > journal list: every word is in the instance's language (fr)
+bench/tests/plugins-besoin.test.mjs > listening post: every word is in the instance's language (fr)
+bench/tests/plugins-besoin.test.mjs > meals page: every word is in the instance's language (fr)
+bench/tests/plugins-besoin.test.mjs > project-management page: every word is in the instance's language (fr)
+bench/tests/plugins-besoin.test.mjs > project-management planning: every word is in the instance's language (fr)
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 hub: a loading row shows before the workbooks, then the workbooks replace it
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 hub: a 500 answer gives the message and Retry, and Retry loads the workbooks
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 hub: a 404 answer gives the message and Retry, and Retry loads the workbooks
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 hub: a cut network gives the message and Retry, and Retry loads the workbooks
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 hub: Retry while the server still fails shows the failure again; a second Retry then loads
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 hub: the failure block is drawn in the dark too
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 workbook: a loading row shows before the workbook, then the workbook replaces it
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 workbook: workbook answering 500 gives the message and Retry, without the raw error; Retry reloads
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 workbook: workbook cut gives the message and Retry, without the raw error; Retry reloads
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 workbook: state answering 500 gives the message and Retry, without the raw error; Retry reloads
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 workbook: state cut gives the message and Retry, without the raw error; Retry reloads
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 workbook: the layout failing alone does not fail the workbook
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 own screen: a loading row shows before the route, then the route replaces it
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 own screen: a 500 answer gives the message and Retry, and Retry fetches again into the same place
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 own screen: a cut network gives the message and Retry, and Retry fetches again into the same place
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 own screen: a 404 says the message and offers no Retry
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 own screen: a 401 says the message and offers no Retry
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 own screen: a 403 says the message and offers no Retry
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 block in a page: a loading row shows before the route, then the route replaces it
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 block in a page: a 500 answer gives the message and Retry, and Retry fetches again into the same place
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 block in a page: a cut network gives the message and Retry, and Retry fetches again into the same place
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 block in a page: a 404 says the message and offers no Retry
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 block in a page: a 401 says the message and offers no Retry
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 block in a page: a 403 says the message and offers no Retry
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 link view: a loading row shows before the route, then the route replaces it
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 link view: a 500 answer gives the message and Retry, and Retry fetches again into the same place
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 link view: a cut network gives the message and Retry, and Retry fetches again into the same place
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 link view: a 404 says the message and offers no Retry
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 link view: a 401 says the message and offers no Retry
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 link view: a 403 says the message and offers no Retry
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 link view: the sentence and Retry share one line
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 hub on a phone: the failure sentence is whole and Retry sits under it, the width of the block
+bench/tests/plugins-chargements-besoin.test.mjs > E-25 workbook on a phone: the failure sentence is whole and Retry sits under it, the width of the block
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 own screen on a phone: the failure sentence is whole and Retry sits under it, the width of the block
+bench/tests/plugins-chargements-besoin.test.mjs > E-28 block in a page on a phone: the failure sentence is whole and Retry sits under it, the width of the block
+bench/tests/plugins-chargements-ensemble.test.mjs > shows the loading row before its data, then the workbooks
+bench/tests/plugins-chargements-ensemble.test.mjs > a 500 answer gives message and Retry, and Retry reloads the workbooks
+bench/tests/plugins-chargements-ensemble.test.mjs > a 404 answer gives message and Retry, and Retry reloads the workbooks
+bench/tests/plugins-chargements-ensemble.test.mjs > a dropped connection gives the same message and Retry
+bench/tests/plugins-chargements-ensemble.test.mjs > while Retry fetches, the screen is back on the loading row and the button is gone
+bench/tests/plugins-chargements-ensemble.test.mjs > Retry failing again keeps message and Retry
+bench/tests/plugins-chargements-ensemble.test.mjs > with a healthy server there is neither failure nor loading row left
+bench/tests/plugins-chargements-ensemble.test.mjs > shows the loading row before its data, then the workbook
+bench/tests/plugins-chargements-ensemble.test.mjs > a failing /workbook gives « Unreadable workbook. » without the raw error, and Retry draws the workbook
+bench/tests/plugins-chargements-ensemble.test.mjs > a failing /state alone fails the whole workbook
+bench/tests/plugins-chargements-ensemble.test.mjs > a failing /layout alone is tolerated: the workbook shows, no failure
+bench/tests/plugins-chargements-ensemble.test.mjs > a dropped connection on /workbook gives message and Retry
+bench/tests/plugins-chargements-ensemble.test.mjs > while Retry fetches, the loading row replaces the failure block
+bench/tests/plugins-chargements-ensemble.test.mjs > the map page shows the loading row before the map
+bench/tests/plugins-chargements-ensemble.test.mjs > a 500 gives « Unreadable route. » and Retry, which fetches again and draws the map
+bench/tests/plugins-chargements-ensemble.test.mjs > a dropped connection gives message and Retry
+bench/tests/plugins-chargements-ensemble.test.mjs > a 404 shows the message without Retry
+bench/tests/plugins-chargements-ensemble.test.mjs > a 401 shows the message without Retry
+bench/tests/plugins-chargements-ensemble.test.mjs > a 403 shows the message without Retry
+bench/tests/plugins-chargements-ensemble.test.mjs > the card of a :::parcours block on a page shows the loading row, then the route
+bench/tests/plugins-chargements-ensemble.test.mjs > the card of a :::parcours block on a page fails with message and Retry, which draws the route
+bench/tests/plugins-chargements-ensemble.test.mjs > the link view fails on one line: message and Retry side by side, and Retry draws the link
+bench/tests/plugins-chargements-ensemble.test.mjs > the link view shows the loading row while it waits
+bench/tests/plugins-chargements-ensemble.test.mjs > on a phone the failure sentence is whole and Retry sits under it, full width
+bench/tests/plugins-chargements-ensemble.test.mjs > E-25 on a phone: the failure sentence is whole and Retry sits under it
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-25 hub: Retry pressed from the keyboard (focus, Enter) fetches again and shows the data
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-25 hub: two quick presses on Retry make one fetch
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-25 hub: a Retry that fails again gives the message and Retry back
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-25 workbook: Retry pressed from the keyboard (focus, Enter) fetches again and shows the data
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-25 workbook: two quick presses on Retry make one fetch
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-25 workbook: a Retry that fails again gives the message and Retry back
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 own screen: Retry pressed from the keyboard (focus, Enter) fetches again and shows the data
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 own screen: two quick presses on Retry make one fetch
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 own screen: a Retry that fails again gives the message and Retry back
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 block in a page: Retry pressed from the keyboard (focus, Enter) fetches again and shows the data
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 block in a page: two quick presses on Retry make one fetch
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 block in a page: a Retry that fails again gives the message and Retry back
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 link view: Retry pressed from the keyboard (focus, Enter) fetches again and shows the data
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 link view: two quick presses on Retry make one fetch
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 link view: a Retry that fails again gives the message and Retry back
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 own screen: a Retry answered 404 shows the message without Retry
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 own screen: a Retry answered 403 shows the message without Retry
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 block in a page: a Retry answered 404 shows the message without Retry
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 block in a page: a Retry answered 403 shows the message without Retry
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 link view: a Retry answered 404 shows the message without Retry
+bench/tests/plugins-chargements-retry-besoin.test.mjs > E-28 link view: a Retry answered 403 shows the message without Retry
+bench/tests/plugins-ensemble.test.mjs > reset_asks_in_a_sheet_with_the_question_and_two_buttons_never_a_native_dialog
+bench/tests/plugins-ensemble.test.mjs > cancel_has_the_focus_when_the_sheet_opens
+bench/tests/plugins-ensemble.test.mjs > escape_cancels_nothing_moves_and_focus_returns_to_the_reset_button
+bench/tests/plugins-ensemble.test.mjs > cancel_button_closes_and_keeps_the_layout
+bench/tests/plugins-ensemble.test.mjs > scrim_click_cancels_and_keeps_the_layout
+bench/tests/plugins-ensemble.test.mjs > tab_and_shift_tab_keep_the_focus_inside_the_sheet
+bench/tests/plugins-ensemble.test.mjs > discard_drops_the_hand_layout_the_chip_goes_and_the_file_has_no_pose
+bench/tests/plugins-ensemble.test.mjs > request_failing_after_the_answer_closes_the_sheet_without_a_native_dialog
+bench/tests/plugins-ensemble.test.mjs > sheet_sits_at_the_bottom_of_the_phone_screen
+bench/tests/plugins-ensemble.test.mjs > refused_gesture_is_said_in_a_sheet_titled_with_the_server_text_and_one_close
+bench/tests/plugins-ensemble.test.mjs > refusal_sheet_closes_by_escape_and_focus_returns_to_the_card
+bench/tests/plugins-ensemble.test.mjs > refusal_sheet_closes_by_scrim_and_by_close_button
+bench/tests/plugins-ensemble.test.mjs > unreachable_server_says_gesture_impossible
+bench/tests/plugins-ensemble.test.mjs > card_dragged_onto_a_day_and_refused_is_back_in_the_tray_when_the_sheet_closes
+bench/tests/plugins-ensemble.test.mjs > walking_mode_map_fills_the_screen_and_returns_to_its_size, desk
+bench/tests/plugins-ensemble.test.mjs > walking_mode_map_fills_the_screen_and_returns_to_its_size, phone
+bench/tests/plugins-ensemble.test.mjs > walking_map_redraws_when_the_window_is_resized
+bench/tests/plugins-ensemble.test.mjs > closing_the_scan_overlay_on_a_phone_puts_the_focus_in_the_composer_field
+bench/tests/plugins-ensemble.test.mjs > cancel_button_of_the_scan_overlay_also_returns_the_focus_to_the_composer_on_a_phone
+bench/tests/plugins-ensemble.test.mjs > closing_the_scan_overlay_at_a_desk_returns_the_focus_to_the_scan_button
+bench/tests/plugins-ensemble.test.mjs > piece_counts_read_one_piece_in_the_singular_and_five_pieces_in_the_plural
+bench/tests/plugins-ensemble.test.mjs > content_block_dates_follow_the_instance_language_and_a_non_date_is_left_as_written
+bench/tests/plugins-ensemble.test.mjs > amber_is_only_the_owners_status_and_a_late_milestone_is_dashed_muted_and_named_late, light
+bench/tests/plugins-ensemble.test.mjs > amber_is_only_the_owners_status_and_a_late_milestone_is_dashed_muted_and_named_late, dark
+bench/tests/plugins-ensemble.test.mjs > planif_composed_phrases_are_in_the_instance_language
+bench/tests/plugins-ensemble.test.mjs > listening_post_composed_phrases_are_in_the_instance_language
+bench/tests/plugins-ensemble.test.mjs > chrome_companions_are_icons_or_words_never_the_emoji_the_charter_removes
+bench/tests/plugins-ensemble.test.mjs > walking_follow_and_trip_hint_carry_no_emoji
+bench/tests/shell-besoin.test.mjs > B-13 · the style sources define .adestia-icon--spin once at top level and @keyframes adestia-icon-spin once
+bench/tests/shell-besoin.test.mjs > P-1 · B-16 · Nestor's invitation to the agent has an SVG arrow and no ↑ character, desk
+bench/tests/shell-besoin.test.mjs > P-1 · B-16 · Nestor's invitation to the agent has an SVG arrow and no ↑ character, phone
+bench/tests/shell-besoin.test.mjs > E-9 · E-10 · the MCP tile says the same count in its subtitle and its chip, and E-10 lists as many servers
+bench/tests/shell-besoin.test.mjs > E-19 · B-16 · a manifest refusal without a code is headed in the user language, its field lines are kept
+bench/tests/shell-besoin.test.mjs > E-19 · bord · the refusal band reads on a phone and shows both refused folders
+bench/tests/shell-besoin.test.mjs > B-13 · the stylesheets hold one .adestia-icon--spin rule and one adestia-icon-spin @keyframes
+bench/tests/shell-besoin.test.mjs > the token field is a password field that asks the browser not to fill it in
+bench/tests/shell-besoin.test.mjs > a refresh that works shows no error
+bench/tests/shell-besoin.test.mjs > a refresh that throws shows the error in the pop-in and gives the button back
+bench/tests/shell-besoin.test.mjs > a refused refresh (server error) shows its message too
+bench/tests/shell-besoin.test.mjs > B-16 · on a 360 px phone each switch sits on the row of its title, light
+bench/tests/shell-besoin.test.mjs > B-16 · on a 360 px phone each switch sits on the row of its title, dark
+bench/tests/shell-besoin.test.mjs > B-16 · on the desk the switch also sits on the row of its title
+bench/tests/shell-besoin.test.mjs > P-11 · an app with no view shows the shared empty state with a translated Home action, desk light
+bench/tests/shell-besoin.test.mjs > P-11 · an app with no view shows the shared empty state with a translated Home action, desk dark
+bench/tests/shell-besoin.test.mjs > P-11 · an app with no view shows the shared empty state with a translated Home action, phone light
+bench/tests/shell-besoin.test.mjs > P-11 · an app with no view shows the shared empty state with a translated Home action, phone dark
+bench/tests/shell-besoin.test.mjs > P-9 · Skippy's console band stays on one line at 360 px, light
+bench/tests/shell-besoin.test.mjs > P-9 · Skippy's console band stays on one line at 360 px, dark
+bench/tests/dette-ensemble.test.mjs > drivers: no module-level line binds a name to another identifier alone
+bench/tests/dette-ensemble.test.mjs > drivers: no re-export under another name of a symbol from the same package
+bench/tests/dette-ensemble.test.mjs > kept exports: every row says why, in a sentence
+bench/tests/dette-ensemble.test.mjs > kept exports: each row is really imported by the test it names, and is exported by its module
+bench/tests/dette-ensemble.test.mjs > kept exports: a re-export outside an index is used by production code, not only by tests
+bench/tests/dette-ensemble.test.mjs > bench: loadPlaywright is defined once
+bench/tests/dette-ensemble.test.mjs > bench: launch(seed) is defined once
+bench/tests/dette-ensemble.test.mjs > bench: the one definitions are importable and used by more than one caller
+bench/tests/dette-ensemble.test.mjs > fake engine: every option beyond scripts is set by some seed
+bench/tests/dette-ensemble.test.mjs > the attested suite plays doc-besoin.test.mjs
+bench/tests/dette-ensemble.test.mjs > DESIGN.md: each rule is guarded in one place only
+bench/tests/dette-ensemble.test.mjs > lint: a typed promise rule is an error in packages
+bench/tests/dette-ensemble.test.mjs > lint: a typed promise rule is an error in plugins
+bench/tests/dette-ensemble.test.mjs > lint: a rule left off is explained under Known defects
+bench/tests/dette-ensemble.test.mjs > lint: .agent/migrate-frame.mjs is gone or clean
+bench/tests/playwright-une-fois.test.mjs > the five scenarios that kept a private Playwright finder import loadPlaywright instead
+bench/tests/playwright-une-fois.test.mjs > no scenario declares a function named playwright
+bench/tests/playwright-une-fois.test.mjs > every scenario that launches a browser takes Playwright from the shared loader
+packages/server/test/bench-besoin.test.ts > B-2 · launch on the fake engine, no docker > answers ok on /api/health with a PATH that holds node and nothing else (no docker)
+packages/server/test/bench-besoin.test.ts > B-2 · launch on the fake engine, no docker > answers the message "ping" with the scripted "pong", the same way twice
+packages/server/test/bench-besoin.test.ts > B-2 · launch on the fake engine, no docker > echoes a message no script matches
+packages/server/test/bench-besoin.test.ts > B-2 · launch on the fake engine, no docker > refuses a turn without a prompt rather than inventing an answer
+packages/server/test/bench-besoin.test.ts > B-2 · launch on the fake engine, no docker > listens on the port asked for
+packages/server/test/bench-besoin.test.ts > B-2 · launch on the fake engine, no docker > serves the chosen skin and locale
+packages/server/test/bench-besoin.test.ts > B-2 · launch on the fake engine, no docker > removes its throwaway data on SIGTERM
+packages/server/test/bench-besoin.test.ts > B-2 · launch on the fake engine, no docker > keeps a data directory the developer names
+packages/server/test/bench-besoin.test.ts > B-2 · launch on the fake engine, no docker > refuses the real engine without CLAUDE_CODE_OAUTH_TOKEN, naming it, and never listens
+packages/server/test/bench-besoin.test.ts > B-2 · launch on the fake engine, no docker > refuses an unknown engine with a non-zero exit
+packages/server/test/bench-besoin.test.ts > B-3 · capture the screens, no docker > captures E-4 and E-9 in light and dark, desk 1440x900 and a portrait phone, each different
+packages/server/test/bench-besoin.test.ts > B-3 · capture the screens, no docker > --skin skippy writes under skippy/ and draws something other than the default skin
+packages/server/test/bench-besoin.test.ts > B-3 · capture the screens, no docker > exits non-zero, naming the screen, when asked for one that does not exist
+packages/server/test/bench-besoin.test.ts > B-3 · capture the screens, no docker > captures E-1 to E-31 x light/dark x desk/phone: 124 pictures (default)
+packages/server/test/bench-besoin.test.ts > B-3 · capture the screens, no docker > captures E-1 to E-31 x light/dark x desk/phone: 124 pictures (skippy)
+packages/server/test/bench-ensemble.test.ts > B-3 · the sweep captures every screen, both themes, both sizes > default skin: exits 0 and says 124/124
+packages/server/test/bench-ensemble.test.ts > B-3 · the sweep captures every screen, both themes, both sizes > default skin: 124 files, E-1 to E-31 each in light and dark at desk and phone
+packages/server/test/bench-ensemble.test.ts > B-3 · the sweep captures every screen, both themes, both sizes > default skin: desk captures are 1440x900, phone captures are a 390x844 portrait
+packages/server/test/bench-ensemble.test.ts > B-3 · the sweep captures every screen, both themes, both sizes > default skin: no capture is a blank page, and dark differs from light, phone from desk
+packages/server/test/bench-ensemble.test.ts > B-3 · the sweep captures every screen, both themes, both sizes > default skin: the screens are not all the same error or loading page (at most one pair alike per theme and size)
+packages/server/test/bench-ensemble.test.ts > B-3 · the sweep captures every screen, both themes, both sizes > --skin skippy: exits 0, 124/124, under skippy/, and E-2 and E-16 are not the default skin
+packages/server/test/bench-ensemble.test.ts > B-3 · the sweep captures every screen, both themes, both sizes > --only restricts to the screens named and still writes 4 captures per screen
+packages/server/test/bench-ensemble.test.ts > B-2 · a message typed in the shell on the fake engine gets the scripted answer > shows "pong" after the developer types "ping" and sends
+packages/server/test/bench-launcher.test.ts > bench launcher refusals > refuses --engine claude without the token, naming it
+packages/server/test/bench-launcher.test.ts > bench launcher refusals > refuses an empty token
+packages/server/test/bench-launcher.test.ts > bench launcher refusals > rejects ["--engine","gpt"] with a non-zero exit
+packages/server/test/bench-launcher.test.ts > bench launcher refusals > rejects ["--locale","de"] with a non-zero exit
+packages/server/test/bench-launcher.test.ts > bench launcher refusals > rejects ["--port","99999"] with a non-zero exit
+packages/server/test/bench-launcher.test.ts > bench launcher refusals > rejects ["--port","-1"] with a non-zero exit
+packages/server/test/bench-launcher.test.ts > bench launcher refusals > rejects ["--bogus","x"] with a non-zero exit
+packages/server/test/bench-launcher.test.ts > bench launcher refusals > rejects ["--seed"] with a non-zero exit
+packages/server/test/bench-launcher.test.ts > bench launcher refusals > rejects ["--seed","../x"] with a non-zero exit
+packages/server/test/bench-launcher.test.ts > bench launcher refusals > refuses --engine claude with --seed oidc, with the token present, before creating anything
+packages/server/test/bench-launcher.test.ts > bench launcher refusals > rejects an unknown seed without leaving a directory
+packages/server/test/bench-launcher.test.ts > bench launcher, fake engine > answers by script, identically twice, and removes its data on SIGTERM
+packages/server/test/bench-launcher.test.ts > bench launcher, fake engine > boots the plugins seed with the ten bundled plugins loaded and no plugin problem
+packages/server/test/bench-launcher.test.ts > bench launcher, stored credential > drops a stored credential in claude mode, so the environment token is used
+packages/server/test/bench-launcher.test.ts > bench launcher, stored credential > keeps a stored credential in fake mode
+packages/server/test/bench-launcher.test.ts > bench launcher, --no-end-session > announces an end_session_endpoint by default and none with the flag
+packages/server/test/bench-sweep.test.ts > bench sweep refusals > rejects ["--bogus","x"] with a non-zero exit, naming the cause
+packages/server/test/bench-sweep.test.ts > bench sweep refusals > rejects ["--skin"] with a non-zero exit, naming the cause
+packages/server/test/bench-sweep.test.ts > bench sweep refusals > rejects ["--skin","../x"] with a non-zero exit, naming the cause
+packages/server/test/bench-sweep.test.ts > bench sweep refusals > rejects ["--locale","de"] with a non-zero exit, naming the cause
+packages/server/test/bench-sweep.test.ts > bench sweep refusals > rejects ["--only","E-99"] with a non-zero exit, naming the cause
+packages/server/test/bench-sweep.test.ts > bench sweep refusals > rejects ["--only","E-0"] with a non-zero exit, naming the cause
+packages/server/test/bench-sweep.test.ts > bench sweep refusals > rejects ["--out"] with a non-zero exit, naming the cause
+packages/server/test/bench-sweep.test.ts > bench sweep, real browser > writes 4 non-empty captures for one screen, under the skin directory
+packages/server/test/bench-sweep.test.ts > bench sweep, real browser > exits non-zero and names the screen when its proof selector is broken
+packages/server/test/catalogues-provenance-ui-ensemble.test.ts > catalogues on screen, provenance and retrieval > an imported skill is marked delivered with its source and opens read-only; a hand-written one is neither marked nor locked
+packages/server/test/catalogues-provenance-ui-ensemble.test.ts > catalogues on screen, provenance and retrieval > a declared catalogue can be removed from the screen, not only through the API
+packages/server/test/catalogues-retrait-ecran-ensemble.test.ts > catalogue removal from the screen > removing one of two catalogues from the screen leaves the other, on screen and on the server, after a reload
+packages/server/test/catalogues-retrait-ecran-ensemble.test.ts > catalogue removal from the screen > a catalogue removed from the screen stays removed after the instance restarts
+packages/server/test/catalogues-retrait-imports-ecran-ensemble.test.ts > catalogue removal withdraws its imports > removing a catalogue from the pop-in deletes the copies imported from it and keeps the other catalogue and the hand-written skill
+packages/server/test/catalogues-retrait-imports-ecran-ensemble.test.ts > catalogue removal withdraws its imports > after the removal the Instructions screen no longer lists the withdrawn items, after a reload
+packages/server/test/catalogues-retrait-imports-ecran-ensemble.test.ts > catalogue removal withdraws its imports > declaring the same address again after a removal starts with nothing imported
+packages/server/test/catalogues-ui-ensemble.test.ts > catalogues on screen > Catalogues is a button of the Instructions page (P-9, E-11), beside the other Settings sections
+packages/server/test/catalogues-ui-ensemble.test.ts > catalogues on screen > a first visit shows an empty list and the form to add a repository with its ref
+packages/server/test/catalogues-ui-ensemble.test.ts > catalogues on screen > declaring, browsing and importing an item copies it and shows it delivered, with its repository and ref
+packages/server/test/catalogues-ui-ensemble.test.ts > catalogues on screen > Refresh re-copies the imported items of that repository
+packages/server/test/catalogues-ui-ensemble.test.ts > catalogues on screen > Remove deletes the copy and offers Import again
+packages/server/test/catalogues-ui-ensemble.test.ts > catalogues on screen > on a codex-cli instance the agent is listed but its Import is not offered
+packages/server/test/catalogues-ui-ensemble.test.ts > catalogues on screen > a repository that cannot be reached shows no items to import
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/health answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/instance answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/models answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/pages answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/pages/index answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/conversations answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/delegations answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/mcp/status answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/mcp/servers answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/mcp/connections answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/instructions answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/instruction-catalogues answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/home/brief answers 200
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > GET /api/health says {"status":"ok"}
+packages/server/test/qualite-serveur-ensemble.test.ts > B-1 · the routes of the product still answer > an unknown API route is still a 404
+packages/server/test/qualite-serveur-ensemble.test.ts > a real turn answers, and its conversation file has the documented shape > "ping" gets "pong" and the jsonl holds meta, user message, agent message, session
+packages/server/test/qualite-serveur-ensemble.test.ts > a page written by the agent appears > is listed by /api/pages with its store and title, and readable by path
+packages/server/test/qualite-serveur-ensemble.test.ts > a page written by the agent appears > a path with no page is a 404
+packages/server/test/qualite-serveur-ensemble.test.ts > a page written by the agent appears > shows on screen: the browser opens the page and reads its text
+packages/server/test/qualite-serveur-ensemble.test.ts > P-13 · an incoming delegation by ask_<name> comes through > refuses a wrong token and a missing token with 401
+packages/server/test/qualite-serveur-ensemble.test.ts > P-13 · an incoming delegation by ask_<name> comes through > lists ask_alfred and ask_alfred_status
+packages/server/test/qualite-serveur-ensemble.test.ts > P-13 · an incoming delegation by ask_<name> comes through > answers "pong" with a task_id, and the thread is stored under the caller folder
+packages/server/test/qualite-serveur-ensemble.test.ts > P-13 · an incoming delegation by ask_<name> comes through > continues the same thread when the task_id is given back
+packages/server/test/qualite-serveur-ensemble.test.ts > P-13 · an incoming delegation by ask_<name> comes through > cuts a long request title to at most 60 characters
+packages/server/test/qualite-serveur-ensemble.test.ts > P-13 · an incoming delegation by ask_<name> comes through > files a caller that does not match ^[a-z][a-z0-9_-]{0,31}$ under "agent"
+packages/server/test/qualite-serveur-ensemble.test.ts > P-13 · an incoming delegation by ask_<name> comes through > a caller of 32 characters is kept, one of 33 goes to "agent"

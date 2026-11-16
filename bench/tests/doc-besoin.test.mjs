@@ -179,7 +179,7 @@ describe('B-4 — what README, CLAUDE.md and the docs name exists', () => {
   test('every `bench/...` or `scripts/...` file named in README.md, CLAUDE.md, parcours and bench/README exists', () => {
     const missing = []
     for (const f of ['README.md', 'CLAUDE.md', 'docs/parcours.md', 'bench/README.md']) {
-      for (const m of read(f).matchAll(/(?<![\w/.-])((?:bench|scripts)\/[\w./-]*\w\.(?:mjs|js|sh|md|json|yaml))/g)) {
+      for (const m of read(f).matchAll(/(?<![\w/.-])((?:bench|scripts)\/[\w./-]*\w\.(?:mjs|json|js|sh|md|yaml)(?![\w]))/g)) {
         if (m[1].includes('my-change')) continue // the README's placeholder name
         if (!existsSync(join(root, m[1]))) missing.push(`${f}: ${m[1]}`)
       }
