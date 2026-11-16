@@ -1285,7 +1285,7 @@ because a skipped test turns the level red.
 ### AD-niveaux-2 — A file touches the screens whose entry imports it, transitively
 
 `scripts/ecrans.json` maps each screen to its entries: `"E-10": { "entrees": ["packages/web/src/app/McpServers.tsx"] }`
-for the screens of `docs/ecrans.md` (E-1 to E-21, E-32, E-33) and, for the plugin screens (E-22
+for the screens of `docs/ecrans.md` (E-1 to E-21, E-32, E-33; the pages that mount the others, `app/Canvas.tsx` for E-20 and `app/App.tsx` for E-32, are entries too, so a file they reach touches them) and, for the plugin screens (E-22
 to E-31, loaded at runtime and imported by nothing), `"dossiers": ["plugins/todo/web/"]`. The
 tool resolves imports statically (TypeScript's `preProcessFile` on `.ts`, `.tsx`, `.js`; relative
 specifiers with the `.js`→`.ts[x]` mapping; `@antorfr/*` mapped to the sources of
@@ -1302,7 +1302,7 @@ vitest setup, then rules 1 and 3:
    `packages/web/src`, `packages/content` and `packages/schemas` are never listed here: the import
    graph (rule 2) decides.
 2. **Imported by an entry**: touches exactly those screens.
-3. **Anything else**, including `packages/web/test/setup.ts` (the vitest setup, run before every test) (`packages/web/src/app/App.tsx` and `main.tsx`, which no screen imports; the
+3. **Anything else**, including `packages/web/test/setup.ts` (the vitest setup, run before every test) (`main.tsx`, which no screen imports; the
    skins; `bench/**`; `vite.config.ts`; `package.json` and the lockfile; the scripts; a file the
    resolver cannot place): touches **every** screen. In doubt, play.
 A changed screen-test file counts as touching the screens it declares (AD-niveaux-3).

@@ -2,6 +2,7 @@
 // keeps the cases that were asked for and fails on a name that matched no test or on a red case.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fichiersDEcran } from './niveaux.mjs'
 
 const [mode, dir, ...rest] = process.argv.slice(2)
 const esc = (s) => String(s).replace(/&(?!(?:amp|lt|gt|quot|apos|#\d+);)/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -62,7 +63,8 @@ if (mode === 'plan') {
       if (w.cls !== 'test') plug.add(w.cls); else allPlug = true
     } else files.add(w.cls)
   }
-  const screen = [...files].filter((f) => existsSync(f) && /playwright|chromium|launch\.mjs/.test(readFileSync(f, 'utf8')))
+  const ecrans = new Set(fichiersDEcran())
+  const screen = [...files].filter((f) => ecrans.has(f))
   const wr = (f, v) => writeFileSync(join(dir, f), v)
   wr('vitest.files', all ? 'ALL\n' : [...files].join('\n') + (files.size ? '\n' : ''))
   wr('plugins.files', allPlug ? 'ALL\n' : [...plug].join('\n') + (plug.size ? '\n' : ''))

@@ -20,7 +20,7 @@
     "E-17": { "entrees": ["packages/web/src/chat/AskPrompt.tsx"] },
     "E-18": { "entrees": ["packages/web/src/chat/Signatures.tsx"] },
     "E-19": { "entrees": ["packages/web/src/app/Problems.tsx"] },
-    "E-20": { "entrees": ["packages/web/src/app/BackButton.tsx", "packages/web/src/app/ui/EmptyState.tsx"] },
+    "E-20": { "entrees": ["packages/web/src/app/Canvas.tsx", "packages/web/src/app/BackButton.tsx", "packages/web/src/app/ui/EmptyState.tsx"] },
     "E-21": { "entrees": ["packages/web/src/sw/sw.ts", "packages/web/src/app/Gates.tsx"] },
     "E-22": { "dossiers": ["plugins/todo/web/"] },
     "E-23": { "dossiers": ["plugins/planif/web/"] },
@@ -32,7 +32,7 @@
     "E-29": { "dossiers": ["plugins/meals/web/"] },
     "E-30": { "dossiers": ["plugins/scan/web/"] },
     "E-31": { "dossiers": ["plugins/project-management/web/"] },
-    "E-32": { "entrees": ["packages/web/src/app/Offline.tsx"] },
+    "E-32": { "entrees": ["packages/web/src/app/App.tsx", "packages/web/src/app/Offline.tsx"] },
     "E-33": { "entrees": ["packages/web/src/app/mcp/ConfirmRemove.tsx", "packages/web/src/app/mcp/ServerDetail.tsx"] }
   },
   "tests": {

@@ -112,7 +112,7 @@ const horsEcran = (f) =>
 // The vitest setup runs before every test, screen tests included.
 const partage = (f) => f === 'packages/web/test/setup.ts'
 
-export function calcul(changes, map = carte(), tests = fichiersDEcran()) {
+export function calcul(changes, map = carte()) {
   const tous = Object.keys(map.ecrans)
   const declares = map.tests
   // Roots: a screen's entries, and each declared screen-test file; a test reaches only into test/
@@ -144,7 +144,7 @@ export function calcul(changes, map = carte(), tests = fichiersDEcran()) {
     tous.forEach((e) => touches.add(e))
     note.push(f)
   }
-  return { touches, partout: note, tests: tests }
+  return { touches, partout: note }
 }
 
 export function niveau(mode, touches, map = carte(), tests = fichiersDEcran()) {
