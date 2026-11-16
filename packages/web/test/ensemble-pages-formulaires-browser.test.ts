@@ -171,12 +171,12 @@ describe.skipIf(!playwright)('adestia-pages-blocs-formulaires, from the need', (
       await context.close()
     }, 60_000)
 
-  // « Look » only where there are several views: callout has one redraw and no `view`; a timeline's variants are tranche 4's.
-  it('reglages_timeline_sans_groupe_look_et_callout_sans_edit_data', async () => {
+  // « Look » only where there are several views: callout has one redraw and no `view`; a timeline has two (bars, list).
+  it('reglages_timeline_avec_groupe_look_et_callout_sans_edit_data', async () => {
     const { context, page } = await edit('en', '/page/planning-invalide')
     await settings('en', page, 'timeline')
     const dialog = page.locator('.adestia-blockset')
-    expect(await dialog.getByRole('radiogroup', { name: 'Look' }).count()).toBe(0)
+    expect(await dialog.getByRole('radiogroup', { name: 'Look' }).getByRole('radio').count()).toBe(2)
     expect(await dialog.getByRole('button', { name: 'Edit data', exact: true }).count()).toBe(1)
     await context.close()
     const c = await edit('en', '/page/six-bords')
@@ -471,12 +471,12 @@ describe.skipIf(!playwright)('adestia-pages-blocs-formulaires, from the need', (
     await context.close()
   }, 60_000)
 
-  // Exclusion: Timeline's card has no variant pictures (tranche 4), but opens its form on a project page.
+  // Timeline's card shows its two variant pictures (bars, list) and opens its form on a project page.
   it('galerie_frise_sur_page_projet_ouvre_le_formulaire_et_edit_data_ajoute_une_ligne', async () => {
     const { context, page } = await edit('en', '/page/vide-projet')
     await gallery(page)
     const cell = page.locator('.adestia-blockcell').filter({ has: page.getByRole('option', { name: 'Timeline', exact: true }) })
-    expect(await cell.getByRole('radio').count()).toBe(0)
+    expect(await cell.getByRole('radio').count()).toBe(2)
     await page.getByRole('option', { name: 'Timeline', exact: true }).click()
     await page.locator('.adestia-blockform').waitFor({ timeout: 10_000 })
     expect(await rowValues(page)).toEqual([['', '', '']])

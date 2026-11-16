@@ -226,15 +226,14 @@ describe.skipIf(!playwright)('blocs finis, réglages lisibles, données en formu
       await context.close()
     }, 60_000)
 
-    // Exclusion: timeline has no variant (they would have no effect).
-    it('timeline_n_offre_aucune_variante_mais_offre_edit_data', async () => {
+    // The timeline offers its two looks (bars, list: E-31) and Edit data.
+    it('timeline_offre_ses_deux_variantes_et_edit_data', async () => {
       const { context, page, w } = await visit(en, 't-reglages')
       await startEditing(page, w)
       await openSettings(page, w, 'Cadrage')
       const settings = page.getByRole('dialog', { name: /Block settings/ })
       await settings.getByText('Layout', { exact: true }).first().waitFor()
-      expect(await settings.getByRole('radiogroup', { name: 'Look' }).count(), 'a variant picker with no effect').toBe(0)
-      expect(await settings.getByText('Look', { exact: true }).count()).toBe(0)
+      expect(await settings.getByRole('radiogroup', { name: 'Look' }).getByRole('radio').count(), 'bars and list').toBe(2)
       expect(await settings.getByRole('button', { name: w.editData, exact: true }).count()).toBe(1)
       await context.close()
     }, 60_000)
