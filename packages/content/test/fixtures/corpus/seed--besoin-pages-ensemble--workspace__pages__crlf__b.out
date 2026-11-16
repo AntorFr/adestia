@@ -1,0 +1,8 @@
+---
+title: Fiche B
+status: fermée
+role: jardin
+cat: bois
+---
+
+Corps B.

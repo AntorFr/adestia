@@ -51,6 +51,28 @@ async function bootBench(locale: string) {
   return { url, config: join(base, 'adestia.config.yaml'), stop }
 }
 
+/**
+ * How long the restarted binary may take to answer. The whole suite plays on a
+ * loaded machine, where a cold server boot has outlasted 20 s; the loop returns
+ * on the first answer, so a generous deadline costs nothing when the boot is fast.
+ */
+const RESTART_DEADLINE_MS = 90_000
+
+/** Boot of the bench, screen (20 s), entry (15 s) and "Restart now" (10 s) come before the deadline: 90 + ~45 s, with margin. */
+const RESTART_TEST_TIMEOUT_MS = patience(180_000)
+
+/** One deadline for the waits of the first test's browser steps (the scaled 10 s of "Restart now"). */
+const BROWSER_DEADLINE_MS = patience(10_000)
+
+/** Runs a wait and, if it fails or expires, says which step it was. */
+async function step<T>(name: string, wait: Promise<T>): Promise<T> {
+  try {
+    return await wait
+  } catch (e) {
+    throw new Error(`step "${name}" failed: ${e instanceof Error ? e.message : String(e)}`, { cause: e })
+  }
+}
+
 /** The restart: the plain binary booted on the file the screen wrote. */
 async function restartedMax(configPath: string): Promise<number> {
   const text = await readFile(configPath, 'utf8')
@@ -59,7 +81,8 @@ async function restartedMax(configPath: string): Promise<number> {
   const child = spawn(execPath, [join(repo, 'packages/server/bin/adestia.js'), '--config', configPath], { stdio: 'ignore', env: { ...process.env, CLAUDE_CODE_OAUTH_TOKEN: 'bench-token' } })
   children.add(child)
   try {
-    for (let i = 0; i < 100; i++) {
+    const deadline = Date.now() + RESTART_DEADLINE_MS
+    while (Date.now() < deadline) {
       try {
         const r = await fetch(`http://127.0.0.1:${port}/api/instance`)
         if (r.ok) return ((await r.json()) as { turns: { max: number } }).turns.max
@@ -68,7 +91,7 @@ async function restartedMax(configPath: string): Promise<number> {
       }
       await new Promise((r) => setTimeout(r, 200))
     }
-    throw new Error('the restarted instance never answered')
+    throw new Error(`the restarted instance never answered within ${RESTART_DEADLINE_MS / 1000} s`)
   } finally {
     child.kill('SIGTERM')
   }
@@ -116,19 +139,21 @@ const fieldText = (page: PW) => page.locator('.adestia-config__field').last().in
 describe.skipIf(!playwright)('B-21 — the owner sets the simultaneous turns (E-14)', () => {
   it('owner saves 5: the restart is announced, the file holds 5, the restarted limiter carries 5', async () => {
     const inst = await bootBench('en')
-    const { browser, page } = await screen(inst.url, 'en')
+    const { browser, page } = await step('screen', screen(inst.url, 'en'))
     expect(await fieldText(page)).toContain(MARK.en)
-    expect(await enter(page, 'en', '5')).toBe(200)
-    await page.getByText('Restart now').waitFor({ timeout: patience(10_000) })
-    expect(await page.getByText('Saved, and waiting for a restart', { exact: false }).isVisible()).toBe(true)
+    expect(await step('save (PUT /api/settings)', enter(page, 'en', '5'))).toBe(200)
+    await step('Restart now', page.getByText('Restart now').waitFor({ timeout: BROWSER_DEADLINE_MS }))
+    const savedText = page.getByText('Saved, and waiting for a restart', { exact: false })
+    await step('saved text', savedText.waitFor({ timeout: BROWSER_DEADLINE_MS }))
+    expect(await savedText.isVisible(), 'saved text visible').toBe(true)
     if (SHOTS) await page.screenshot({ path: join(SHOTS, 'tours-en-5.png') })
     expect(await maxInFile(inst.config)).toBe('5')
     // not live: the running limiter keeps its boot value
-    expect(((await (await fetch(`${inst.url}/api/instance`)).json()) as { turns: { max: number } }).turns.max).toBe(3)
+    expect(((await (await fetch(`${inst.url}/api/instance`)).json()) as { turns: { max: number } }).turns.max, 'limiteur non redémarré').toBe(3)
     await inst.stop()
-    expect(await restartedMax(inst.config)).toBe(5)
+    expect(await step('restart', restartedMax(inst.config))).toBe(5)
     await browser.close()
-  }, patience(120_000))
+  }, RESTART_TEST_TIMEOUT_MS)
 
   it('owner saves 5 in French: same outcome, French words', async () => {
     const inst = await bootBench('fr')
@@ -141,7 +166,7 @@ describe.skipIf(!playwright)('B-21 — the owner sets the simultaneous turns (E-
     await inst.stop()
     expect(await restartedMax(inst.config)).toBe(5)
     await browser.close()
-  }, patience(120_000))
+  }, RESTART_TEST_TIMEOUT_MS)
 
   it('the two bounds, 1 and 16, are accepted and written', async () => {
     const inst = await bootBench('en')

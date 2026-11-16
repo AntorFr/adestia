@@ -13,8 +13,31 @@ import { patience } from './patience.js'
 
 const WORDS = 'The server is not responding'
 type Route = { request(): { url(): string }; abort(c?: string): Promise<void>; fulfill(o: { status?: number; contentType?: string; body?: string }): Promise<void>; continue(): Promise<void> }
+type Ev = { on(e: string, f: (r: unknown) => void): void }
+/**
+ * Calls the page has sent and not yet heard back from (answer headers or failure). Tracked from the
+ * start so that, once a route is armed, the ones it could not catch can be waited out.
+ */
+function trackInFlight(page: Page) {
+  const pending = new Set<unknown>()
+  const done = (r: unknown) => pending.delete(r)
+  const ev = page as unknown as Ev
+  ev.on('request', (r) => { if (/\/api\//.test((r as { url(): string }).url())) pending.add(r) })
+  ev.on('response', (r) => done((r as { request(): unknown }).request()))
+  ev.on('requestfailed', done)
+  return {
+    /** Resolves when every call pending right now has been answered or has failed. */
+    async drain(): Promise<void> {
+      const seen = [...pending]
+      while (seen.some((r) => pending.has(r))) await new Promise((r) => setTimeout(r, 50))
+    },
+  }
+}
 const asRoute = (r: unknown) => r as Route
 const unroute = (page: Page, glob: string) => (page as unknown as { unroute(g: string): Promise<void> }).unroute(glob)
+
+const waitFor = (page: Page, fn: (w: string) => boolean, arg: string, timeout: number) =>
+  (page as unknown as { waitForFunction(f: (w: string) => boolean, a: string, o: { timeout: number }): Promise<unknown> }).waitForFunction(fn, arg, { timeout })
 
 async function shown(page: Page): Promise<number> {
   return page.evaluate((w: string) => [...document.querySelectorAll('[role="status"]')].filter((e) => (e.textContent ?? '').includes(w)).length, WORDS)
@@ -46,25 +69,54 @@ describe.skipIf(!playwright)('B-19 · bords du bandeau « le serveur ne répond 
     return o
   }
 
+  let flight: ReturnType<typeof trackInFlight>
   it.each([502, 503, 504])('un %i sur un appel /api/ alors que la sonde échoue : le bandeau apparaît ; la sonde repasse : il part seul', async (status) => {
-    const { context, page } = await ready()
+    const { context, page } = await open(browser, inst.url, { theme: 'light', size: 'desk', locale: 'en', route: '/', before: async (p) => { flight = trackInFlight(p) } })
+    await page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
     try {
-      // Any OTHER /api/ call the screen makes that the real server answered would clear the banner (an answered call
-      // stops the probe, AD-27): the link is down for them too, so only the 502 and the failing probe are in play.
-      await page.route('**/api/**', async (r) => asRoute(r).abort('failed'))
-      await page.route('**/api/health', async (r) => asRoute(r).abort('failed'))
-      let answered = false
-      await page.route('**/api/instructions', async (r) => {
-        answered = true
-        await asRoute(r).fulfill({ status, contentType: 'text/plain', body: 'gateway' })
+      // The link is down for the whole page but the one call under test: no other /api/ call may
+      // answer in between (an answer clears the banner and retires the probe loop).
+      let failedProbes = 0
+      let sawProbeFail!: () => void
+      const probeFailed = new Promise<void>((resolve) => { sawProbeFail = resolve })
+      let sawGateway!: () => void
+      const gatewayAnswered = new Promise<void>((resolve) => { sawGateway = resolve })
+      await page.route('**/api/**', async (r) => {
+        const url = asRoute(r).request().url()
+        if (url.endsWith('/api/health')) {
+          await asRoute(r).abort('failed')
+          failedProbes += 1
+          sawProbeFail()
+        } else if (url.endsWith('/api/instructions')) {
+          await asRoute(r).fulfill({ status, contentType: 'text/plain', body: 'gateway' })
+          sawGateway()
+        } else {
+          await asRoute(r).abort('failed')
+        }
       })
+      // A call sent before the route existed is not caught by it: if it answers late it clears the
+      // banner and retires the probe loop. Wait for those to be heard back, then provoke the 502.
+      await flight.drain()
       await page.evaluate(() => (location.hash = '/settings/instructions'))
-      expect(await until(page, (n) => n === 1, patience(10_000))).toBe(1)
-      expect(answered).toBe(true)
-      await unroute(page, '**/api/health')
-      await unroute(page, '**/api/instructions')
+      // Signals, not seconds: the simulated request went out, and the probe it started failed.
+      await gatewayAnswered
+      await probeFailed
+      expect(failedProbes).toBeGreaterThan(0)
+      await waitFor(
+        page,
+        (w: string) => [...document.querySelectorAll('[role="status"]')].filter((e) => (e.textContent ?? '').includes(w)).length === 1,
+        WORDS,
+        patience(60_000),
+      )
+      expect(await shown(page)).toBe(1)
       await unroute(page, '**/api/**')
-      expect(await until(page, (n) => n === 0, patience(8_000))).toBe(0)
+      await waitFor(
+        page,
+        (w: string) => [...document.querySelectorAll('[role="status"]')].filter((e) => (e.textContent ?? '').includes(w)).length === 0,
+        WORDS,
+        patience(60_000),
+      )
+      expect(await shown(page)).toBe(0)
     } finally {
       await context.close()
     }

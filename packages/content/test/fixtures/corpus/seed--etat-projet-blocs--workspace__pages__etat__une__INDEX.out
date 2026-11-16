@@ -1,0 +1,15 @@
+---
+title: Une ligne
+type: project-management
+---
+
+:::progress{view="bar"}
+:::
+
+:::milestones
+- Recette: 2026-12-02
+:::
+
+:::risks
+- Fournisseur: High — Marc
+:::

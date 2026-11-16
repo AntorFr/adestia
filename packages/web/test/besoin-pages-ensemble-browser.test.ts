@@ -77,7 +77,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
         beforeAll(async () => {
           instance = await launch('besoin-pages-ensemble', skin, locale)
           browser = await newBrowser()
-        }, patience(60_000))
+        }, 180_000) // the instance boots and the browser starts: under a loaded pod 60 s was shorter than that
         afterAll(async () => {
           await browser?.close()
           await instance?.stop()
@@ -164,7 +164,15 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             }, null, { timeout: ms })
             let picked = false
             for (let attempt = 0; attempt < 3 && !picked; attempt++) {
-              if (attempt > 0) await page.keyboard.press('Shift+Home') // the line holds what is left of the last try: typed over
+              if (attempt > 0) {
+                // a rebase by an autosave answer may have dropped the empty line and the focus with it: land again at the end of
+                // the document, and open a new empty line only if the caret is not already on one
+                await page.locator('.ProseMirror').last().getByText('Corps.').click()
+                await page.keyboard.press('Control+End')
+                const line = await page.evaluate(() => (window.getSelection()?.anchorNode?.textContent ?? '').trim())
+                if (line.startsWith('/')) await page.keyboard.press('Shift+Home') // what is left of the last try: typed over
+                else if (line !== '') await page.keyboard.press('Enter') // no empty line left: a new one
+              }
               await page.keyboard.type('/')
               const last = attempt === 2
               // a menu that never opens (the '/' lost to a rebase under load) is a failed attempt, not a verdict: only the last one blames it
@@ -200,7 +208,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             const flat = () => page.evaluate(() => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' '))
             const want = NEEDS_CONTENT[locale].saved
             await page
-              .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: patience(15_000) })
+              .waitForFunction((t: string) => (document.querySelector('.adestia-canvas__body') as HTMLElement).innerText.replace(/[\u00a0\u202f\s]+/g, ' ').includes(t), want, { timeout: 45_000 })
               .catch(async (error: unknown) => {
                 await shot(page, `refus-ECHEC-${skin}-${locale}-${theme}`)
                 throw new Error(`the answer came without the status text (la réponse est venue sans le texte du statut): ${String(error)}\nstatus read: ${(await flat()).slice(-400)}`)
@@ -212,7 +220,7 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
             await shot(page, `refus-${skin}-${locale}-${theme}`)
             await context.close()
           }
-        }, patience(240_000))
+        }, 300_000)
 
         // P-6 step 4 / E-6: the popover stays below the header and the bands even when its block is the first
         // one of the page, right under the bands; at 1440 px and on a phone, in both themes.
@@ -225,9 +233,39 @@ describe.skipIf(!playwright)('pages tranche, second pass from the need', () => {
               await page.waitForSelector('[data-block="callout"]', { timeout: patience(15_000) })
               await page.locator('[data-block="callout"]').hover({ timeout: patience(3_000) }).catch(() => undefined) // a touch screen has no hover
               await page.getByRole('button', { name: w.block }).first().click()
-              await page.waitForSelector('.adestia-popover', { timeout: patience(10_000) })
-              // pause fixe : the panel measures itself once mounted: a visual settle before reading its geometry
-              await page.waitForTimeout(patience(300))
+              await page.waitForSelector('.adestia-popover', { timeout: 10_000 })
+              // The popover places itself in steps (hidden at 0,0, then placed, then re-placed as the form fills and fonts
+              // arrive), and a band can appear or change height under load, which re-places the popover a frame later:
+              // wait for the signal that the WHOLE set is settled — popover visible, and the rectangles of the popover, the
+              // canvas header and every band, and the number of bands, identical on 5 consecutive frames.
+              await page.waitForFunction(
+                () =>
+                  new Promise<boolean>((resolve) => {
+                    const box = (e: Element) => {
+                      const r = e.getBoundingClientRect()
+                      return `${r.top}|${r.left}|${r.width}|${r.height}`
+                    }
+                    const key = (el: Element) => {
+                      const header = document.querySelector('.adestia-canvas__header')
+                      const bands = [...document.querySelectorAll('.adestia-problems')]
+                      return [box(el), header ? box(header) : 'no-header', String(bands.length), ...bands.map(box)].join('#')
+                    }
+                    let last = ''
+                    let same = 0
+                    const frame = () => {
+                      const el = document.querySelector('.adestia-popover')
+                      if (!el || !el.isConnected || getComputedStyle(el).visibility === 'hidden') return resolve(false)
+                      const k = key(el)
+                      same = k === last ? same + 1 : 0
+                      last = k
+                      if (same >= 5) return resolve(true)
+                      requestAnimationFrame(frame)
+                    }
+                    requestAnimationFrame(frame)
+                  }),
+                undefined,
+                { timeout: 20_000 },
+              )
               const g = (await page.evaluate(() => {
                 const rect = (e: Element) => {
                   const r = e.getBoundingClientRect()

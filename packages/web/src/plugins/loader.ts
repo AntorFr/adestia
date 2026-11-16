@@ -14,6 +14,7 @@
  */
 
 import { forgetContributedBlocks, registerBlocks, type ContributedBlock, type ContributedField } from '@antorfr/adestia-content'
+import type { PluginGalleryEntry } from '@antorfr/adestia-schemas'
 import { createElement, type ComponentType } from 'react'
 
 import {
@@ -65,6 +66,10 @@ export interface PluginDescriptor {
    * draw exactly what the server accepted, and two tables drift.
    */
   readonly vocabulary?: Readonly<Record<string, ContributedBlock>>
+  /** How the manifest says this plugin's blocks show in the gallery. */
+  readonly gallery?: Readonly<Record<string, PluginGalleryEntry>>
+  /** The page seeds it ships, as paths under its folder (AD-36). */
+  readonly templates?: readonly string[]
   readonly chrome?: string
   readonly styles?: readonly string[]
   readonly contract?: number
@@ -93,6 +98,11 @@ export interface LoadedPlugin {
   readonly types?: readonly string[]
   /** Declared frontmatter fields, by type — drawn by the page's properties form. */
   readonly fields?: PluginDescriptor['fields']
+  /** The blocks it adds to the vocabulary, and how the gallery shows them. */
+  readonly blockNames?: readonly string[]
+  readonly gallery?: PluginDescriptor['gallery']
+  /** The page seeds it ships (AD-36). */
+  readonly templates?: PluginDescriptor['templates']
   /**
    * This plugin's own words, in the reader's language — what the shell says
    * when it draws something the MANIFEST declared. See `Words`.
@@ -286,7 +296,9 @@ export async function loadPlugins(
       view === undefined &&
       blocks === undefined &&
       chrome === undefined &&
-      layouts === undefined
+      layouts === undefined &&
+      // A plugin that only ships page seeds is a plugin: its templates are read by the shell itself.
+      (descriptor.templates ?? []).length === 0
     ) {
       // Nothing usable came back: drop the styles we just injected rather than
       // leaving a dead plugin's CSS restyling the page.
@@ -306,6 +318,9 @@ export async function loadPlugins(
       ...(layouts === undefined ? {} : { layouts }),
       ...(descriptor.types ? { types: descriptor.types } : {}),
       ...(descriptor.fields ? { fields: descriptor.fields } : {}),
+      ...(descriptor.vocabulary ? { blockNames: Object.keys(descriptor.vocabulary) } : {}),
+      ...(descriptor.gallery ? { gallery: descriptor.gallery } : {}),
+      ...(descriptor.templates ? { templates: descriptor.templates } : {}),
       ...(words ? { words } : {}),
     })
   }

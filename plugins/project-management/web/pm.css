@@ -189,8 +189,8 @@ button.pm-timeline__span:hover {
 .pm-timeline__today::after {
   content: attr(data-label);
   position: absolute;
-  left: 3px;
-  bottom: -17px;
+  left: 5px;
+  bottom: -21px;
   font-size: var(--text-2xs);
   font-weight: 600;
   font-family: var(--font-mono);
@@ -318,20 +318,15 @@ button.pm-timeline__span:hover {
   padding: var(--space-2) 0;
 }
 .pm-subproject__card {
-  display: flex;
+  /* The box, the border, the hover and the press are the charter's
+     `.adestia-card`; only the inside is laid out here. */
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
   padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
+  margin: 0;
+  min-width: 0;
 }
-.pm-subproject__card:hover { border-color: var(--accent); }
 /* La boulette et le nom sur une ligne, le mot dessous : un nom de projet long
    a besoin d'aller à la ligne, ce qu'une ligne de liste ne lui permettait pas
    mais qu'une carte doit. */
@@ -367,3 +362,92 @@ button.pm-timeline__span:hover {
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+/* ── progress, milestones, risks ──────────────────────────────────────────
+   The pieces are the shell's (`.adestia-state`, `.adestia-figure`,
+   `.adestia-meter`, `.adestia-card--static`); this is only their layout. */
+.pm-empty {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+.pm-progress--bar { display: flex; flex-direction: column; gap: var(--space-2); }
+.pm-progress__head { display: flex; align-items: baseline; gap: var(--space-2); }
+.pm-progress__head strong { font-size: var(--text-xl); }
+.pm-progress__head span,
+.pm-progress__line { color: var(--text-muted); font-size: var(--text-sm); margin: 0; }
+.pm-list { list-style: none; margin: 0; padding: 0; }
+.pm-mile {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+}
+.pm-list .pm-mile { padding: var(--space-2) 0; border-bottom: 1px solid var(--border); }
+.pm-list .pm-mile:last-child { border-bottom: 0; }
+.pm-mile__label { flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; }
+.pm-mile__date,
+.pm-risk__owner { color: var(--text-muted); font-size: var(--text-sm); }
+.pm-mile--done .pm-mile__label { color: var(--text-muted); text-decoration: line-through; }
+.pm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--space-2);
+}
+.pm-grid .adestia-card__title { overflow-wrap: anywhere; }
+.pm-risks__scroll { overflow-x: auto; }
+.pm-risks { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.pm-risks th,
+.pm-risks td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border); vertical-align: middle; }
+.pm-risks th { color: var(--text-muted); font-weight: 600; }
+.pm-risks td:first-child { overflow-wrap: anywhere; }
+.pm-unread {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.pm-milestones,
+.pm-risks-block,
+.pm-progress,
+.pm-empty { margin: 0 0 var(--space-4); }
+.pm-milestones .pm-list { margin: 0; padding: 0; list-style: none; }
+.pm-milestones .pm-list .pm-mile { margin: 0; }
+.pm-unread li { margin: 0; padding: 0; }
+.pm-risks tbody tr:nth-child(odd) { background: transparent; }
+.pm-grid .adestia-card { align-items: flex-start; text-align: left; margin: 0; }
+.pm-grid .adestia-card__title { font: inherit; font-weight: 600; margin: 0; }
+
+/* ── `:::timeline view=list` — the dated entries as rows ───────────────────
+   The same entries and the same words as the bars; a late one is the dashed
+   `--text-muted` outline of its pill, never amber. */
+.pm-timeline--list .pm-list { margin: 0; padding: 0; list-style: none; }
+.pm-timeline__row > .adestia-state,
+.pm-timeline__row > .pm-timeline__owner { flex: none; min-width: 8rem; }
+.pm-timeline__row { padding: var(--space-2) 0; border-bottom: 1px solid var(--border); }
+.pm-timeline__row:last-child { border-bottom: 0; }
+.pm-timeline__row { flex-wrap: wrap; }
+.pm-timeline__name { white-space: normal; overflow-wrap: anywhere; }
+.pm-timeline__name {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+button.pm-timeline__name { cursor: pointer; }
+button.pm-timeline__name:hover { text-decoration: underline; }
+.pm-timeline__owner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: 600 var(--text-xs)/1.4 var(--font-mono);
+}
+.pm-timeline__row--done .pm-mile__label,
+.pm-timeline__row--past .pm-mile__label { color: var(--text-muted); }

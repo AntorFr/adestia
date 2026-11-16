@@ -4,6 +4,9 @@
  *
  *   node --test bench/tests/doc-besoin.test.mjs
  *
+ * The version guard owes an entry to each stable tag, not to each series pre-release, and lets the last
+ * title lag a pre-release tag (see doc-version.test.mjs).
+ *
  * Needs git history with tags for the version checks (a clone without tags reports it and fails,
  * rather than passing silently). Only tags merged into HEAD count: those of an unmerged epic are
  * not in main's history and get their entry with the merge. The fresh-context `relecteur-depot`
@@ -63,7 +66,7 @@ describe('B-5 — CHANGELOG.md is the history, in version order', () => {
     }
   })
 
-  test('the last title is the latest tag or its next version, status.md cites it, no tag lacks its entry', () => {
+  test('the last title is the latest tag or its next version (after a pre-release: any series number up to one ahead, or the release), status.md cites it, no stable tag lacks its entry', () => {
     assert.deepEqual(checkVersions({ tags: allTags(), headings, status: read('.agent/status.md'), since: 'v0.61.0' }), [])
   })
 

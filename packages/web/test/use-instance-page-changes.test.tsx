@@ -75,3 +75,27 @@ describe('useInstance.pageChanges', () => {
     expect(result.current.pageChanges).toEqual({ seq: 0, paths: [] })
   })
 })
+
+describe('useInstance.writableFolders', () => {
+  const withIndex = (index: unknown) => {
+    const f = feed('off')
+    const inner = f.fetchImpl
+    const fetchImpl = ((url: string) =>
+      String(url).startsWith('/api/pages/index') ? Promise.resolve(json(index)) : inner(url)) as unknown as typeof fetch
+    return options(fetchImpl)
+  }
+
+  it('exposes the folders the index names, the root included', async () => {
+    const { result } = renderHook(() => useInstance(withIndex({ entries: [], writableFolders: ['', 'notes'] })))
+    await waitFor(() => expect(result.current.writableFolders).toEqual(['', 'notes']))
+  })
+
+  it('is [] when the index carries none, or something that is not a list', async () => {
+    const a = renderHook(() => useInstance(withIndex({ entries: [] })))
+    await waitFor(() => expect(a.result.current.indexed).toBe(true))
+    expect(a.result.current.writableFolders).toEqual([])
+    const b = renderHook(() => useInstance(withIndex({ entries: [], writableFolders: 'notes' })))
+    await waitFor(() => expect(b.result.current.indexed).toBe(true))
+    expect(b.result.current.writableFolders).toEqual([])
+  })
+})

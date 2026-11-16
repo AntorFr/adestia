@@ -29,7 +29,7 @@ One instance is one agent, one workspace, one subscription.
 Form of the `exigences` skill; each need names the journeys it serves.
 
 ### Unchanged behaviour
-- **B-1** *(`adestia-qualite`; `adestia-correctifs` lifts it for its register, B-13; `adestia-ajouts` lifts it for B-17 to B-22 only)* — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
+- **B-1** *(`adestia-qualite`; `adestia-correctifs` lifts it for its register, B-13; `adestia-ajouts` lifts it for B-17 to B-22 only; `adestia-pages` lifts it for B-23 to B-31 only)* — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
   routes, same API, same configuration keys, same files on disk and their formats, same MCP
   tools, same words where a word is not corrected by `B-8` or `B-9`. A visible change is limited to
   the look (`B-6`, `B-7`, `B-9`), to the language of a string (`B-8`), to the labels of back
@@ -144,6 +144,21 @@ nothing else is added (see Out of scope).
   Claude refuses to resume a session that is gone (checked in AD-28): the server reruns the turn once
   without it, on the same conversation, and the mark sits above the first reply of that turn.
 
+
+### What `adestia-pages` adds
+`adestia-pages` (Monsieur's orientation of 2026-11-11: four ordered tranches) is a functional epic:
+it adds the behaviours below, so `B-1` (no functional change) does not bind it. Existing pages
+keep opening as they did (B-31).
+
+- **B-23** — A block moves without a mouse: from the keyboard, from **Move up / Move down** controls on its bar, and by touch (a long press then drag, or the same controls). The move works at the page level today; the same controls move it across containers once B-28 exists. *(P-17)*
+- **B-24** — The user browses all the blocks the instance offers (core and enabled plugins) in a **block gallery**: each with its name, a picture of how it looks, one line saying what it is for; choosing one inserts it at the **insertion point** (after the block that has focus or selection; at the end of the page when none; at the end of the container when the focus is a container), and opens its form (B-27) when it needs data. The `/` menu stays. *(P-17)*
+- **B-25** — Every block is redrawn to look finished (the blocks of the core in tranche 2; those of `project-management`, `timeline` included, in tranche 4), and where one data can read in several ways the block offers display variants (`view`), chosen from the settings (B-26) or the gallery. *(P-18)*
+- **B-26** — The block settings (E-6) are redrawn: labels in the user's language, fields grouped and explained, the variants shown as small pictures rather than words, the effect visible while the user changes it. No raw attribute is shown by default. *(P-18)*
+- **B-27** — The data of a block is entered in a form, not as raw markdown lines: the figures of `figures`, the phases and milestones of `timeline`, the items of `list` and `table`, the cards. The raw lines stay one click away; what the form writes is the same file as before (AD-33). *(P-18)*
+- **B-28** — A page has **sections** (a titled group of blocks that may be folded) and **columns** (two or three side by side that stack on a phone); a block is dropped into, out of, and between them, with the pointer, the keyboard and the buttons of B-23. Nesting is bounded (AD-32). *(P-19)*
+- **B-29** — The blocks of `project-management` are redesigned in this frame, and the project blocks that the status page needs (a candidate list is in the mockup `etat-projet`: derived progress, milestones, risks, workload…) are three, chosen by Monsieur on that picture (11/11): **A** progress derived from the sub-pages, **B** milestones, **C** risks. Workload per person (candidate D) is out of scope. The fields each reads are fixed by the design of tranche 4. *(P-20)*
+- **B-30** — A page **"Project status"** is created from a template (a page seed with its sections, columns and blocks already placed) and finished by editing its blocks through forms. This is the exit criterion of the epic: someone composes a readable, structured status page without touching markdown or raw configuration. *(P-20)*
+- **B-31** — Every page written before this epic opens, reads and saves unchanged: no migration, and a page without containers is written back byte-for-byte as before its edit (AD-32). *(P-19)*
 
 ## Journeys
 
@@ -363,9 +378,50 @@ The user works with a page open and the agent writes in it; the owner is away fr
 
 Needs: B-17, B-18, B-19, B-20, B-21, B-22
 
+### P-17 — Arrange the blocks of a page
+The user has a page with six blocks in the wrong order, on a laptop, and later on a phone.
+
+1. The user opens the page in editing (E-4). Each block bar shows **Move up**, **Move down** and the grip (B-23).
+2. With the keyboard, the user focuses a block bar and presses the move shortcut; the block moves one place, a live region says where (B-23).
+3. On the phone, the user presses the block's move control, or long-presses the grip and drags (B-23).
+4. The user wants a block they do not know the name of: **Add block** (or `/` then "Browse") opens the gallery (E-34); they scan the pictures, choose "Figures", and it lands at the insertion point with its default values (B-24). For a block with data (`figures`, `timeline`, `list`, `table`, cards) its form (E-35, B-27) opens on the new block; any other block opens nothing.
+5. *Failure.* The page was written elsewhere while the sheet was open: the banner "The page changed." with **Reload** shows, nothing is inserted. On the first block **Move up** is disabled; `Alt+↑` does nothing and the live region says "Already first". On a read-only page none of these controls exist.
+
+Needs: B-23, B-24
+
+### P-18 — Shape a block's look and data
+The user has a block that looks rough and whose data is raw lines.
+
+1. The user opens the block's settings (E-6); the variants are small pictures; choosing one redraws the block in place (B-25, B-26).
+2. The user presses **Edit data** (at the foot of E-6; built, `adestia-pages-blocs-formulaires-saisie`); a form (E-35) lists the figures (or phases, items): add, reorder, remove a row, with the right field per column (a number, a date, or plain text; a timeline row carries no status, the line format has none) (B-27).
+3. A number that is not a number is refused under its field, in the user's language, and **Apply** waits until it is fixed (B-27). After inserting a data block from the gallery (E-34), the same form opens on the new block with one empty row (P-17 step 4, B-24).
+4. The user closes the form; the block shows the result. The raw lines are available from **Raw** in the form and say the same thing (B-27, AD-33).
+
+Needs: B-25, B-26, B-27
+
+### P-19 — Give a page real structure
+The user wants a section "Risks" next to a section "Decisions" and a summary above both.
+
+1. The user adds a **Section** and a **Columns** block from the gallery (E-34) (B-28).
+2. They drop existing blocks into the columns by dragging or with the move controls (B-23, B-28); a block that cannot go somewhere (depth, AD-32) shows why instead of refusing silently.
+3. They fold a section to read the page shorter (a reader's toggle, local to the screen, also available on a read-only page; the saved initial state is the section's `closed` setting); on a phone the columns stack (B-28).
+4. A colleague opens a page written last month: it reads as before (B-31).
+
+Needs: B-23, B-28, B-31
+
+### P-20 — Compose a project status page
+The owner follows a project and wants a status page without writing markdown.
+
+1. In the folder where the project lives (the E-3 listing, not a block container), the user presses **New from template** (E-3), chooses "Project status", names the page and creates it (E-36) (B-30).
+2. The page opens with a summary section, a two-column band (progress and milestones, risks), and the timeline; the derived blocks (progress, timeline) fill from the folder at once, the two written ones (milestones, risks) start empty with a sentence that names **Edit data**, and the user fills them through forms (B-27, B-29). If the title is already a page of that folder, E-36 says so under the field and writes nothing; where the folder cannot be written, or no template is shipped, the button is not there. The band holds the three project blocks Monsieur chose (11/11): progress derived from the sub-pages (A), milestones (B), risks (C); the fields each reads are in `docs/donnees.md` ("Project blocks"): A has none (it reads the sub-pages), B and C are lines the forms write.
+3. The user changes a block's variant, moves a risk block to another column, adds a block from the gallery (B-23, B-24, B-28).
+4. A reader opens the page (E-4, E-31): it is legible on a desk and on a phone, light and dark (B-30).
+
+Needs: B-25, B-29, B-30
+
 ## Out of scope
 
-- **Any functional change, except the six of `adestia-ajouts` (B-17 to B-22)** (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
+- **Any functional change, except the six of `adestia-ajouts` (B-17 to B-22) and the nine of `adestia-pages` (B-23 to B-31)** (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
   route or file, a changed data format, a changed MCP tool. A defect found on the way is
   written down (`ARCHITECTURE.md` › Known defects) and left for its own feature.
 - **Catalogue security corrections** belonged to the separate catalogue work, not
@@ -384,3 +440,5 @@ Needs: B-17, B-18, B-19, B-20, B-21, B-22
   a volume for the Claude home in the deployment (`k8s-home-lab` is Monsieur's).
 - Deployment: nothing here changes `k8s-home-lab`; the epic reaches `main` and is tagged,
   the bodies are bumped by Monsieur.
+
+- **`adestia-pages` does not build** (to be kept for later, one line each): free positioning (pixels, overlapping blocks); a page template authored by the user (only shipped templates); drag of a block between two pages; a task manager, a Gantt chart or a sync with an outside tool (the project blocks read Adestia pages only); live collaboration; a new skin or a change of the palette (the charter holds, `docs/charte.md`); a table of contents block; undo history across sessions.

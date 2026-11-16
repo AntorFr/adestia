@@ -10,7 +10,16 @@ export interface PopoverProps {
   readonly children: ReactNode
   readonly label?: string
   readonly className?: string
+  /**
+   * What the panel must leave readable (the block whose settings it is): it goes below it,
+   * else above, else beside it, else — on a screen with no such room — in the larger of the
+   * two gaps, scrolling inside. Without room anywhere it hangs from the anchor as usual.
+   */
+  readonly avoid?: RefObject<HTMLElement | null>
 }
+
+/** The least height worth showing a panel at when it has to shrink to leave a block visible. */
+const LEAST = 176
 
 const GAP = 8
 
@@ -19,17 +28,25 @@ const GAP = 8
  * there is no room, bounded below its canvas chrome and inside the visible viewport.
  * It follows scrolling and resizing. Escape or a press outside closes it; focus returns to the opener.
  */
-export function Popover({ anchor, open, onClose, children, label, className }: PopoverProps) {
+export function Popover({ anchor, open, onClose, children, label, className, avoid }: PopoverProps) {
   const panel = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ top: number; left: number; maxHeight: number } | null>(null)
-  useFocusScope(panel, open, { trap: false, onEscape: onClose })
+  // Focus can only enter a panel that is visible: until `pos` is set it is `visibility: hidden`
+  // and `focus()` would be a silent no-op. So the scope arms once the panel is placed.
+  useFocusScope(panel, open && pos !== null, { trap: false, onEscape: onClose })
+
+  // A reopening must place afresh, never show the panel at its previous position.
+  useLayoutEffect(() => {
+    if (!open) setPos(null)
+  }, [open])
 
   useLayoutEffect(() => {
     const host = anchor.current
     const box = panel.current
     if (!open || !host || !box) return
     const canvas = host.closest('.adestia-canvas')
-    const boundaries = canvas
+    // Read at each placement: a band can appear or leave after the panel opened.
+    const readBoundaries = () => canvas
       ? [...canvas.querySelectorAll<HTMLElement>('.adestia-canvas__header, .adestia-console-host, .adestia-problems, .adestia-editor__readonly')]
       : []
     const viewport = window.visualViewport
@@ -42,7 +59,7 @@ export function Popover({ anchor, open, onClose, children, label, className }: P
       const right = viewportLeft + (viewport?.width ?? window.innerWidth) - GAP
       // Only this anchor's canvas contributes chrome: a chat menu must not
       // inherit the page's bands on the other side of the split.
-      const ceiling = boundaries.reduce((edge, element) => {
+      const ceiling = readBoundaries().reduce((edge, element) => {
         const r = element.getBoundingClientRect()
         return r.width > 0 && r.height > 0 && r.bottom > viewportTop && r.top < bottom
           ? Math.max(edge, r.bottom + GAP)
@@ -62,9 +79,29 @@ export function Popover({ anchor, open, onClose, children, label, className }: P
       const below = a.bottom + GAP
       const above = a.top - GAP - h
       const preferred = below + h > bottom && above >= topLimit ? above : below
-      const top = Math.max(topLimit, Math.min(preferred, bottom - h))
-      const left = Math.max(viewportLeft + GAP, Math.min(a.left, right - w))
-      const next = { top, left, maxHeight: h }
+      let top = Math.max(topLimit, Math.min(preferred, bottom - h))
+      let left = Math.max(viewportLeft + GAP, Math.min(a.left, right - w))
+      let height = h
+      const block = avoid?.current?.getBoundingClientRect()
+      if (block && block.width > 0 && block.height > 0) {
+        const full = Math.min(box.scrollHeight + 2, available) // the panel's own height, uncut
+        const roomBelow = bottom - (block.bottom + GAP)
+        const roomAbove = block.top - GAP - topLimit
+        const hClamp = (v: number) => Math.max(topLimit, Math.min(v, bottom - full))
+        if (roomBelow >= full) { top = block.bottom + GAP; height = full }
+        else if (roomAbove >= full) { top = block.top - GAP - full; height = full }
+        else if (right - (block.right + GAP) >= w) {
+          left = block.right + GAP
+          top = hClamp(Math.max(block.top, topLimit)); height = full
+        } else if (block.left - GAP - viewportLeft - GAP >= w) {
+          left = block.left - GAP - w
+          top = hClamp(Math.max(block.top, topLimit)); height = full
+        } else if (Math.max(roomBelow, roomAbove) >= LEAST) {
+          if (roomBelow >= roomAbove) { top = block.bottom + GAP; height = roomBelow }
+          else { top = topLimit; height = roomAbove }
+        }
+      }
+      const next = { top, left, maxHeight: height }
       setPos((previous) => previous?.top === next.top && previous.left === next.left && previous.maxHeight === next.maxHeight ? previous : next)
     }
     const schedule = (event?: Event) => {
@@ -79,7 +116,18 @@ export function Popover({ anchor, open, onClose, children, label, className }: P
     viewport?.addEventListener('resize', schedule)
     viewport?.addEventListener('scroll', schedule)
     const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(() => schedule())
-    for (const element of [host, box, ...boundaries]) observer?.observe(element)
+    const watched = new Set<Element>()
+    const watch = () => {
+      const current = new Set<Element>([host, box, ...readBoundaries()])
+      for (const element of watched) if (!current.has(element)) { observer?.unobserve(element); watched.delete(element) }
+      for (const element of current) if (!watched.has(element)) { observer?.observe(element); watched.add(element) }
+    }
+    watch()
+    let mutations: MutationObserver | undefined
+    if (canvas && typeof MutationObserver !== 'undefined') {
+      mutations = new MutationObserver(() => { watch(); schedule() })
+      mutations.observe(canvas, { childList: true, subtree: true })
+    }
     return () => {
       cancelAnimationFrame(frame)
       document.removeEventListener('scroll', schedule, true)
@@ -87,8 +135,9 @@ export function Popover({ anchor, open, onClose, children, label, className }: P
       viewport?.removeEventListener('resize', schedule)
       viewport?.removeEventListener('scroll', schedule)
       observer?.disconnect()
+      mutations?.disconnect()
     }
-  }, [open, anchor])
+  }, [open, anchor, avoid])
 
   useEffect(() => {
     if (!open) return

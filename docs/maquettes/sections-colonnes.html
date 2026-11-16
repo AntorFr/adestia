@@ -1,0 +1,15 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="maquette.css"><title>Sections and columns</title>
+<body><div class="sheetpage"><h1>A page with sections and columns (tranche 3, B-28 / B-31)</h1>
+<p class="lead">A section is a titled, foldable group; columns sit side by side and stack on a phone. Dashed edges and the "+" lanes appear in editing only; reading shows the content alone. An old page without containers is unchanged (B-31).</p>
+<h2>Editing</h2><div class="show" data-tpl="ed"></div>
+<template id="ed"><div class="pg"><h3 class="pt">Garden project</h3><div class="sub">Page · editing</div>
+<div class="sec"><div class="sh"><i data-i="chev" style="transform:rotate(90deg)"></i><i data-i="sect" class="ico"></i>Summary<span class="btn" style="margin-left:auto"><i data-i="up"></i></span><span class="btn"><i data-i="down"></i></span></div><div class="sb"><div class="bl card"><div style="font-size:14px">On track for April. Two decisions open.</div></div></div></div>
+<div class="cols c2"><div class="col"><div class="sh" style="font:600 11px var(--font-mono);color:var(--text-faint);padding:2px 4px 8px">COLUMN 1</div><div class="bl card sel"><div class="bar"><button><i data-i="grip"></i></button><button><i data-i="left"></i></button><button><i data-i="right"></i></button><button><i data-i="up"></i></button><button><i data-i="down"></i></button></div><div class="hd"><i class="ico" data-i="flag"></i>Decisions</div><div class="muted" style="font-size:13px">Tiles · Roof quote</div></div><div class="drop"></div><div style="padding:6px;color:var(--text-faint);font-size:12px;display:flex;gap:6px"><i data-i="plus"></i>Drop here</div></div>
+<div class="col"><div style="font:600 11px var(--font-mono);color:var(--text-faint);padding:2px 4px 8px">COLUMN 2</div><div class="bl card"><div class="hd"><i class="ico" data-i="warn"></i>Risks</div><div class="muted" style="font-size:13px">Weather · Supplier delay</div></div></div></div>
+<div class="sec fold"><div class="sh"><i data-i="chev"></i><i data-i="sect" class="ico"></i>Archive<span class="pill p-n" style="margin-left:auto">folded · 4 blocks</span></div></div></div></template>
+<h2>Reading — same page, no scaffolding</h2><div class="show" data-tpl="rd"></div>
+<template id="rd"><div class="pg"><h3 class="pt">Garden project</h3><div class="sub">Updated today</div>
+<div class="sec" style="background:transparent"><div class="sh"><i data-i="chev" style="transform:rotate(90deg)"></i>Summary</div><div class="sb"><div style="font-size:14.5px;padding:0 4px 10px">On track for April. Two decisions open.</div></div></div>
+<div class="cols c2"><div class="bl card"><div class="hd"><i class="ico" data-i="flag"></i>Decisions</div><div class="muted" style="font-size:13px">Tiles · Roof quote</div></div><div class="bl card"><div class="hd"><i class="ico" data-i="warn"></i>Risks</div><div class="muted" style="font-size:13px">Weather · Supplier delay</div></div></div>
+<div class="sec fold"><div class="sh"><i data-i="chev"></i>Archive</div></div></div></template>
+</div><script src="maquette.js"></script>

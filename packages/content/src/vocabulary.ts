@@ -31,12 +31,24 @@ export type BlockContent =
    * two forms draw differently is two renderings wearing one word.
    */
   | 'optional'
+  /**
+   * Holds other BLOCKS, not prose (AD-32): a `section` holds blocks and
+   * columns, `columns` holds `col`, a `col` holds blocks. Written with a longer
+   * fence than its children. The validator judges what each may hold by its
+   * parent chain, not by this shape alone.
+   */
+  | 'container'
 
 export interface AttributeSpec {
   readonly required?: boolean
   /** Closed set of accepted values. Absent means any non-empty string. */
   readonly values?: readonly string[]
   readonly default?: string
+  /**
+   * A value outside `values` is read as `default`, without a diagnostic: a
+   * display variant (AD-35) never makes a page unreadable.
+   */
+  readonly fallback?: boolean
 }
 
 export interface BlockSpec {
@@ -153,6 +165,34 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     description: 'A line break between blocks that share lines: the next block starts a new line.',
     attributes: {},
   },
+  /**
+   * ── Containers (AD-32) ─────────────────────────────────────────────────────
+   * Depth is bounded: a section holds blocks and columns, a column holds
+   * blocks, never a section or columns, and a section never holds a section.
+   * `title` and `ico` are RESERVED, so the section's own are not declared here;
+   * `closed=fold` is its saved initial state (the reader's toggle is local).
+   * `w` inside a `col` is ignored at render time but stays in the file.
+   */
+  section: {
+    name: 'section',
+    content: 'container',
+    description: 'A titled stretch of the page that holds blocks and columns, and can start folded.',
+    attributes: {
+      closed: { values: ['fold'] },
+    },
+  },
+  columns: {
+    name: 'columns',
+    content: 'container',
+    description: 'A band of two or three columns side by side; holds `col` blocks only.',
+    attributes: {},
+  },
+  col: {
+    name: 'col',
+    content: 'container',
+    description: 'One column of a `columns` band; holds blocks, never a section or columns.',
+    attributes: {},
+  },
   gallery: {
     name: 'gallery',
     content: 'flow',
@@ -214,7 +254,11 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
     name: 'figures',
     content: 'flow',
     description: 'Figures drawn as tiles, from a markdown list.',
-    attributes: {},
+    attributes: {
+      // `tiles` is a tile per figure (a percentage tile draws its bar, which
+      // is a drawing and not a value); `inline` is one line of figures.
+      view: { values: ['tiles', 'inline'], default: 'tiles', fallback: true },
+    },
   },
 
   /**
@@ -301,7 +345,7 @@ export const VOCABULARY: Readonly<Record<string, BlockSpec>> = {
       // How the ENTRIES are laid out — rows, a grid of cards, chips — and
       // never whether the block is boxed: that is `frame=card`. Every value is
       // drawn for both sources; over files, `cards` is the contact sheet.
-      view: { values: ['rows', 'cards', 'chips'], default: 'rows' },
+      view: { values: ['rows', 'cards', 'chips'], default: 'rows', fallback: true },
     },
   },
 }

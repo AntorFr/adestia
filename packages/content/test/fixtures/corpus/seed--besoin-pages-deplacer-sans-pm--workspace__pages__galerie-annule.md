@@ -1,0 +1,11 @@
+---
+title: Galerie galerie-annule
+---
+
+:::callout{ico=💡 title="Bloc 1"}
+Texte du bloc 1.
+:::
+
+:::callout{ico=💡 title="Bloc 2"}
+Texte du bloc 2.
+:::

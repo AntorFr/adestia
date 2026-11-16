@@ -362,6 +362,7 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
         await done
         await page.locator(`${canvas} .adestia-tile__label:text-is("agenda")`).first().waitFor({ state: 'visible', timeout: T })
         await expect.poll(() => page.evaluate(() => location.hash), { timeout: T }).toBe('#/settings/mcp')
+        // the list refetches after the DELETE: wait for the removed tile to leave, a count read at once saw the old list
         await page.locator(`${canvas} .adestia-tile__label:text-is("${name}")`).first().waitFor({ state: 'detached', timeout: T })
         expect(await page.locator(`${canvas} .adestia-tile__label:text-is("${name}")`).count()).toBe(0)
         expect(g.calls).toBe(1)

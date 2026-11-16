@@ -10,6 +10,9 @@ export {
   splitFrontmatter,
   readFrontmatter,
   writeFrontmatter,
+  readTemplateDeclaration,
+  type TemplateDeclaration,
+  type TemplateText,
   type FieldValue,
   type FrontmatterRead,
 } from './frontmatter.js'

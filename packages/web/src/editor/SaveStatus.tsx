@@ -1,10 +1,19 @@
+import { Button } from '../app/ui/index.js'
 import { Icon } from '../app/Icon.js'
 import type { IconName } from '../app/icons.js'
 import type { SaveState } from './useAutosave.js'
 import { diagnosticMessage } from './diagnostics.js'
 
 /** The save line: an icon and a sentence, in the page's language (`t` is identity in English). */
-export function SaveStatus({ state, t = (key) => key }: { state: SaveState; t?: (key: string) => string }) {
+export function SaveStatus({
+  state,
+  t = (key) => key,
+  onRetry,
+}: {
+  state: SaveState
+  t?: (key: string) => string
+  onRetry?: () => void
+}) {
   const line = (modifier: string, icon: IconName, text: string) => (
     <span className={modifier === '' ? 'adestia-save' : `adestia-save adestia-save--${modifier}`}>
       <Icon name={icon} {...(icon === 'loader-circle' ? { className: 'adestia-icon--spin' } : {})} />
@@ -31,6 +40,16 @@ export function SaveStatus({ state, t = (key) => key }: { state: SaveState; t?: 
       )
     }
     case 'failed':
-      return line('error', 'circle-alert', state.message)
+      // A save that did not reach the file is "Not saved" like a refused one, and can be tried again.
+      return (
+        <>
+          {line('error', 'circle-alert', t('Not saved: %reason').replace('%reason', () => state.message))}
+          {onRetry && (
+            <Button variant="ghost" icon="rotate-ccw" onClick={onRetry}>
+              {t('Retry')}
+            </Button>
+          )}
+        </>
+      )
   }
 }

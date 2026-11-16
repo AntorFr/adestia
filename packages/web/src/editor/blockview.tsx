@@ -24,19 +24,28 @@
  */
 
 import { resolveBlock, type Indexed } from '@antorfr/adestia-content'
-import { serializerCtx } from '@milkdown/kit/core'
+import { parserCtx, serializerCtx } from '@milkdown/kit/core'
 import type { Ctx } from '@milkdown/kit/ctx'
 import type { Node as ProseNode } from '@milkdown/kit/prose/model'
+import { redo, undo } from '@milkdown/kit/prose/history'
 import { NodeSelection, TextSelection } from '@milkdown/kit/prose/state'
 import type { EditorView, NodeView } from '@milkdown/kit/prose/view'
 import { createRoot, type Root } from 'react-dom/client'
 
+import { BlockForm } from './BlockForm.js'
+import { OPEN_FORM } from './slash.js'
+import { bodyLines, fenced } from './blockform/index.js'
 import { BlockSettings } from './BlockSettings.js'
+import { columnsOf, isHollow, lastColumnHolds, withColumnCount } from './containers.js'
 import { domIcon } from './dom-icon.js'
 import type { IconName } from '../app/icons.js'
 import { prettify } from '../app/paths.js'
+import { moveBlock, nodeAtPath, slotAtPosIn, slotToIndex, slotsAt, type Direction, type Path } from './moveBlock.js'
+import { announce, canMove, moveByStep, moveTo, placeOf, said, stepOf } from './moveui.js'
 import { Reader, type BlockComponents, type VocabularyContext } from './Reader.js'
+import type { PluginGalleryFields } from '@antorfr/adestia-schemas'
 import type { Say } from '../plugins/words.js'
+import { REPORT_NOW } from './reportNow.js'
 
 /** What a block's rendering needs to know about the page it is written in. */
 export interface EditorEnv {
@@ -54,14 +63,21 @@ export interface EditorEnv {
    * runs — so the settings panel cannot get it translated any other way.
    */
   readonly say?: Say | undefined
+  /** The form a block declares for its lines (`fields`), absent for a block with none (E-35). */
+  readonly forms?: ((name: string) => PluginGalleryFields | undefined) | undefined
+  /** Whether a block inserted from the gallery opens its settings (E-6) because it has no form to open. */
+  readonly settingsOnInsert?: ((name: string) => boolean) | undefined
   /** The editor's translator: the bar, the settings and the notes speak the instance's language. */
   readonly t?: ((key: string) => string) | undefined
 }
 
+/** How long a finger rests on the grip before the drag starts (AD-deplacer-1). */
+const LONG_PRESS_MS = 400
+
 type Posture = 'prose' | 'data' | 'atom'
 
 /** Blocks whose body is text a person writes in place. */
-const PROSE = new Set(['content', 'callout', 'gallery', 'table'])
+const PROSE = new Set(['content', 'callout', 'gallery', 'table', 'section', 'columns', 'col'])
 
 /**
  * The next block view to be built opens its settings — set by the `/` menu
@@ -81,6 +97,8 @@ export function directiveView(name: string, atom: boolean, env: EditorEnv) {
 
 type Attributes = Record<string, string>
 
+const CONTAINER_NAMES = new Set(['section', 'columns', 'col'])
+
 class DirectiveView implements NodeView {
   readonly dom: HTMLElement
   readonly contentDOM?: HTMLElement
@@ -93,12 +111,20 @@ class DirectiveView implements NodeView {
   private previewRoot?: Root
   private readonly head?: HTMLElement
   private readonly lift: HTMLButtonElement
+  private readonly up: HTMLButtonElement
+  private readonly down: HTMLButtonElement
+  private readonly out: HTMLButtonElement
+  private readonly into: HTMLButtonElement
   /** The ⚙ as a ref, which is what the settings window hangs from and returns focus to. */
   private readonly anchor: { current: HTMLElement | null }
+  /** This block's own element, which its settings window keeps clear of. */
+  private readonly self: { current: HTMLElement | null }
   private readonly t: (key: string) => string
   /** A data block showing its raw lines rather than its rendering. */
   private raw = false
   private open: boolean
+  /** The data form (E-35), with the lines the block had when it opened. */
+  private form: { readonly base: string; readonly fresh: boolean } | undefined
 
   constructor(
     private readonly name: string,
@@ -160,13 +186,36 @@ class DirectiveView implements NodeView {
     const grip = iconButton('grip-vertical', t('Move block'), 'adestia-edblock__grip')
     grip.addEventListener('pointerdown', (event) => {
       event.preventDefault()
-      this.startDrag(event)
+      this.press(event)
     })
+    // A long press on a phone must not become the browser's text selection or menu.
+    grip.addEventListener('contextmenu', (event) => event.preventDefault())
     this.bar.append(grip)
+    this.up = action('arrow-up', t('Move up'), () => this.step('up'), 'adestia-edblock__up')
+    this.down = action('arrow-up', t('Move down'), () => this.step('down'), 'adestia-edblock__down')
+    // Out of the container it sits in / into the container that follows (AD-structure-1).
+    this.out = action('arrow-up', t('Move out of the container'), () => this.step('out'), 'adestia-edblock__out')
+    this.into = action('arrow-up', t('Move into the next container'), () => this.step('in'), 'adestia-edblock__into')
+    // Alt+↑/↓ from anywhere in the block: its bar, or the caret in its body.
+    // Neighbours moved without this view being told: read the ends again when it is reached.
+    this.dom.addEventListener(OPEN_FORM, () => {
+      if (this.env.forms?.(this.name)) this.openForm(true)
+      else if (this.env.settingsOnInsert?.(this.name)) this.setOpen(true)
+    })
+    this.dom.addEventListener('pointerover', () => this.syncMove())
+    this.dom.addEventListener('focusin', () => this.syncMove())
+    this.dom.addEventListener('keydown', (event) => {
+      const direction = stepOf(event)
+      if (!direction) return
+      event.preventDefault()
+      event.stopPropagation()
+      this.step(direction, true)
+    })
     this.lift = action('corner-left-up', t('Leave the parent block'), () => this.liftOut(), 'adestia-edblock__lift')
     action('trash-2', t('Delete block'), () => this.remove(), 'adestia-edblock__remove')
     const gear = iconButton('settings', t('Block settings'), 'adestia-edblock__gear')
     this.anchor = { current: gear }
+    this.self = { current: this.dom }
     gear.addEventListener('mousedown', (event) => {
       event.preventDefault()
       // Focus goes to the ⚙ itself, so that closing the window gives it back here.
@@ -232,9 +281,12 @@ class DirectiveView implements NodeView {
     if (attributes['w']) this.dom.dataset['w'] = attributes['w']
     else delete this.dom.dataset['w']
     this.dom.classList.toggle('adestia-edblock--open', this.open)
+    // A column is a place, not a block: nothing to move, delete or set on it.
+    this.bar.hidden = this.name === 'col'
     // The lift button only for a block that sits inside another.
     const at = this.getPos()
-    this.lift.hidden = at === undefined || this.view.state.doc.resolve(at).depth === 0
+    // A block in a section or column leaves by "Move out", the same move as Alt+←.
+    this.lift.hidden = at === undefined || this.view.state.doc.resolve(at).depth === 0 || this.sitsInContainer()
 
     if (this.posture === 'prose') this.dressProse(attributes)
     else this.renderPreview()
@@ -274,6 +326,11 @@ class DirectiveView implements NodeView {
       body.push('adestia-gallery')
     } else if (this.name === 'table') {
       body.push('adestia-table-scroll', 'adestia-tableblock')
+    } else if (CONTAINER_NAMES.has(this.name)) {
+      // Dashed edges and the drop lane are editing's alone (B-28): reading draws content only.
+      classes.push('adestia-edblock--container', `adestia-edblock--${this.name}`)
+      if (this.name === 'section' && attributes['closed'] === 'fold') classes.push('adestia-edblock--folded')
+      if (isHollow(this.node)) classes.push('adestia-edblock--hollow')
     }
     const hasHead = Boolean(title || attributes['ico'] || by)
     if (framed) classes.push('adestia-framed')
@@ -281,7 +338,12 @@ class DirectiveView implements NodeView {
     if (this.open) classes.push('adestia-edblock--open')
 
     setClass(this.dom, classes.join(' '))
-    if (this.contentDOM) setClass(this.contentDOM, body.join(' '))
+    if (this.contentDOM) {
+      setClass(this.contentDOM, body.join(' '))
+      if (CONTAINER_NAMES.has(this.name)) this.contentDOM.dataset['drop'] = this.t('Drop here')
+    }
+    if (this.name === 'section') this.dom.dataset['note'] = this.t('folded at opening')
+    if (this.name === 'col') this.dom.dataset['col'] = String(this.columnNumber())
     if (this.head) {
       this.head.hidden = !hasHead
       fillHead(this.head, { title, ico: attributes['ico'], by })
@@ -329,8 +391,8 @@ class DirectiveView implements NodeView {
   }
 
   private renderPanel(): void {
-    this.panel.hidden = !this.open
-    if (!this.open) {
+    this.panel.hidden = !this.open && !this.form
+    if (!this.open && !this.form) {
       this.panelRoot?.render(null)
       return
     }
@@ -342,18 +404,108 @@ class DirectiveView implements NodeView {
     const about = resolved
       ? (this.env.say?.(resolved.plugin, resolved.spec.description) ?? resolved.spec.description)
       : undefined
+    const fields = this.env.forms?.(this.name)
+    const label = prettify(this.name)
     this.panelRoot.render(
-      <BlockSettings
-        name={this.name}
-        spec={resolved?.spec}
-        {...(about ? { about } : {})}
-        attributes={this.attributes}
-        anchor={this.anchor}
-        t={this.t}
-        onChange={(next) => this.write(next)}
-        onClose={() => this.setOpen(false)}
-      />,
+      <>
+        {this.open && (
+          // The window is portaled out of the panel, but React events still
+          // climb through it: this is where its keys reach the editor.
+          <div style={{ display: 'contents' }} onKeyDown={(event) => this.historyKey(event)}>
+          <BlockSettings
+            name={this.name}
+            spec={resolved?.spec}
+            {...(about ? { about } : {})}
+            attributes={this.attributes}
+            anchor={this.anchor}
+            avoid={this.self}
+            t={this.t}
+            onChange={(next) => this.write(next)}
+            {...(this.name === 'columns'
+              ? {
+                  columns: {
+                    count: columnsOf(this.node),
+                    canShrink: !lastColumnHolds(this.node),
+                    onChange: (count: number) => this.setColumns(count),
+                  },
+                }
+              : {})}
+            onClose={() => this.setOpen(false)}
+            {...(fields ? { onEditData: () => this.openForm() } : {})}
+          />
+          </div>
+        )}
+        {this.form && fields && (
+          <BlockForm
+            name={label}
+            fields={fields}
+            lines={bodyLines(this.form.base)}
+            stale={this.markdownOf() !== this.form.base}
+            locale={this.env.locale}
+            fresh={this.form.fresh}
+            t={this.t}
+            onApply={(lines) => this.applyLines(lines)}
+            onClose={() => this.closeForm()}
+          />
+        )}
+      </>,
     )
+  }
+
+  /**
+   * Focus sits in the settings window after a choice, outside the editor's own
+   * key handling: hand undo/redo to its history, but leave a text field its
+   * native undo.
+   */
+  private historyKey(event: { ctrlKey: boolean; metaKey: boolean; altKey: boolean; shiftKey: boolean; key: string; target: EventTarget; preventDefault(): void }): void {
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) return
+    if ((event.target as HTMLElement).closest('input, textarea, select, [contenteditable="true"]')) return
+    const key = event.key.toLowerCase()
+    const run = key === 'z' ? (event.shiftKey ? redo : undo) : key === 'y' ? redo : undefined
+    if (!run) return
+    event.preventDefault()
+    run(this.view.state, this.view.dispatch)
+  }
+
+  private openForm(fresh = false): void {
+    this.form = { base: this.markdownOf(), fresh }
+    this.open = false
+    this.refresh()
+  }
+
+  private closeForm(): void {
+    this.form = undefined
+    this.refresh()
+  }
+
+  /** The form's lines become the block's body: one change of the document, one undo step. */
+  private applyLines(lines: string[]): void {
+    const at = this.getPos()
+    const fresh = this.ctx.get(parserCtx)(fenced(this.name, lines)).firstChild
+    if (at !== undefined && fresh && fresh.type === this.node.type && this.form && this.markdownOf() === this.form.base) {
+      this.view.dispatch(
+        this.view.state.tr.replaceWith(at + 1, at + this.node.nodeSize - 1, fresh.content).scrollIntoView(),
+      )
+      this.dom.dispatchEvent(new Event(REPORT_NOW, { bubbles: true }))
+    }
+    this.closeForm()
+  }
+
+  /** Which column of its band this is, 1-based, for the label the edge wears. */
+  private columnNumber(): number {
+    const at = this.getPos()
+    if (at === undefined) return 0
+    const $at = this.view.state.doc.resolve(at)
+    return $at.index() + 1
+  }
+
+  /** The band's choice on the strip: add an empty column, or take the last away if it is empty. */
+  private setColumns(count: number): void {
+    const at = this.getPos()
+    if (at === undefined) return
+    const next = withColumnCount(this.node, this.view.state.schema, count)
+    if (!next) return
+    this.view.dispatch(this.view.state.tr.replaceWith(at, at + this.node.nodeSize, next))
   }
 
   private write(attributes: Attributes): void {
@@ -362,24 +514,108 @@ class DirectiveView implements NodeView {
     this.view.dispatch(this.view.state.tr.setNodeMarkup(at, undefined, { ...this.node.attrs, attributes }))
   }
 
+  /** Whether the block sits directly in a section or a column — the places a block moves in and out of. */
+  private sitsInContainer(): boolean {
+    const at = this.getPos()
+    if (at === undefined) return false
+    const $at = this.view.state.doc.resolve(at)
+    return $at.depth > 0 && ($at.parent.type.name === 'section' || $at.parent.type.name === 'col')
+  }
+
+  /** The place of this block in the page tree, or undefined for a block inside any other kind of block. */
+  private place(): { path: Path; index: number; total: number; at: number } | undefined {
+    const at = this.getPos()
+    if (at === undefined) return undefined
+    const { path, index, total } = placeOf(this.view, at)
+    return !path || index < 0 ? undefined : { path, index, total, at }
+  }
+
+  /** The four move controls: disabled at an end; "in" and "out" only where they mean something. */
+  private syncMove(): void {
+    const place = this.place()
+    this.up.hidden = this.down.hidden = this.out.hidden = this.into.hidden = place === undefined || this.name === 'col'
+    if (!place || this.name === 'col') return
+    this.up.disabled = !canMove(this.view, place.path, 'up')
+    this.down.disabled = !canMove(this.view, place.path, 'down')
+    this.out.hidden = place.path.length < 2
+    this.out.disabled = !canMove(this.view, place.path, 'out')
+    // "Into" shows when a container follows, so that a click on a refusal can say why.
+    const next = nodeAtPath(this.view.state.doc, [...place.path.slice(0, -1), place.index + 1])?.node.type.name
+    this.into.hidden = next !== 'section' && next !== 'columns'
+    this.into.disabled = false
+  }
+
+  /** One step, from a button or Alt+arrows; focus follows the control used. */
+  private step(direction: Direction, fromKey = false): void {
+    const place = this.place()
+    if (!place) return
+    const focused = this.dom.ownerDocument.activeElement
+    const onBar = focused instanceof HTMLElement && this.bar.contains(focused) ? focused.className : undefined
+    const moved = moveByStep(this.view, place.path, direction, this.t)
+    if (moved === undefined) return
+    // The move rebuilds the view; give the keyboard back to the same control.
+    const next = this.view.nodeDOM(moved)
+    if (!(next instanceof HTMLElement)) return
+    const control = fromKey && onBar ? next.querySelector<HTMLElement>(`.adestia-edblock__bar > button[class="${onBar}"]`) : null
+    if (control) control.focus()
+    else if (fromKey) this.view.focus()
+  }
+
+  /** A press on the grip: the pointer drags at once, a finger after 400 ms without moving. */
+  private press(start: PointerEvent): void {
+    if (start.pointerType !== 'touch') {
+      this.startDrag(start)
+      return
+    }
+    const doc = this.view.dom.ownerDocument
+    let last = start
+    const cancel = () => {
+      clearTimeout(timer)
+      doc.removeEventListener('pointermove', onMove)
+      doc.removeEventListener('pointerup', cancel)
+      doc.removeEventListener('pointercancel', cancel)
+    }
+    const timer = setTimeout(() => {
+      cancel()
+      this.startDrag(last)
+    }, LONG_PRESS_MS)
+    // A finger that travels before the delay is scrolling, not dragging.
+    const onMove = (event: PointerEvent) => {
+      last = event
+      if (Math.hypot(event.clientX - start.clientX, event.clientY - start.clientY) > 10) cancel()
+    }
+    doc.addEventListener('pointermove', onMove)
+    doc.addEventListener('pointerup', cancel)
+    doc.addEventListener('pointercancel', cancel)
+  }
+
   /**
-   * Dragging the block to where the pointer is — ALWAYS between two things
-   * at the top of the page, never inside a block: a block dropped into
-   * another is the accident Crepe's handle made possible, and it is also
-   * how a nested block gets out. A line shows where it will land:
-   * horizontal between full-width things, vertical inside a band.
+   * Dragging the block to where the pointer is — between two things of the
+   * deepest section or column under it, else of the page; never inside a
+   * block that is not one. A line shows where it will land: horizontal between
+   * full-width things, vertical inside a band. What the drop would do is
+   * `moveBlock`'s answer; a refusal keeps the line, marked, with its reason
+   * beside it and in the live region — never silent, and nothing is written.
    */
   private startDrag(start: PointerEvent): void {
     const view = this.view
     const doc = view.dom.ownerDocument
+    const source = this.place()?.path
+    if (!source) return
     const line = doc.createElement('div')
     line.className = 'adestia-drop-line'
     doc.body.append(line)
     this.dom.classList.add('adestia-edblock--dragging')
     doc.body.classList.add('adestia-dragging-block')
     const canvas = this.dom.closest('.adestia-canvas')
-    let target: number | undefined
+    let target: { parent: ProseNode; index: number } | undefined
 
+    const judge = (found: Drop) => {
+      const sameParent = source.length - 1 === found.path.length && found.path.every((n, i) => n === source[i])
+      const slot = found.slot
+      const index = sameParent ? slotToIndex(source[source.length - 1] ?? 0, slot) : slot
+      return { index, result: moveBlock(view.state.doc, source, found.parent, index) }
+    }
     const place = (x: number, y: number) => {
       if (canvas) {
         const edge = canvas.getBoundingClientRect()
@@ -387,13 +623,26 @@ class DirectiveView implements NodeView {
         else if (y > edge.bottom - 48) canvas.scrollBy(0, 14)
       }
       const found = dropTarget(view, x, y)
-      target = found?.pos
+      target = undefined
+      line.classList.remove('adestia-drop-line--refused')
+      delete line.dataset['reason']
       if (!found) {
         line.hidden = true
+        announce(doc, '')
         return
       }
+      const { index, result } = judge(found)
       line.hidden = false
       Object.assign(line.style, found.line)
+      if (!result.ok) {
+        const reason = said(result, this.t)
+        line.classList.add('adestia-drop-line--refused')
+        line.dataset['reason'] = reason
+        announce(doc, reason)
+        return
+      }
+      target = { parent: found.parent, index }
+      announce(doc, '')
     }
     const stop = (commit: boolean) => {
       doc.removeEventListener('pointermove', onMove)
@@ -402,7 +651,10 @@ class DirectiveView implements NodeView {
       line.remove()
       this.dom.classList.remove('adestia-edblock--dragging')
       doc.body.classList.remove('adestia-dragging-block')
-      if (commit && target !== undefined) this.moveTo(target)
+      const refused = !target && line.classList.contains('adestia-drop-line--refused')
+      // A refused drop leaves the reason up for its few seconds.
+      if (!refused) announce(doc, '')
+      if (commit && target) moveTo(view, source, target.parent, target.index, this.t)
     }
     const onMove = (event: PointerEvent) => place(event.clientX, event.clientY)
     const onUp = () => stop(true)
@@ -415,20 +667,6 @@ class DirectiveView implements NodeView {
     doc.addEventListener('pointerup', onUp)
     doc.addEventListener('keydown', onKey, true)
     place(start.clientX, start.clientY)
-  }
-
-  /** Moved to a top-level position of the document as it stood. */
-  private moveTo(target: number): void {
-    const at = this.getPos()
-    if (at === undefined) return
-    const size = this.node.nodeSize
-    // Dropped on itself or right beside itself: nothing moves.
-    if (target >= at && target <= at + size) return
-    const tr = this.view.state.tr.delete(at, at + size)
-    const to = tr.mapping.map(target)
-    tr.insert(to, this.node)
-    tr.setSelection(NodeSelection.create(tr.doc, to))
-    this.view.dispatch(tr.scrollIntoView())
   }
 
   /** Out of the block it sits in, just after it. */
@@ -472,6 +710,7 @@ class DirectiveView implements NodeView {
   }
 
   selectNode(): void {
+    this.syncMove()
     this.dom.classList.add('ProseMirror-selectednode')
   }
 
@@ -511,61 +750,109 @@ class DirectiveView implements NodeView {
   }
 }
 
+/** Where a dragged block would land: under `parent` (at `path`), in the gap before child `slot`. */
+interface Drop {
+  readonly parent: ProseNode
+  readonly path: Path
+  readonly slot: number
+  readonly line: Partial<CSSStyleDeclaration>
+}
+
+const inside = (rect: DOMRect, x: number, y: number) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+
+/** The part of a container's element that holds its children. */
+const bodyOf = (element: HTMLElement) => element.querySelector<HTMLElement>(':scope > .adestia-edblock__body')
+
 /**
  * Where a dragged block would land under the pointer: a position between two
- * top-level nodes, and the line that says so, in viewport coordinates.
- * Inside a band the halves are left and right; anywhere else, top and bottom.
- * Never before the frontmatter, which is the file's first lines.
+ * children of the deepest section or column under it (else of the page), and
+ * the line that says so, in viewport coordinates. Inside a band the halves are
+ * left and right; anywhere else, top and bottom. Never before the frontmatter,
+ * which is the file's first lines.
  */
-function dropTarget(
-  view: EditorView,
-  x: number,
-  y: number,
-): { pos: number; line: Partial<CSSStyleDeclaration> } | undefined {
-  type Slot = { pos: number; size: number; rect: DOMRect; banded: boolean; first: boolean }
-  const slots: Slot[] = []
-  view.state.doc.forEach((node, offset) => {
-    const element = view.nodeDOM(offset)
-    if (!(element instanceof HTMLElement)) return
-    slots.push({
-      pos: offset,
-      size: node.nodeSize,
-      rect: element.getBoundingClientRect(),
-      banded: Boolean(element.dataset['w']),
-      first: node.type.name === 'frontmatter',
+function dropTarget(view: EditorView, x: number, y: number): Drop | undefined {
+  const doc = view.state.doc
+  let path: Path = []
+  for (;;) {
+    const holder = nodeAtPath(doc, path)
+    const slots = slotsAt(doc, path)
+    if (!holder || !slots) return undefined
+    const items = slots.flatMap((slot) => {
+      const element = view.nodeDOM(slot.pos)
+      const node = doc.nodeAt(slot.pos)
+      return element instanceof HTMLElement && node ? [{ ...slot, node, element, rect: element.getBoundingClientRect() }] : []
     })
-  })
-  const usable = slots.filter((slot) => !slot.first && slot.rect.height > 0)
-  if (usable.length === 0) return undefined
-  // The slot under the pointer, else the nearest one vertically.
-  const under =
-    usable.find((slot) => y >= slot.rect.top && y <= slot.rect.bottom && x >= slot.rect.left && x <= slot.rect.right) ??
-    usable.reduce((best, slot) => {
-      const distance = (one: Slot) => (y < one.rect.top ? one.rect.top - y : y > one.rect.bottom ? y - one.rect.bottom : 0)
-      return distance(slot) < distance(best) ? slot : best
-    })
-  const { rect } = under
-  if (under.banded) {
-    const before = x < rect.left + rect.width / 2
+    const usable = items.filter((item) => item.rect.height > 0)
+    if (usable.length === 0) {
+      // An empty section or column: its own body is the lane, the slot is 0.
+      const element = path.length ? view.nodeDOM(holder.pos) : undefined
+      const body = element instanceof HTMLElement ? bodyOf(element) : null
+      if (!body) return undefined
+      const rect = body.getBoundingClientRect()
+      return {
+        parent: holder.node,
+        path,
+        slot: 0,
+        line: { left: `${Math.round(rect.left)}px`, top: `${Math.round(rect.top + 3)}px`, width: `${Math.round(rect.width)}px`, height: '3px' },
+      }
+    }
+    // The child under the pointer, else the nearest one vertically.
+    const under =
+      usable.find((item) => inside(item.rect, x, y)) ??
+      usable.reduce((best, item) => {
+        const distance = (one: typeof item) => (y < one.rect.top ? one.rect.top - y : y > one.rect.bottom ? y - one.rect.bottom : 0)
+        return distance(item) < distance(best) ? item : best
+      })
+    const index = items.indexOf(under)
+    const kind = under.node.type.name
+    if (inside(under.rect, x, y) && (kind === 'section' || kind === 'columns')) {
+      const body = bodyOf(under.element)
+      if (body && inside(body.getBoundingClientRect(), x, y)) {
+        if (kind === 'section') {
+          path = [...path, index]
+          continue
+        }
+        const cols = slotsAt(doc, [...path, index]) ?? []
+        const column = cols.findIndex((col) => {
+          const element = view.nodeDOM(col.pos)
+          return element instanceof HTMLElement && x >= element.getBoundingClientRect().left && x <= element.getBoundingClientRect().right
+        })
+        if (column >= 0) {
+          path = [...path, index, column]
+          continue
+        }
+      }
+    }
+    const { rect } = under
+    // `w` is the page's own rule (a band of blocks); a column ignores it.
+    const banded = Boolean(under.element.dataset['w']) && holder.node.type.name !== 'col'
+    const near = banded ? x < rect.left + rect.width / 2 : y < rect.top + rect.height / 2
+    const pos = near ? under.pos : under.pos + under.size
+    const slot = slotAtPosIn(doc, path, pos)
+    if (banded) {
+      return {
+        parent: holder.node,
+        path,
+        slot,
+        line: {
+          left: `${Math.round((near ? rect.left : rect.right) + (near ? -6 : 4))}px`,
+          top: `${Math.round(rect.top)}px`,
+          width: '3px',
+          height: `${Math.round(rect.height)}px`,
+        },
+      }
+    }
     return {
-      pos: before ? under.pos : under.pos + under.size,
+      parent: holder.node,
+      path,
+      slot,
       line: {
-        left: `${Math.round((before ? rect.left : rect.right) + (before ? -6 : 4))}px`,
-        top: `${Math.round(rect.top)}px`,
-        width: '3px',
-        height: `${Math.round(rect.height)}px`,
+        left: `${Math.round(rect.left)}px`,
+        top: `${Math.round((near ? rect.top : rect.bottom) + (near ? -5 : 3))}px`,
+        width: `${Math.round(rect.width)}px`,
+        height: '3px',
       },
     }
-  }
-  const before = y < rect.top + rect.height / 2
-  return {
-    pos: before ? under.pos : under.pos + under.size,
-    line: {
-      left: `${Math.round(rect.left)}px`,
-      top: `${Math.round((before ? rect.top : rect.bottom) + (before ? -5 : 3))}px`,
-      width: `${Math.round(rect.width)}px`,
-      height: '3px',
-    },
   }
 }
 

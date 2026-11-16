@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
+import { resolveLocale } from '../app/i18n.js'
+import { galleryCards } from './gallery.js'
 import type { EditorProps } from './Editor.js'
 import type { PropertiesEnv } from './frontmatterview.js'
 
 export function useEditorSurface(
-  { page, mount, blocks, vocabulary, pages, fetchImpl, locale, fieldContributions, titleField, t, say }: EditorProps,
+  { page, mount, blocks, vocabulary, pages, fetchImpl, locale, fieldContributions, titleField, t, say, galleryPlugins }: EditorProps,
   editing: boolean,
   shown: string,
   saved: string,
@@ -17,6 +19,10 @@ export function useEditorSurface(
    * editor must not remount it and throw away what is being typed.
    */
   const env = useRef<PropertiesEnv>({})
+  // Read when a block asks, not when the surface mounted: a plugin can finish loading after the
+  // editor opened, and its block's form must still be found (the gallery lists it by then).
+  const latest = useRef({ galleryPlugins, locale })
+  latest.current = { galleryPlugins, locale }
   env.current = {
     path: page.path,
     store: page.store,
@@ -36,6 +42,13 @@ export function useEditorSurface(
     without: titleField ? ['title'] : undefined,
     t,
     say,
+    forms: (name) =>
+      galleryCards(latest.current.galleryPlugins ?? [], resolveLocale(latest.current.locale) === 'fr' ? 'fr' : 'en').find((card) => card.id === name)?.fields,
+    // A plugin block with variants and no form (`progress`) opens its settings when inserted from the gallery.
+    settingsOnInsert: (name) => {
+      const card = galleryCards(latest.current.galleryPlugins ?? [], resolveLocale(latest.current.locale) === 'fr' ? 'fr' : 'en').find((one) => one.id === name)
+      return card !== undefined && card.view !== undefined && card.fields === undefined
+    },
   }
 
   /*

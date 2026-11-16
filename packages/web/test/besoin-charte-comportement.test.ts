@@ -28,7 +28,9 @@ async function visit(browser: Browser, seed: string, options: { size?: Size; loc
 const iconsOf = (page: Page, selector: string) =>
   page.evaluate((s: string) => [...document.querySelectorAll(s)].map((el) => el.querySelector('use')?.getAttribute('href') ?? null), selector)
 
-describe.skipIf(!playwright)('charter — behaviour of the shared components on the settings and entry screens', () => {
+// Each visit boots an instance: under the whole browser suite that exceeds the 5 s default and, on a loaded
+// pod, the 30 s of the attested run too; the budget is the file's, not a test's.
+describe.skipIf(!playwright)('charter — behaviour of the shared components on the settings and entry screens', { timeout: 120_000 }, () => {
   let browser: Browser
   beforeAll(async () => {
     browser = await newBrowser()
@@ -118,6 +120,8 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
 
     it('marks a delivered file read-only with the lock icon', async () => {
       await visit(browser, 'base', { route: '/settings/instructions' }, async (page) => {
+        // The cards load after the shell: wait for the badges themselves, not for a fixed delay.
+        await page.waitForSelector('.adestia-filecard__badge', { timeout: 20_000 })
         const marks = await page.evaluate(() => [...document.querySelectorAll('.adestia-filecard__badge')].map((b) => `${(b.textContent ?? '').trim()}=${b.querySelector('use')?.getAttribute('href')}`))
         expect(marks.length).toBeGreaterThan(0)
         expect([...new Set(marks)]).toEqual(['delivered=#adestia-i-lock'])
@@ -214,27 +218,32 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
   })
 
   describe('E-14 configuration', { timeout: patience(60_000) }, () => {
-    it('shows a spinner row before the form while the settings load (Q-23), then the form', async () => {
-      // The route holds /api/settings until the test frees it, after the spinner is measured.
-      let free!: () => void
-      const freed = new Promise<void>((resolve) => { free = resolve })
+    // The settings request is held by a barrier the test lifts once it has looked at the spinner: no delay to outrun.
+    const gate = () => {
+      let lift!: () => void
+      const lifted = new Promise<void>((resolve) => { lift = resolve })
       const slow = async (page: Page) => {
         await page.route('**/api/settings', async (route) => {
-          await freed
+          await lifted
           await route.continue().catch(() => undefined)
         })
       }
+      return { lift, slow }
+    }
+
+    it('shows a spinner row before the form while the settings load (Q-23), then the form', async () => {
+      const { lift, slow } = gate()
       try {
         await visit(browser, 'config-writable', { route: '/settings/config', before: slow }, async (page) => {
         // `visit` waits for .adestia-prefs and 600 ms: the request is still held
         const during = await page.evaluate(() => ({ spinner: document.querySelector('.adestia-prefs__page use[href="#adestia-i-loader-circle"]') !== null, controls: document.querySelectorAll('.adestia-prefs__page :is(input, select, textarea)').length }))
         expect(during).toEqual({ spinner: true, controls: 0 })
-        free()
+        lift()
         await page.waitForSelector('.adestia-prefs__page :is(input, select, textarea)', { timeout: patience(15_000) })
         expect(await page.evaluate(() => document.querySelector('.adestia-prefs__page use[href="#adestia-i-loader-circle"]') !== null)).toBe(false)
         })
       } finally {
-        free()
+        lift() // never leave the page hanging when the test fails before the assertion
       }
     })
 
@@ -318,15 +327,24 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
       })
     })
 
+    // The signal that the menu is armed: focus has entered the panel (placed, then focused),
+    // not a delay. Escape and the outside click are only heard from that point.
+    // (`Page` of charte-browser.ts does not type `waitForFunction`; the real Playwright page has it.)
+    const menuReady = (page: Page) =>
+      (page as Page & { waitForFunction(fn: () => boolean, arg: null, options: { timeout: number }): Promise<unknown> })
+        .waitForFunction(() => document.activeElement?.closest('.adestia-cog__panel') != null, null, { timeout: patience(10_000) })
+
     it('closes on Escape and returns the focus to the cog; a click outside closes it too', async () => {
       await visit(browser, 'base', { route: '/settings' }, async (page) => {
         await cog(page)
         await page.waitForSelector('.adestia-cog__panel', { state: 'visible' })
+        await menuReady(page)
         await page.keyboard.press('Escape')
         await page.waitForSelector('.adestia-cog__panel', { state: 'detached', timeout: patience(5000) })
         expect(await focusOnCog(page)).toBe(true)
         await cog(page)
         await page.waitForSelector('.adestia-cog__panel', { state: 'visible' })
+        await menuReady(page)
         await page.mouse.click(300, 700)
         await page.waitForSelector('.adestia-cog__panel', { state: 'detached', timeout: patience(5000) })
       })

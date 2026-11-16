@@ -77,6 +77,8 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
   /** Who the refused sign-in was, when the server remembers it (`GET /auth/refused`). */
   const [refusedName, setRefusedName] = useState<string | undefined>()
   const [pages, setPages] = useState<readonly IndexEntry[]>([])
+  // A hint for drawing, not a permission: the write stays the verdict.
+  const [writableFolders, setWritableFolders] = useState<readonly string[]>([])
   /**
    * The stores this instance composes — empty when it has only one, which is
    * how the shell knows there is no provenance to draw.
@@ -221,7 +223,7 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
 
         // The INDEX rather than the plain list: sections are dressed by their
         // index page's frontmatter, and only this endpoint carries it.
-        const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[] }>(
+        const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[] }>(
           fetchImpl,
           '/api/pages/index',
         )
@@ -233,6 +235,7 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
           const body = list.data
           setPages(Array.isArray(body?.entries) ? body.entries : [])
           setStores(Array.isArray(body?.stores) ? body.stores : [])
+          setWritableFolders(Array.isArray(body?.writableFolders) ? body.writableFolders : [])
           setIndexed(true)
         }
         if (!cancelled) setReady(true)
@@ -275,7 +278,7 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
       onChange: (paths) => {
         setPageChanges((current) => ({ seq: current.seq + 1, paths }))
         void (async () => {
-          const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[] }>(
+          const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[] }>(
             fetchImpl,
             '/api/pages/index',
           )
@@ -283,11 +286,12 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
           const body = list.data
           setPages(Array.isArray(body?.entries) ? body.entries : [])
           setStores(Array.isArray(body?.stores) ? body.stores : [])
+          setWritableFolders(Array.isArray(body?.writableFolders) ? body.writableFolders : [])
         })()
       },
     })
     return () => controller.abort()
   }, [instance, fetchImpl, onLink])
 
-  return { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, skin, skinScheme, loaded, ready, indexed, pageChanges }
+  return { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, writableFolders, skin, skinScheme, loaded, ready, indexed, pageChanges }
 }

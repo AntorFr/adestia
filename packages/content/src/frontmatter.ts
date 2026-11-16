@@ -232,3 +232,42 @@ export function writeFrontmatter(
   const at = (BLOCK.exec(markdown)?.index ?? 0) + 4
   return markdown.slice(0, at) + next + markdown.slice(at + head.length)
 }
+
+/** A sentence in one language, or in each language the author wrote it in. */
+export type TemplateText = string | { readonly en: string; readonly fr?: string }
+
+/** What a seed's `template:` key declares (AD-36): read by the template sheet only. */
+export interface TemplateDeclaration {
+  readonly name?: TemplateText
+  readonly image?: string
+  readonly description?: TemplateText
+}
+
+function templateText(value: unknown): TemplateText | undefined {
+  if (typeof value === 'string') return value.trim() === '' ? undefined : value
+  if (typeof value !== 'object' || value === null) return undefined
+  const { en, fr } = value as { en?: unknown; fr?: unknown }
+  if (typeof en !== 'string' || en.trim() === '') return undefined
+  return typeof fr === 'string' && fr.trim() !== '' ? { en, fr } : { en }
+}
+
+/**
+ * The `template:` key of a seed, or undefined when the file has none or the
+ * frontmatter does not parse. Never throws; a malformed field is just absent.
+ */
+export function readTemplateDeclaration(markdown: string): TemplateDeclaration | undefined {
+  const { head } = splitFrontmatter(markdown)
+  if (head === undefined) return undefined
+  const doc = parseDocument(head)
+  if (doc.errors.length > 0 || !isMap(doc.contents)) return undefined
+  const raw: unknown = doc.get('template', false) === undefined ? undefined : doc.toJS()['template']
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined
+  const { name, image, description } = raw as Record<string, unknown>
+  const declared = templateText(name)
+  const described = templateText(description)
+  return {
+    ...(declared !== undefined ? { name: declared } : {}),
+    ...(typeof image === 'string' && image !== '' ? { image } : {}),
+    ...(described !== undefined ? { description: described } : {}),
+  }
+}
