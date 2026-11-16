@@ -225,8 +225,7 @@ rounded sum of each file's measured time, so they can differ by one from `avant.
 - **Command**: `node scripts/mesurer-tests-ecran.mjs --sortie <dir>` after `npm ci` and `npm run build`, one file at a time,
   the attested suite's options (`BENCH_FULL_SWEEP=1 ADESTIA_PATIENCE=4`, `--maxWorkers=1` for vitest, `node --test` for `.mjs`).
   The time is that of the whole command, startup included. `--grappe <name>` measures one cluster.
-- **Machine**: a pod of 18 cores (`nproc`) with Playwright and Chromium, as for `avant.md` (another pod of the same kind:
-  `sdlc-adestia-tests-hors-ecran-durees-dev-1`).
+- **Machine**: a pod of 18 cores (`nproc`) with Playwright and Chromium, like `avant.md` (any machine with 18 cores, Playwright and Chromium gives comparable figures).
 - **Same reds as before**: the files that were red or skipped on `main` still are (listed in `avant.md`); their time is
   counted anyway, and the command then exits 1 while still printing the table (expected on `main`; `avant.md` lists the causes). Per-file times: `docs/tests-ecran/avant.md`; the screen tests kept are the display ones.
 

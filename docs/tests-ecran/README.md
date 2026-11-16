@@ -4,6 +4,7 @@ Un **test d'écran** est un test qui charge une page dans un navigateur : tout f
 (`packages/*/test`, `bench/tests`, `plugins/*/test`) dont le texte nomme `chromium` ou `playwright`.
 Les tests jsdom à réseau simulé restent hors inventaire, sauf ceux qu'une grappe y trouve en passant
 (elle le dit dans son fichier).
+Une grappe peut aussi lister des fichiers qui ne pilotent aucun navigateur : leurs lignes sont `sans-porte` (déjà hors écran, rien à reporter), voir plus bas.
 
 ## La règle
 
