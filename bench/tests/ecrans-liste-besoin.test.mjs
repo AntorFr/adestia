@@ -60,9 +60,11 @@ function lancer(base) {
   return { code: r.status, out: r.stdout, err: r.stderr, lignes: r.stdout === '' ? [] : r.stdout.replace(/\n$/, '').split('\n') }
 }
 
-// Tous les fichiers de test d'ecran du depot (la regle du canon : grep playwright|chromium|launch.mjs dans packages/*/test).
+// Tous les fichiers de test d'ecran du depot (la regle du canon : grep des mots du navigateur dans packages/*/test).
 function tousLesTestsDEcran() {
-  const r = spawnSync('sh', ['-c', "grep -rlE 'playwright|chromium|launch\\.mjs' packages/*/test | grep -E '\\.test\\.tsx?$' | sort"], { cwd: clone, encoding: 'utf8' })
+  // Les mots du motif sont coupes : ce fichier ne doit pas se faire prendre lui-meme pour un test d'ecran par le grep du canon.
+  const motif = ['play' + 'wright', 'chro' + 'mium', 'launch\\.' + 'mjs'].join('|')
+  const r = spawnSync('sh', ['-c', `grep -rlE '${motif}' packages/*/test | grep -E '\\.test\\.tsx?$' | sort`], { cwd: clone, encoding: 'utf8' })
   return r.stdout.trim().split('\n')
 }
 // Les fichiers de test d'ecran que la carte ne declare pas : joues a tout niveau (« dans le doute, on joue »).
