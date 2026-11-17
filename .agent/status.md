@@ -21,7 +21,7 @@ le mode `--liste` imprime sur stdout, triés, un chemin par ligne, les fichiers 
 avertissements sur stderr). Le scanner d'imports de `scripts/niveaux.mjs` (`specifiers`) remplace `ts.preProcessFile` pour `ecrans`, `fiche`,
 `--lister` et `--liste` : l'outil n'a plus besoin de `node_modules`. Preuve : `bench/tests/niveaux-besoin.test.mjs` (liste = `joues` de `ecrans` sur
 quatre diffs réels, extraction sans `node_modules`, scanner comparé au graphe de TypeScript). Durée dans le README (~0,5 s).
-Reste : rien. Pièges : la commande lit l'historique git de `{base}` (`git diff <base> HEAD`), comme `ecrans` ; le scanner ne lit que les
+Reste : déclarer ce test d'écran dans `scripts/ecrans.json` (`--verifier` rouge, voir plus bas), hors de cette feature. Pièges : la commande lit l'historique git de `{base}` (`git diff <base> HEAD`), comme `ecrans` ; le scanner ne lit que les
 spécificateurs littéraux (un `import(variable)` n'est pas suivi, TypeScript non plus). `--verifier` rouge sur `main` à la livraison :
 `packages/web/test/verify-etat-projet-browser.test.ts` est absent de `scripts/ecrans.json` (venu d'`adestia-pages`, pas de cette feature) ; `--liste` le
 signale sur stderr et rend sa liste quand même.
