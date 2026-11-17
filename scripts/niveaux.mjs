@@ -3,19 +3,18 @@
 //   node scripts/niveaux.mjs ecrans <base>            play the local level + the screen tests of touched screens
 //   node scripts/niveaux.mjs fiche <base>             play the whole suite minus the screen tests of untouched screens
 //   node scripts/niveaux.mjs --lister ecrans|fiche <base>   print what that would play, play nothing
+//   node scripts/niveaux.mjs --liste ecrans <base>    print only the screen-test files `ecrans` would play, sorted, one per line
 //   node scripts/niveaux.mjs --verifier               guard: scripts/ecrans.json against the repository
 //
 // <base> is a commit; the changed files are those of `git diff <base> HEAD`. The map of
 // screens and screen tests is scripts/ecrans.json. Nothing here depends on the repository
-// beyond TypeScript, used only to read import specifiers.
+// beyond Node: import specifiers are read by the scanner below, so no `npm ci` is needed.
 import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
-import { createRequire } from 'node:module'
 import { dirname, join, posix, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const require = createRequire(join(root, 'package.json'))
 
 export const carte = () => JSON.parse(readFileSync(join(root, 'scripts', 'ecrans.json'), 'utf8'))
 
@@ -44,7 +43,6 @@ export function fichiersDEcran() {
 }
 
 // --- the import graph -------------------------------------------------------------------------
-let ts
 const pkgSrc = {
   '@antorfr/adestia-schemas': 'packages/schemas/src/index.ts',
   '@antorfr/adestia-content': 'packages/content/src/index.ts',
@@ -66,6 +64,105 @@ function resolveSpec(from, spec) {
   return null
 }
 
+
+// Import specifiers of a JS/TS source: `import … from 'x'`, `export … from 'x'`, `import 'x'`,
+// `import('x')` and `require('x')` with a literal. Comments, strings and templates are skipped, so a
+// specifier quoted in a comment or a fixture is not one.
+function tokens(src) {
+  const out = []
+  const n = src.length
+  let i = 0
+  const regexAfter = () => {
+    const p = out[out.length - 1]
+    if (!p) return true
+    if (p.t === 'id') return /^(return|typeof|case|in|of|delete|void|throw|new|else|do|instanceof|yield|await)$/.test(p.v)
+    if (p.t === 'str' || p.t === 'num') return false
+    return !/^[)\]}]$/.test(p.v) || p.v === '}'
+  }
+  const skipTemplate = () => { // i is just after the opening backtick
+    while (i < n && src[i] !== '`') {
+      if (src[i] === '\\') i += 2
+      else if (src[i] === '$' && src[i + 1] === '{') {
+        i += 2
+        let depth = 1
+        while (i < n && depth) {
+          const c = src[i]
+          if (c === '{') { depth++; i++ }
+          else if (c === '}') { depth--; i++ }
+          else if (c === '`') { i++; skipTemplate() }
+          else if (c === '"' || c === "'") { i++; while (i < n && src[i] !== c && src[i] !== '\n') i += src[i] === '\\' ? 2 : 1; i++ }
+          else i++
+        }
+      } else i++
+    }
+    i++
+  }
+  while (i < n) {
+    const c = src[i]
+    if (/\s/.test(c)) { i++; continue }
+    if (c === '/' && src[i + 1] === '/') { while (i < n && src[i] !== '\n') i++; continue }
+    if (c === '/' && src[i + 1] === '*') { const e = src.indexOf('*/', i + 2); i = e < 0 ? n : e + 2; continue }
+    if (c === '"' || c === "'") {
+      let j = i + 1
+      let v = ''
+      while (j < n && src[j] !== c && src[j] !== '\n') { if (src[j] === '\\') { v += src[j + 1] ?? ''; j += 2 } else v += src[j++] }
+      out.push({ t: 'str', v })
+      i = j + 1
+      continue
+    }
+    if (c === '`') { i++; skipTemplate(); out.push({ t: 'str', v: null }); continue }
+    if (c === '/' && regexAfter()) {
+      let j = i + 1
+      let cls = false
+      while (j < n && src[j] !== '\n' && (cls || src[j] !== '/')) {
+        if (src[j] === '\\') j++
+        else if (src[j] === '[') cls = true
+        else if (src[j] === ']') cls = false
+        j++
+      }
+      i = j + 1
+      while (/[a-z]/i.test(src[i] ?? '')) i++
+      out.push({ t: 'str', v: null })
+      continue
+    }
+    if (/[A-Za-z_$]/.test(c)) {
+      let j = i + 1
+      while (/[\w$]/.test(src[j] ?? '')) j++
+      out.push({ t: 'id', v: src.slice(i, j) })
+      i = j
+      continue
+    }
+    if (/\d/.test(c)) { let j = i + 1; while (/[\w.]/.test(src[j] ?? '')) j++; out.push({ t: 'num', v: '' }); i = j; continue }
+    out.push({ t: 'p', v: c })
+    i++
+  }
+  return out
+}
+
+export function specifiers(src) {
+  const tk = tokens(src)
+  const found = []
+  const isStr = (t) => t && t.t === 'str' && t.v !== null
+  for (let k = 0; k < tk.length; k++) {
+    const t = tk[k]
+    if (t.t !== 'id') continue
+    const prev = tk[k - 1]
+    if (prev && prev.t === 'p' && prev.v === '.') continue
+    if (t.v === 'require' && tk[k + 1]?.v === '(' && isStr(tk[k + 2])) found.push(tk[k + 2].v)
+    else if (t.v === 'import' && isStr(tk[k + 1])) found.push(tk[k + 1].v)
+    else if (t.v === 'import' && tk[k + 1]?.v === '(' && isStr(tk[k + 2])) found.push(tk[k + 2].v)
+    else if (t.v === 'import' || t.v === 'export') {
+      for (let m = k + 1; m < tk.length; m++) {
+        const u = tk[m]
+        if (u.t === 'id' && u.v === 'from' && isStr(tk[m + 1])) { found.push(tk[m + 1].v); break }
+        if (u.t === 'id' || (u.t === 'p' && /^[*,{}]$/.test(u.v))) continue
+        break
+      }
+    }
+  }
+  return found
+}
+
 const cacheImports = new Map()
 function importsOf(rel) {
   if (cacheImports.has(rel)) return cacheImports.get(rel)
@@ -74,9 +171,7 @@ function importsOf(rel) {
   if (/\.css$/.test(rel)) {
     specs = [...text.matchAll(/@import\s+(?:url\()?['"]([^'"]+)['"]/g)].map((m) => m[1])
   } else if (/\.(ts|tsx|js|mjs|jsx)$/.test(rel)) {
-    ts ??= require('typescript')
-    const info = ts.preProcessFile(text, true, true)
-    specs = info.importedFiles.map((f) => f.fileName)
+    specs = specifiers(text)
   }
   const out = []
   for (const s of specs) {
@@ -220,11 +315,22 @@ function main(argv) {
     console.log('scripts/ecrans.json: ok')
     return 0
   }
+  if (a === '--liste') {
+    if (b !== 'ecrans' || !c) {
+      console.error('usage: niveaux.mjs --liste ecrans <base>')
+      return 2
+    }
+    const p = verifier()
+    if (p.length) console.error(`warning (the guard will fail): ${p.join('; ')}`)
+    const { joues } = lister('ecrans', c)
+    if (joues.length) console.log([...joues].sort().join('\n'))
+    return 0
+  }
   const listing = a === '--lister'
   const mode = listing ? b : a
   const base = listing ? c : b
   if (!['ecrans', 'fiche'].includes(mode) || !base) {
-    console.error('usage: niveaux.mjs [--lister] ecrans|fiche <base> | --verifier')
+    console.error('usage: niveaux.mjs [--lister] ecrans|fiche <base> | --liste ecrans <base> | --verifier')
     return 2
   }
   const p = verifier()

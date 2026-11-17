@@ -1418,10 +1418,11 @@ is off-screen, whether it starts the server or not.
 `.sdlc.yaml` `tests:` gains `ecrans: npm ci && node scripts/niveaux.mjs ecrans {base}`,
 `fiche: npm ci && node scripts/niveaux.mjs fiche {base}` and
 `rejouer: npm ci && scripts/rejouer.sh {tests}` (replacing `scripts/rejouer.sh {tests}`). `commande:`
-and `local:` are unchanged. `scripts/niveaux.mjs` (no dependency beyond the repository's own
-TypeScript) has three modes: `ecrans <base>` and `fiche <base>` play, `--lister` instead prints what
-they would play (touched screens, played and left-out screen-test files) and plays nothing: the
-tests and the README read that. Both write the same `resultats.xml` through
+and `local:` are unchanged. `scripts/niveaux.mjs` (imports only `node:*`; its own import
+scanner replaces TypeScript, so it needs no `node_modules`) has four modes: `ecrans <base>` and
+`fiche <base>` play, `--lister` instead prints what they would play (touched screens, played and
+left-out screen-test files) and plays nothing, and `--liste ecrans <base>` prints only the
+screen-test files `ecrans` would play, one per line: the tests and the README read that. Both write the same `resultats.xml` through
 `scripts/suite-rapport.mjs`, under the suite's test names. `ecrans` plays what `local:` plays
 plus the chosen screen tests (after the server and web builds, which the browser suites need);
 `fiche` is `scripts/suite-attestee.sh` with the left-out files excluded from the vitest step
@@ -1434,7 +1435,7 @@ because a skipped test turns the level red.
 `scripts/ecrans.json` maps each screen to its entries: `"E-10": { "entrees": ["packages/web/src/app/McpServers.tsx"] }`
 for the screens of `docs/ecrans.md` (E-1 to E-21, E-32, E-33) and, for the plugin screens (E-22
 to E-31, loaded at runtime and imported by nothing), `"dossiers": ["plugins/todo/web/"]`. The
-tool resolves imports statically (TypeScript's `preProcessFile` on `.ts`, `.tsx`, `.js`; relative
+tool resolves imports statically (the script's own import scanner on `.ts`, `.tsx`, `.js`, no TypeScript needed; relative
 specifiers with the `.js`→`.ts[x]` mapping; `@antorfr/*` mapped to the sources of
 `packages/*/src`, as `tsconfig.base.json` does; CSS imports; dynamic `import()` with a literal)
 and, from the changed files of `{base}..HEAD` (`git diff --name-only`, deleted files included,
@@ -1496,6 +1497,43 @@ begin with « niveau » fails. `CLAUDE.md` (Code and commands) lists the four le
 `scripts/niveaux.mjs --lister`; the README of the repository states, beside the suite's duration,
 the duration of `ecrans` and `fiche` measured on three real `{base}`: a screen file (e.g.
 `McpServers.tsx`), a shared file (e.g. `useRoute.ts`), a server-only change.
+
+## Decisions of adestia-ecrans-liste
+
+The chain's `jouer-ecrans` tool (rule R28) replays the product's own selection between the head of
+the last screen run and the new head, to know whether a new run is due. Without a declared list, any
+commit after a run makes one due, a doc-only commit included. `ecrans:` plays; this feature adds a
+key that only *names*.
+
+### AD-ecrans-liste-1 — `tests.ecrans_liste` prints the screen-test files `ecrans:` would play, one per line
+
+`.sdlc.yaml` `tests:` gains `ecrans_liste: node scripts/niveaux.mjs --liste ecrans {base}` (no
+`npm ci` in front of it: the command runs in an extraction without `node_modules`). The new mode
+`--liste` of `scripts/niveaux.mjs` prints, on stdout, exactly the repository-relative paths of the
+files `ecrans <base>` would hand to `ADESTIA_JOUER_ECRANS` (`niveau('ecrans', …).joues`), sorted, one
+per line, and nothing else: no header, no counts, no blank line, and an empty output (exit 0) when
+no screen test is due, as for a doc-only change. Warnings go to stderr, never stdout. `--lister`
+keeps its human report. The files are chosen by the same functions as `ecrans` (`changes`,
+`calcul`, `niveau`), so the two cannot drift: `ecrans` reads its list from the same code path.
+
+The one dependency of those functions was TypeScript (`ts.preProcessFile`, to read import
+specifiers). It is replaced, **for both modes**, by a scanner of the repository's own
+(`import … from`, `export … from`, bare `import 'x'`, `import('x')` and `require('x')` with a
+literal, comments skipped), so a single graph serves the play and the list; a scanner used only by
+the list would let the two disagree. `bench/tests/niveaux-besoin.test.mjs` gains a case that runs
+`--liste` and `ecrans` on the same real `{base}` (a screen file, a shared file, a server-only change,
+a doc-only change) and compares them, and a case that runs `--liste` with `node_modules` absent.
+`node scripts/niveaux.mjs --lister` no longer needs `npm ci`; the README says so, and states the
+duration of `ecrans_liste` beside those of `ecrans` and `fiche`. The command needs the git history
+of `{base}` (`git diff <base> HEAD`), as `ecrans` does.
+"Empty for a doc-only change" holds only if every screen-test file is on the map: a test file that
+`scripts/ecrans.json` omits is played at every level, so it would appear in every list.
+`packages/web/test/verify-etat-projet-browser.test.ts` is such a file (it came with `main`);
+the task declares it in `scripts/ecrans.json` (one entry; the selection rule is unchanged) so that
+`--verifier` is green and a doc-only diff lists nothing.
+*Rejected:* keeping TypeScript and asking the chain to install (the Livre forbids the install, and
+the point is a cheap question after every commit); a scanner for the list only (drift); declaring the
+list by hand in `.sdlc.yaml` (it rots, the reason `ecrans.json` is read by the graph).
 
 ## Decisions of adestia-acces-refuse
 

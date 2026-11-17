@@ -275,3 +275,177 @@ test('suite-attestee.sh sans ADESTIA_EXCLURE_ECRANS garde la commande vitest d\'
 })
 
 void mkdirSync
+
+// --- AD-ecrans-liste-1 : `--liste ecrans <base>` (tâche adestia-ecrans-liste-mode-liste) --------------
+// La chaîne demande, sans installer ni jouer, quels fichiers de test d'écran sont dus : stdout porte
+// ces chemins triés, un par ligne, rien d'autre ; les avertissements vont sur stderr.
+
+const STUBS = '#!/bin/sh\necho "JOUER=[$ADESTIA_JOUER_ECRANS]"\n'
+const souches = () => {
+  reset()
+  for (const s of ['suite-attestee.sh', 'suite-locale.sh']) writeFileSync(join(repo, 'scripts', s), STUBS)
+  // verify-etat-projet-browser.test.ts is absent from the map on this tree (a defect `--verifier` already names, out of
+  // this task): an undeclared screen test is always played, so a doc-only diff would never list nothing. The clone's map
+  // declares it, which isolates what --liste does from that defect.
+  const carteF = join(repo, 'scripts/ecrans.json')
+  const c = JSON.parse(readFileSync(carteF, 'utf8'))
+  c.tests['packages/web/test/verify-etat-projet-browser.test.ts'] ??= ['E-33']
+  writeFileSync(carteF, JSON.stringify(c, null, 2) + '\n')
+  commit('stubs liste')
+  return git('rev-parse', 'HEAD').trim() // the stubs are the start, so they touch no screen
+}
+const joues = (b) => /JOUER=\[([^\]]*)\]/.exec(niveaux('ecrans', b).stdout)[1].split(' ').filter(Boolean)
+const liste = (b) => spawnSync('node', ['scripts/niveaux.mjs', '--liste', 'ecrans', b], { cwd: repo, encoding: 'utf8' })
+const fichiersListes = (stdout) => (stdout === '' ? [] : stdout.replace(/\n$/, '').split('\n'))
+
+const QUATRE_DIFFS = [
+  ['un fichier d\'écran', (r) => appendFileSync(join(r, 'packages/web/test/besoin-mcp-browser.test.ts'), '\n// touched\n'), 'E-10 E-33'],
+  ['un fichier partagé (useRoute.ts)', (r) => appendFileSync(join(r, 'packages/web/src/app/useRoute.ts'), '\n// touched\n'), 'tous'],
+  ['un changement serveur seul', (r) => appendFileSync(join(r, 'packages/server/src/index.ts'), '\n// touched\n'), 'vide'],
+  ['un changement de doc seul', (r) => appendFileSync(join(r, 'docs/parcours.md'), '\nuntouched\n'), 'vide'],
+]
+
+for (const [nom, change, attendu] of QUATRE_DIFFS) {
+  test(`--liste ecrans (${nom}) rend exactement ce que ecrans donne à ADESTIA_JOUER_ECRANS, et rien d'autre sur stdout`, () => {
+    // Casserait si --liste calculait une autre sélection que ecrans, ou imprimait un en-tête, un compte, une ligne vide.
+    const b = souches()
+    change(repo)
+    commit('diff')
+    const r = liste(b)
+    assert.equal(r.status, 0, r.stderr)
+    const l = fichiersListes(r.stdout)
+    assert.deepEqual(l, joues(b))
+    assert.deepEqual(l, [...l].sort())
+    assert.ok(l.every((f) => /^packages\/[\w./-]+\.test\.tsx?$/.test(f) && existsSync(join(repo, f))), r.stdout)
+    assert.ok(r.stdout === '' || (r.stdout.endsWith('\n') && !r.stdout.endsWith('\n\n')), JSON.stringify(r.stdout))
+    if (attendu === 'vide') assert.equal(r.stdout, '')
+        if (attendu === 'tous') assert.equal(l.length, 41)
+    if (attendu === 'E-10 E-33') {
+      assert.ok(l.includes('packages/web/test/besoin-mcp-browser.test.ts'))
+      assert.ok(!l.includes('packages/web/test/besoin-chat-browser.test.ts'))
+    }
+  })
+}
+
+test('--liste ecrans : un fichier d\'écran qui n\'est pas dans la carte avertit sur stderr, jamais sur stdout, et sort 0', () => {
+  // Casserait si l'avertissement de --verifier se mêlait à la liste que la chaîne lit.
+  const b = souches()
+  writeFileSync(join(repo, 'packages/web/test/zz-orphelin-browser.test.ts'), '// orphelin: playwright\n')
+  appendFileSync(join(repo, 'packages/web/src/app/McpServers.tsx'), '\n// touched\n')
+  commit('orphelin')
+  const r = liste(b)
+  assert.equal(r.status, 0, r.stderr)
+  assert.match(r.stderr, /zz-orphelin-browser/)
+  assert.ok(!/warning|guard/i.test(r.stdout), r.stdout) // undeclared, the orphan is played: it is a path on stdout, the warning is not
+  assert.ok(fichiersListes(r.stdout).includes('packages/web/test/zz-orphelin-browser.test.ts'))
+  assert.deepEqual(fichiersListes(r.stdout), joues(b))
+})
+
+test('--lister garde son rapport (écrans touchés, fichiers joués et laissés de côté)', () => {
+  // Casserait si l'ajout de --liste avait remplacé le rapport de --lister.
+  reset()
+  appendFileSync(join(repo, 'packages/web/src/app/McpServers.tsx'), '\n// touched\n')
+  commit('mcp')
+  const r = niveaux('--lister', 'ecrans', base)
+  assert.equal(r.status, 0, r.stderr)
+  assert.equal(touches(r.stdout), 'E-9 E-10 E-20 E-32')
+  const jo = lignes(r.stdout, 'fichiers d\'écran joués')
+  const la = lignes(r.stdout, 'fichiers d\'écran laissés de côté')
+  assert.ok(jo.length > 0 && la.length > 0 && jo.length + la.length === 41, `${jo.length}+${la.length}`)
+  assert.ok(jo.includes('packages/web/test/besoin-mcp-browser.test.ts'))
+})
+
+test('--liste : fiche, ou sans base, est un usage faux (code 2, rien sur stdout)', () => {
+  // Casserait si --liste fiche rendait une liste (hors tranche) ou si une base absente passait.
+  reset()
+  for (const args of [['--liste', 'fiche', base], ['--liste', 'ecrans'], ['--liste']]) {
+    const r = niveaux(...args)
+    assert.equal(r.status, 2, args.join(' '))
+    assert.equal(r.stdout, '', args.join(' '))
+    assert.match(r.stderr, /usage/)
+  }
+})
+
+test('--liste exécuté dans une extraction sans node_modules sort 0 avec la même liste', () => {
+  // Casserait si le script exigeait encore TypeScript (require('typescript')) ou tout autre paquet installé.
+  const b = souches()
+  appendFileSync(join(repo, 'packages/web/src/app/McpServers.tsx'), '\n// touched\n')
+  commit('mcp')
+  const attendu = liste(b)
+  assert.equal(attendu.status, 0, attendu.stderr)
+  const nu = join(tmp, 'nu')
+  execFileSync('git', ['clone', '-q', '--no-hardlinks', repo, nu])
+  assert.ok(!existsSync(join(nu, 'node_modules')))
+  // A PATH holding only node: no global tool can stand in for a missing install either.
+  const r = spawnSync(process.execPath, ['scripts/niveaux.mjs', '--liste', 'ecrans', b], {
+    cwd: nu, encoding: 'utf8', env: { PATH: [dirname(process.execPath), dirname(execFileSync('which', ['git'], { encoding: 'utf8' }).trim())].join(':'), HOME: tmp },
+  })
+  assert.equal(r.status, 0, r.stderr)
+  assert.deepEqual(fichiersListes(r.stdout), joues(b))
+  assert.equal(r.stdout, attendu.stdout)
+  assert.ok(r.stdout.includes('packages/web/test/besoin-mcp-browser.test.ts'))
+  assert.ok(!/typescript|Cannot find/i.test(r.stderr), r.stderr)
+})
+
+// --- le scanner d'imports maison -------------------------------------------------------------------
+
+const scanner = async () => (await import(pathToFileURL(join(source, 'scripts/niveaux.mjs')).href)).specifiers
+
+test('scanner : les cinq formes littérales sont lues, les commentaires, chaînes et gabarits sont ignorés', async () => {
+  const specifiers = await scanner()
+  const src = [
+    "import a from './a.js'",
+    "import { b, c as d } from \"./b.js\"",
+    "import * as e from './e.js'",
+    "import type { T } from './t.js'",
+    "import f, { g } from './f.js'",
+    "export { h } from './h.js'",
+    "export * from './star.js'",
+    "export * as ns from './ns.js'",
+    "import './side.css'",
+    "const x = await import('./dyn.js')",
+    "const y = require('./req.cjs')",
+    "// import z from './commentaire.js'",
+    "/* import z from './bloc.js' */",
+    "const s = \"import z from './chaine.js'\"",
+    "const t = `import z from './gabarit.js'; ${ require('./interpole.js') }`",
+    "const n = require(nom)",
+    "const m = await import(`./${v}.js`)",
+    "obj.import('./methode.js')",
+    "export const k = 1",
+    "export { local }",
+  ].join('\n')
+  assert.deepEqual(specifiers(src).sort(), [
+    './a.js', './b.js', './dyn.js', './e.js', './f.js', './h.js', './ns.js', './req.cjs', './side.css', './star.js', './t.js',
+  ])
+})
+
+test('scanner : une expression régulière ou une division ne masque pas l\'import qui suit', async () => {
+  // Casserait si un « / » mal classé ouvrait une regex qui avale les lignes suivantes.
+  const specifiers = await scanner()
+  const src = "const r = /['\"`]/g\nconst q = (a + b) / 2 / 3\nconst w = x.y / z\nimport k from './apres.js'\n"
+  assert.deepEqual(specifiers(src), ['./apres.js'])
+})
+
+test('scanner : même graphe que ts.preProcessFile sur chaque fichier du dépôt, à deux écarts connus près', async () => {
+  // L'oracle est TypeScript lui-même (celui que le script n'utilise plus). Les deux écarts sont des fautes de TS :
+  // un `export … from` cité dans un commentaire d'un test, et un `await import()` sous `as` que TS ne voit pas.
+  const { createRequire } = await import('node:module')
+  const ts = createRequire(join(source, 'package.json'))('typescript')
+  const specifiers = await scanner()
+  const fichiers = git('ls-files', '--', '*.ts', '*.tsx', '*.js', '*.mjs', '*.jsx').split('\n').filter(Boolean)
+  assert.ok(fichiers.length > 500, `${fichiers.length} fichiers`)
+  const ecarts = []
+  for (const f of fichiers) {
+    const t = readFileSync(join(repo, f), 'utf8')
+    const a = new Set(ts.preProcessFile(t, true, true).importedFiles.map((x) => x.fileName))
+    const b = new Set(specifiers(t))
+    for (const x of a) if (!b.has(x)) ecarts.push(`${f} -${x}`)
+    for (const x of b) if (!a.has(x)) ecarts.push(`${f} +${x}`)
+  }
+  assert.deepEqual(ecarts.sort(), [
+    'bench/tests/dette-ensemble.test.mjs -./owner.js',
+    'packages/server/test/qualite-serveur-besoin.test.ts +@antorfr/adestia-content',
+    'packages/server/test/qualite-serveur-besoin.test.ts +@antorfr/adestia-drivers',
+  ])
+})

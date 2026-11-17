@@ -20,6 +20,10 @@ tests:
   # The levels between local and the suite (AD-niveaux-1): scripts/niveaux.mjs reads the files
   # changed since {base} and the map scripts/ecrans.json, then plays the local level plus the screen
   # tests of the touched screens (ecrans) or the suite minus those of untouched screens (fiche).
-  # `node scripts/niveaux.mjs --lister ecrans|fiche <base>` prints what each would play.
+  # `node scripts/niveaux.mjs --lister ecrans|fiche <base>` prints what each would play; it needs no
+  # `npm ci` (the import scanner is the script's own).
   ecrans: npm ci && node scripts/niveaux.mjs ecrans {base}
+  # The screen-test files `ecrans` would play, sorted, one path per line, nothing else (AD-ecrans-liste-1);
+  # no install in front: it runs in an extraction without node_modules, and needs the git history of {base}.
+  ecrans_liste: node scripts/niveaux.mjs --liste ecrans {base}
   fiche: npm ci && node scripts/niveaux.mjs fiche {base}

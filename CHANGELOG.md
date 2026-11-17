@@ -1023,3 +1023,11 @@ branch and that `test:plugins` is replayed after a red vitest run.
   status** (a summary, a band of progress and milestones beside risks, then a timeline, with no
   date written in advance). `GET /api/pages/index` also answers `writableFolders`, the folders
   where a page can be written, so the button is drawn only there.
+
+## v0.98.1
+
+- **Touched screen tests listed without playing them** — `node scripts/niveaux.mjs --liste ecrans <base>`
+  prints only the screen-test files the `ecrans` level would play, one path per line, and plays
+  nothing; `.sdlc.yaml` declares it as `ecrans_liste`. A commit that only changes documentation
+  lists no screen test, because every screen test is on the screen map (`scripts/ecrans.json`).
+  Tooling and documentation only: nothing changes for users.

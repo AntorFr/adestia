@@ -268,7 +268,7 @@ Both write `resultats.xml` with the suite's test names. `scripts/suite-attestee.
 Between the local level and the suite sit two levels that play only the screen tests of the screens the work
 touches (AD-niveaux-1 to 3): `node scripts/niveaux.mjs ecrans <base>` plays the local level plus those screen tests,
 `fiche` plays the whole suite minus the screen tests of untouched screens, and
-`node scripts/niveaux.mjs --lister ecrans|fiche <base>` prints what each would play and plays nothing (it reads the TypeScript compiler: run `npm ci` first; `--verifier` needs nothing). With an empty change (`<base>` = `HEAD`) no screen is touched: `ecrans` plays only the local level, `fiche` still plays the files that drive the whole shell.
+`node scripts/niveaux.mjs --lister ecrans|fiche <base>` prints what each would play and plays nothing (no `npm ci` needed: the script reads imports with its own scanner, as `--verifier` and `--liste` do); `node scripts/niveaux.mjs --liste ecrans <base>` (the chain's `ecrans_liste`) prints only the sorted screen-test files `ecrans` would play, one per line, nothing when only docs changed. With an empty change (`<base>` = `HEAD`) no screen is touched: `ecrans` plays only the local level, `fiche` still plays the files that drive the whole shell.
 `<base>` is a commit, the fork point from `main` (`git merge-base origin/main HEAD`); the changed files are `git diff <base> HEAD`, read against `scripts/ecrans.json`. Measured
 on a throwaway clone with its install done, one commit on top of `<base>` (Intel i5-13500, 18 threads, an idle machine, faster than the chain's pod, so these figures sit below the `~10 min` of the local level measured there;
 `npm ci` adds 14 s; the chain's pod is slower, the suite takes about 35 minutes there):
@@ -278,6 +278,8 @@ on a throwaway clone with its install done, one commit on top of `<base>` (Intel
 | a screen file (`packages/web/src/app/McpServers.tsx`) | the screens whose page imports it | 11m32s | 14m59s |
 | a shared file (`packages/web/src/app/useRoute.ts`) | all 33 | 19m12s | 21m22s\* |
 | server only (`packages/server/src/app.ts`) | none | 2m52s | 9m30s |
+
+`ecrans_liste` (`node scripts/niveaux.mjs --liste ecrans <base>`, no install, no `node_modules`) answers in about 0.5 s on that machine whatever the change (one `git diff`, one walk of the import graph).
 
 The first row was measured before `Canvas.tsx` (E-20) and `App.tsx` (E-32) were declared as entries, so it did not count the screen tests of those two screens; a change to `McpServers.tsx` now plays them too, and the figure is a little higher.
 
