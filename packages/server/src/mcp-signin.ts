@@ -75,8 +75,9 @@ export class McpSignIn {
   readonly #path: string
   readonly #fetch: typeof fetch
   readonly #pending = new Map<string, Pending>()
-  /** One minting engine per person: `McpTokens` caches by identity, and its
-      rotation writes go through this module's adapter to the per-user key. */
+  /** One minting engine per person AND server, keyed like the key it mints
+      from: servers behind one authorization server share `tokenUrl|clientId`,
+      which is all `McpTokens` can tell them apart by. */
   readonly #minters = new Map<string, McpTokens>()
   #queue: Promise<unknown> = Promise.resolve()
   #cache: Persisted | undefined
@@ -324,7 +325,7 @@ export class McpSignIn {
     })
     // A key from a previous life may sit in this person's minter cache;
     // dropping the minter makes the next turn start from the fresh key.
-    this.#minters.delete(pending.userId)
+    this.#minters.delete(userKey(pending.server, pending.userId))
     return { server: pending.server, userId: pending.userId }
   }
 
@@ -358,32 +359,24 @@ export class McpSignIn {
     const out: Record<string, string> = {}
     for (const server of servers) {
       if (server.signIn !== 'oauth') continue
+      const entry = userKey(server.name, userId)
       const registration = (await this.#read()).registrations[server.name]
-      const seed = (await this.#read()).keys[userKey(server.name, userId)]
+      const seed = (await this.#read()).keys[entry]
       if (!registration || !seed) continue
 
-      let minter = this.#minters.get(userId)
+      let minter = this.#minters.get(entry)
       if (!minter) {
-        // The adapter maps the minting engine's `tokenUrl|clientId` key onto
-        // this PERSON's entry, so rotation lands where the seed came from.
-        const owner = userId
+        // Bound to this one entry, so rotation lands where the seed came from.
         const store = {
-          load: async (key: string) => {
-            const name = this.#serverForMintKey(key)
-            return name
-              ? (await this.#read()).keys[userKey(name, owner)]
-              : undefined
-          },
-          save: async (key: string, refreshToken: string) => {
-            const name = this.#serverForMintKey(key)
-            if (!name) return
+          load: async () => (await this.#read()).keys[entry],
+          save: async (_key: string, refreshToken: string) => {
             await this.#write((held) => {
-              held.keys[userKey(name, owner)] = refreshToken
+              held.keys[entry] = refreshToken
             })
           },
         }
         minter = new McpTokens(this.#fetch, store)
-        this.#minters.set(userId, minter)
+        this.#minters.set(entry, minter)
       }
 
       const token = await minter.for({
@@ -395,14 +388,5 @@ export class McpSignIn {
       if (token) out[server.name] = token
     }
     return out
-  }
-
-  /** Which server a minting key (`tokenUrl|clientId`) belongs to. */
-  #serverForMintKey(key: string): string | undefined {
-    const registrations = this.#cache?.registrations ?? {}
-    for (const [name, registration] of Object.entries(registrations)) {
-      if (`${registration.tokenEndpoint}|${registration.clientId}` === key) return name
-    }
-    return undefined
   }
 }
