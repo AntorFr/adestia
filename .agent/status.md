@@ -31,8 +31,7 @@ la dit en entier) ; ni `fr`, ni sombre, ni téléphone regardés pour l'édition
 ## Défauts connus
 
 La liste de référence est dans [ARCHITECTURE.md](../ARCHITECTURE.md), section
-« Known defects ». Les défauts catalogues d'options git et de liens symboliques
-sont corrigés par `main` et n'y figurent plus.
+« Known defects ». Les défauts catalogues d'options git et de liens symboliques sont corrigés par `main` et n'y figurent plus.
 
 Compléments encore visibles dans le code :
 - Copilot : le refus d'authentification non reconnu cite la fin de la sortie d'erreur de la CLI (400 caractères, jetons `gh*_` masqués) ; l'armement lit `authTokens` (CLI 1.0.98) avant `copilotTokens`. Corrigé en `v0.97.3`, plus un défaut ; `authTokens` est le format de la CLI 1.0.98, les chaînes de `auth.ts` restent épinglées à la 1.0.80.
