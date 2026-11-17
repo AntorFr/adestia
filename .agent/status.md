@@ -15,6 +15,17 @@
   déployée le 15/10 sans détail par instance déployée. Cela ne prouve pas leur version actuelle.
 - Histoire et décisions des chantiers clos : [CHANGELOG.md](../CHANGELOG.md).
 
+## `adestia-ecrans-liste` : la liste des écrans touchés sans les jouer (`feature/adestia-ecrans-liste`)
+Construit (AD-ecrans-liste-1) : `.sdlc.yaml` déclare `tests.ecrans_liste: node scripts/niveaux.mjs --liste ecrans {base}`, sans `npm ci` devant ;
+le mode `--liste` imprime sur stdout, triés, un chemin par ligne, les fichiers de test d'écran que `ecrans` jouerait (rien si seule la doc change ;
+avertissements sur stderr). Le scanner d'imports de `scripts/niveaux.mjs` (`specifiers`) remplace `ts.preProcessFile` pour `ecrans`, `fiche`,
+`--lister` et `--liste` : l'outil n'a plus besoin de `node_modules`. Preuve : `bench/tests/niveaux-besoin.test.mjs` (liste = `joues` de `ecrans` sur
+quatre diffs réels, extraction sans `node_modules`, scanner comparé au graphe de TypeScript). Durée dans le README (~0,5 s).
+Reste : rien. Pièges : la commande lit l'historique git de `{base}` (`git diff <base> HEAD`), comme `ecrans` ; le scanner ne lit que les
+spécificateurs littéraux (un `import(variable)` n'est pas suivi, TypeScript non plus). `--verifier` rouge sur `main` à la livraison :
+`packages/web/test/verify-etat-projet-browser.test.ts` est absent de `scripts/ecrans.json` (venu d'`adestia-pages`, pas de cette feature) ; `--liste` le
+signale sur stderr et rend sa liste quand même.
+
 ## Tranche 4 d'`adestia-pages` : page « Project status » (`feature/adestia-pages-etat-projet`)
 Construit : trois blocs de `project-management` (`progress` dérivé des sous-pages, `milestones`, `risks` ; AD-etat-projet-1 et -2), lisibles par `web/model.js`, dans la galerie sous `Project`, avec formulaires E-35 pour `milestones` et `risks` (colonnes `check` et `choice`, lignes `label-date-done` et `label-level-owner`) ; `timeline` gagne `view=bars|list` sans changer le fichier écrit (sous 640 px les barres se replient en liste, dessin seul : une barre n'y porte pas son libellé) ; la tuile Progress porte un mètre ; `subproject` redessiné (carte et pastille de la charte). **New from template** (E-3) et la feuille E-36 (`app/NewFromTemplate.tsx`, `app/templates.ts`) créent la page par `PUT /api/pages/*` sans révision (409 = nom pris, AD-etat-projet-3) ; l'index de pages répond `writableFolders` (`server/src/writable-folders.ts`, un dossier absorbé par une app en est exclu) ; le manifeste porte la clé `templates`, `project-management` livre `templates/project-status.md`. Recette en bouchon : `node bench/launch.mjs --engine fake --seed etat-projet-gabarit`, puis `BENCH_URL=<url> node bench/scenarios/etat-projet-gabarit.mjs` ; les autres graines `etat-projet-*` ont chacune leur scénario (`blocs-projet`, `nouveau-modele`, `redessin-frise`). **Pièges** : le modèle ne porte aucune date écrite d'avance (une page créée aujourd'hui ne doit pas en avoir de périmée) ; la clôture d'un conteneur est plus longue que celle de ses enfants (`:::::columns` / `::::col`) ; un jalon non fait et passé est « en retard », jamais « prochain » ; `writableFolders` n'est qu'un indice, l'écriture reste le verdict ; la puce `-` vide du modèle n'est jamais gardée par le formulaire (sinon le fichier passerait à `*`). **Reste** : charge par personne (bloc D), page vierge dans E-36 et choix du magasin, hors tranche ; ni la variante danger de la jauge, ni la version et le tag, posés à la livraison.
 
