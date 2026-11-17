@@ -1497,6 +1497,38 @@ begin with « niveau » fails. `CLAUDE.md` (Code and commands) lists the four le
 the duration of `ecrans` and `fiche` measured on three real `{base}`: a screen file (e.g.
 `McpServers.tsx`), a shared file (e.g. `useRoute.ts`), a server-only change.
 
+## Decisions of adestia-ecrans-liste
+
+The chain's `jouer-ecrans` tool (rule R28) replays the product's own selection between the head of
+the last screen run and the new head, to know whether a new run is due. Without a declared list, any
+commit after a run makes one due, a doc-only commit included. `ecrans:` plays; this feature adds a
+key that only *names*.
+
+### AD-ecrans-liste-1 — `tests.ecrans_liste` prints the screen-test files `ecrans:` would play, one per line
+
+`.sdlc.yaml` `tests:` gains `ecrans_liste: node scripts/niveaux.mjs --liste ecrans {base}` (no
+`npm ci` in front of it: the command runs in an extraction without `node_modules`). The new mode
+`--liste` of `scripts/niveaux.mjs` prints, on stdout, exactly the repository-relative paths of the
+files `ecrans <base>` would hand to `ADESTIA_JOUER_ECRANS` (`niveau('ecrans', …).joues`), sorted, one
+per line, and nothing else: no header, no counts, no blank line, and an empty output (exit 0) when
+no screen test is due, as for a doc-only change. Warnings go to stderr, never stdout. `--lister`
+keeps its human report. The files are chosen by the same functions as `ecrans` (`changes`,
+`calcul`, `niveau`), so the two cannot drift: `ecrans` reads its list from the same code path.
+
+The one dependency of those functions was TypeScript (`ts.preProcessFile`, to read import
+specifiers). It is replaced, **for both modes**, by a scanner of the repository's own
+(`import … from`, `export … from`, bare `import 'x'`, `import('x')` and `require('x')` with a
+literal, comments skipped), so a single graph serves the play and the list; a scanner used only by
+the list would let the two disagree. `bench/tests/niveaux-besoin.test.mjs` gains a case that runs
+`--liste` and `ecrans` on the same real `{base}` (a screen file, a shared file, a server-only change,
+a doc-only change) and compares them, and a case that runs `--liste` with `node_modules` absent.
+`node scripts/niveaux.mjs --lister` no longer needs `npm ci`; the README says so, and states the
+duration of `ecrans_liste` beside those of `ecrans` and `fiche`. The command needs the git history
+of `{base}` (`git diff <base> HEAD`), as `ecrans` does.
+*Rejected:* keeping TypeScript and asking the chain to install (the Livre forbids the install, and
+the point is a cheap question after every commit); a scanner for the list only (drift); declaring the
+list by hand in `.sdlc.yaml` (it rots, the reason `ecrans.json` is read by the graph).
+
 ## Decisions of adestia-acces-refuse
 
 An OIDC account that is in no allowed group used to meet a bare JSON 403 at `/auth/callback`, and
