@@ -93,8 +93,8 @@ function fakeAuthServer() {
 }
 
 /** Runs one person through the whole flow and returns their state param. */
-async function connect(service: McpSignIn, userId: string) {
-  const begun = await service.begin(HA, userId, 'https://alfred.example', 'Alfred')
+async function connect(service: McpSignIn, userId: string, server: McpServerConfig = HA) {
+  const begun = await service.begin(server, userId, 'https://alfred.example', 'Alfred')
   if ('problem' in begun) throw new Error(begun.problem)
   const state = new URL(begun.authorizeUrl).searchParams.get('state')!
   const done = await service.complete(state, 'good-code')
@@ -236,6 +236,82 @@ describe('per-turn tokens', () => {
     // Both mint, each from their own seed; neither empties the other's.
     expect(Object.keys(await service.tokensFor([HA], 'sebastien'))).toHaveLength(1)
     expect(Object.keys(await service.tokensFor([HA], 'emilie'))).toHaveLength(1)
+  })
+
+  it('keeps two servers apart when they share one authorization server and client', async () => {
+    const { fetchImpl, log } = fakeAuthServer()
+    // A gateway: one IdP, one client handed back to every registration, and
+    // the first server's key revoked behind the instance's back.
+    const gateway = (async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/.idp/register')) {
+        return new Response(JSON.stringify({ client_id: 'shared' }), { status: 201 })
+      }
+      if (url.endsWith('/.idp/token')) {
+        const body = new URLSearchParams(String(init?.body))
+        if (body.get('refresh_token') === 'refresh-1') {
+          log.refreshes.push(body)
+          return new Response(JSON.stringify({ error: 'invalid_grant' }), { status: 400 })
+        }
+      }
+      return fetchImpl(input, init)
+    }) as typeof fetch
+    const JIRA: McpServerConfig = { ...HA, name: 'jira' }
+    const service = new McpSignIn(dataDir, gateway)
+    await connect(service, 'sebastien', HA)
+    await connect(service, 'sebastien', JIRA)
+
+    const minted = await service.tokensFor([HA, JIRA], 'sebastien')
+    expect(Object.keys(minted)).toEqual(['jira'])
+    expect(log.refreshes.map((body) => body.get('refresh_token'))).toEqual(['refresh-1', 'refresh-2'])
+
+    // The rotation went to jira's own entry: a restart mints from it again.
+    const reborn = new McpSignIn(dataDir, gateway)
+    expect(Object.keys(await reborn.tokensFor([JIRA], 'sebastien'))).toEqual(['jira'])
+    expect(log.refreshes.at(-1)!.get('refresh_token')).toBe('refresh-3')
+  })
+})
+
+describe('servers behind one gateway client', () => {
+  /** One IdP, one client for every registration, healthy keys. */
+  function sharedClient() {
+    const { fetchImpl, log } = fakeAuthServer()
+    const gateway = (async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input).endsWith('/.idp/register')) {
+        return new Response(JSON.stringify({ client_id: 'shared' }), { status: 201 })
+      }
+      return fetchImpl(input, init)
+    }) as typeof fetch
+    return { gateway, log }
+  }
+  const JIRA: McpServerConfig = { ...HA, name: 'jira' }
+
+  it('hands each server a token minted from its own key, not the first one’s', async () => {
+    const { gateway, log } = sharedClient()
+    const service = new McpSignIn(dataDir, gateway)
+    await connect(service, 'sebastien', HA)
+    await connect(service, 'sebastien', JIRA)
+
+    const minted = await service.tokensFor([HA, JIRA], 'sebastien')
+    expect(Object.keys(minted).sort()).toEqual(['home-assistant', 'jira'])
+    expect(minted['home-assistant']).not.toBe(minted['jira'])
+    expect(log.refreshes.map((body) => body.get('refresh_token')).sort()).toEqual([
+      'refresh-1',
+      'refresh-2',
+    ])
+  })
+
+  it('reconnecting one server leaves the other’s minting untouched', async () => {
+    const { gateway } = sharedClient()
+    const service = new McpSignIn(dataDir, gateway)
+    await connect(service, 'sebastien', HA)
+    await connect(service, 'sebastien', JIRA)
+    const first = await service.tokensFor([HA, JIRA], 'sebastien')
+
+    await connect(service, 'sebastien', HA)
+    const second = await service.tokensFor([HA, JIRA], 'sebastien')
+    expect(second['home-assistant']).not.toBe(first['home-assistant'])
+    expect(second['jira']).toBe(first['jira'])
   })
 })
 

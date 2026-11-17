@@ -1031,3 +1031,10 @@ branch and that `test:plugins` is replayed after a red vitest run.
   nothing; `.sdlc.yaml` declares it as `ecrans_liste`. A commit that only changes documentation
   lists no screen test, because every screen test is on the screen map (`scripts/ecrans.json`).
   Tooling and documentation only: nothing changes for users.
+
+## v0.98.2
+
+- **Each MCP server refreshes its token with its own key** — when several MCP servers sign in
+  through the same authorization server and the same client (a shared gateway), revoking the key
+  of the first no longer leaves the others without a token: every server keeps its own refresh
+  key, rotates it on its own, and picks it up again after a restart.
