@@ -1038,3 +1038,10 @@ branch and that `test:plugins` is replayed after a red vitest run.
   through the same authorization server and the same client (a shared gateway), revoking the key
   of the first no longer leaves the others without a token: every server keeps its own refresh
   key, rotates it on its own, and picks it up again after a restart.
+
+## v0.98.3
+
+- **The image build is capped at 120 minutes** — each job of the publishing workflow
+  (`attestation` and `build`) now stops after two hours instead of the forge's 360-minute
+  default, so a frozen build is cut and replayed rather than blocking a release for six hours.
+  A stable build usually takes about 5 minutes. Tooling only: nothing changes for users.
