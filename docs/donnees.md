@@ -126,7 +126,8 @@ a user (see Rules of access).
   (`MCP_MASK`) before reaching the browser.
 - **Per-person MCP sign-in** — for a server with `signIn: oauth`: one dynamic client
   registration per server for the instance, one rotating refresh key per (server, person),
-  in `mcp-signin.json`. The user connects from the connect card in E-16 Chat rail or from E-10 MCP servers. Per-person
+  in `mcp-signin.json`; each (server, person) mints from its own key, even when several servers share
+  one `tokenUrl|clientId` behind a common gateway. The user connects from the connect card in E-16 Chat rail or from E-10 MCP servers. Per-person
   OIDC refresh tokens for `reboundAudience` live in `user-tokens.json`.
 - **Delegation thread** — a conversation opened by a calling agent through `ask_<name>`
   (`DelegationChannel`). Stored like a conversation, under the caller's plain name;
