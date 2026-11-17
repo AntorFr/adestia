@@ -1418,10 +1418,11 @@ is off-screen, whether it starts the server or not.
 `.sdlc.yaml` `tests:` gains `ecrans: npm ci && node scripts/niveaux.mjs ecrans {base}`,
 `fiche: npm ci && node scripts/niveaux.mjs fiche {base}` and
 `rejouer: npm ci && scripts/rejouer.sh {tests}` (replacing `scripts/rejouer.sh {tests}`). `commande:`
-and `local:` are unchanged. `scripts/niveaux.mjs` (no dependency beyond the repository's own
-TypeScript) has three modes: `ecrans <base>` and `fiche <base>` play, `--lister` instead prints what
-they would play (touched screens, played and left-out screen-test files) and plays nothing: the
-tests and the README read that. Both write the same `resultats.xml` through
+and `local:` are unchanged. `scripts/niveaux.mjs` (imports only `node:*`; its own import
+scanner replaces TypeScript, so it needs no `node_modules`) has four modes: `ecrans <base>` and
+`fiche <base>` play, `--lister` instead prints what they would play (touched screens, played and
+left-out screen-test files) and plays nothing, and `--liste ecrans <base>` prints only the
+screen-test files `ecrans` would play, one per line: the tests and the README read that. Both write the same `resultats.xml` through
 `scripts/suite-rapport.mjs`, under the suite's test names. `ecrans` plays what `local:` plays
 plus the chosen screen tests (after the server and web builds, which the browser suites need);
 `fiche` is `scripts/suite-attestee.sh` with the left-out files excluded from the vitest step
