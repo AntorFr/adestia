@@ -1525,6 +1525,11 @@ a doc-only change) and compares them, and a case that runs `--liste` with `node_
 `node scripts/niveaux.mjs --lister` no longer needs `npm ci`; the README says so, and states the
 duration of `ecrans_liste` beside those of `ecrans` and `fiche`. The command needs the git history
 of `{base}` (`git diff <base> HEAD`), as `ecrans` does.
+"Empty for a doc-only change" holds only if every screen-test file is on the map: a test file that
+`scripts/ecrans.json` omits is played at every level, so it would appear in every list.
+`packages/web/test/verify-etat-projet-browser.test.ts` is such a file (it came with `main`);
+the task declares it in `scripts/ecrans.json` (one entry; the selection rule is unchanged) so that
+`--verifier` is green and a doc-only diff lists nothing.
 *Rejected:* keeping TypeScript and asking the chain to install (the Livre forbids the install, and
 the point is a cheap question after every commit); a scanner for the list only (drift); declaring the
 list by hand in `.sdlc.yaml` (it rots, the reason `ecrans.json` is read by the graph).
