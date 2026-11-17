@@ -234,6 +234,13 @@ rounded sum of each file's measured time, so they can differ by one from `avant.
 - **Same reds as before**: the files that were red or skipped on `main` still are (listed in `avant.md`); their time is
   counted anyway, and the command then exits 1 while still printing the table (expected on `main`; `avant.md` lists the causes). Per-file times: `docs/tests-ecran/avant.md`; the screen tests kept are the display ones.
 
+## Publishing the image
+
+Pushing a `v*` tag runs `.github/workflows/docker-publish.yml`, which publishes
+`ghcr.io/antorfr/adestia`. A stable build usually takes about 5 minutes; each job is
+capped at `timeout-minutes: 120`, so a frozen build is cut after 120 minutes and can
+be replayed, instead of blocking the delivery until the forge's own 360-minute limit.
+
 ## Status
 
 **Early, and running.** The screens are checked in a real browser (`bench/`) and
