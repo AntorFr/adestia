@@ -1434,7 +1434,7 @@ because a skipped test turns the level red.
 `scripts/ecrans.json` maps each screen to its entries: `"E-10": { "entrees": ["packages/web/src/app/McpServers.tsx"] }`
 for the screens of `docs/ecrans.md` (E-1 to E-21, E-32, E-33) and, for the plugin screens (E-22
 to E-31, loaded at runtime and imported by nothing), `"dossiers": ["plugins/todo/web/"]`. The
-tool resolves imports statically (TypeScript's `preProcessFile` on `.ts`, `.tsx`, `.js`; relative
+tool resolves imports statically (the script's own import scanner on `.ts`, `.tsx`, `.js`, no TypeScript needed; relative
 specifiers with the `.js`→`.ts[x]` mapping; `@antorfr/*` mapped to the sources of
 `packages/*/src`, as `tsconfig.base.json` does; CSS imports; dynamic `import()` with a literal)
 and, from the changed files of `{base}..HEAD` (`git diff --name-only`, deleted files included,
