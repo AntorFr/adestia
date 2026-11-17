@@ -272,6 +272,49 @@ describe('per-turn tokens', () => {
   })
 })
 
+describe('servers behind one gateway client', () => {
+  /** One IdP, one client for every registration, healthy keys. */
+  function sharedClient() {
+    const { fetchImpl, log } = fakeAuthServer()
+    const gateway = (async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input).endsWith('/.idp/register')) {
+        return new Response(JSON.stringify({ client_id: 'shared' }), { status: 201 })
+      }
+      return fetchImpl(input, init)
+    }) as typeof fetch
+    return { gateway, log }
+  }
+  const JIRA: McpServerConfig = { ...HA, name: 'jira' }
+
+  it('hands each server a token minted from its own key, not the first one’s', async () => {
+    const { gateway, log } = sharedClient()
+    const service = new McpSignIn(dataDir, gateway)
+    await connect(service, 'sebastien', HA)
+    await connect(service, 'sebastien', JIRA)
+
+    const minted = await service.tokensFor([HA, JIRA], 'sebastien')
+    expect(Object.keys(minted).sort()).toEqual(['home-assistant', 'jira'])
+    expect(minted['home-assistant']).not.toBe(minted['jira'])
+    expect(log.refreshes.map((body) => body.get('refresh_token')).sort()).toEqual([
+      'refresh-1',
+      'refresh-2',
+    ])
+  })
+
+  it('reconnecting one server leaves the other’s minting untouched', async () => {
+    const { gateway } = sharedClient()
+    const service = new McpSignIn(dataDir, gateway)
+    await connect(service, 'sebastien', HA)
+    await connect(service, 'sebastien', JIRA)
+    const first = await service.tokensFor([HA, JIRA], 'sebastien')
+
+    await connect(service, 'sebastien', HA)
+    const second = await service.tokensFor([HA, JIRA], 'sebastien')
+    expect(second['home-assistant']).not.toBe(first['home-assistant'])
+    expect(second['jira']).toBe(first['jira'])
+  })
+})
+
 describe('the file on disk', () => {
   it('is 0600 and never holds a user id in clear', async () => {
     const { fetchImpl } = fakeAuthServer()
