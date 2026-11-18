@@ -1045,3 +1045,11 @@ branch and that `test:plugins` is replayed after a red vitest run.
   (`attestation` and `build`) now stops after two hours instead of the forge's 360-minute
   default, so a frozen build is cut and replayed rather than blocking a release for six hours.
   A stable build usually takes about 5 minutes. Tooling only: nothing changes for users.
+
+## v0.98.4
+
+- **The browser-test helper waits for the shell on a signal** — `open()` in the browser-test
+  helper (`packages/web/test/charte-browser.ts`) now waits for the instance to answer and for the
+  chat shell to be drawn (up to 60 s) instead of a fixed 20 s, and a failed wait names the URL,
+  the route and the page text, or says the shell was not built. This removes a timeout seen
+  under load in `besoin-etat-projet-browser.test.ts`. Tests only: nothing changes for users.
