@@ -1,6 +1,6 @@
 /** Feature adestia-bloc-a-copier (B-copie-1, E-16): settled threads with `copy` fences, and a turn that streams one. */
 import { configFor, populate, storeToken } from './_base.mjs'
-import { at, conversation, page, put, said, userDirectory } from './_lib.mjs'
+import { at, conversation, said, userDirectory } from './_lib.mjs'
 import { untilStopped } from '../fake-engine.mjs'
 
 export const THREADS = {
@@ -32,7 +32,6 @@ export const scripts = [
 export default async function seed(ctx) {
   await populate(ctx)
   await storeToken(ctx.dataDir)
-  await put(ctx.workspace, 'pages/copie/note.md', page({ title: 'Note copie' }, 'Avant.\n\n```copy\nTexte dans une page\n```\n\nApres.'))
   const owner = userDirectory('local')
   await conversation(ctx.dataDir, owner, {
     id: THREADS.email, title: 'Email Anne', updatedAt: at(18),

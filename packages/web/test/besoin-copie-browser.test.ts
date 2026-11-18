@@ -249,6 +249,13 @@ describe.skipIf(!hasBrowser)('Copy box in the chat thread (B-copie-1, E-16)', ()
   }, 120_000)
 
   it('E-5 exclusion: une fence copy dans une page reste un bloc de code, sans bouton', async () => {
+    // the page is written through the product's own route (a seed page would have to join the corpus fixtures)
+    const put = await fetch(`${en.url}/api/pages/copie/note.md`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ markdown: '---\ntitle: Note copie\n---\n\nAvant.\n\n```copy\nTexte dans une page\n```\n\nApres.\n' }),
+    })
+    expect(put.status).toBe(200)
     const { context, page } = await visit(en.url, { route: '/page/copie/note' })
     await page.getByText('Texte dans une page').first().waitFor({ timeout: WAIT })
     expect(await page.locator('.adestia-copybox').count()).toBe(0)
