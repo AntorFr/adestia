@@ -1388,7 +1388,17 @@ state (ready, copied, failed).
 Given a settled reply with a `copy` block, When the reader presses the icon, Then the clipboard
 holds the block's text and the icon turns to `check` for two seconds. Given the copy is refused,
 Then the icon turns to `x` and the text stays selectable. Given the reply is still streaming,
-Then the box has no button.
+Then the box has no button. Given a `copy` block with nothing in it, Then an empty frame is drawn
+and has no button. Given a settled reply whose `copy` fence was never closed, Then the text after
+the opening fence is in the box and the button is there. Given two `copy` blocks in one reply, When
+the reader presses the second icon, Then the clipboard holds the second block's text only. Given a
+long word without spaces, Then the box wraps it and shows no horizontal scroll. Given an Owner or a
+User, Then both see the same box and the same button.
+
+Exact text. Given a block whose value is three lines with a blank line between two of them
+(`Bonjour Anne,`, an empty line, `Je confirme jeudi.`), When the reader presses the icon, Then the
+clipboard holds those exact characters, line breaks and blank line kept, with no fence line, no
+final newline and no markup, and pasting it in a mail client shows the same three lines.
 
 Extreme content. A long text (three pages): the frame grows with it, the button stays at the
 top-right corner of the frame and scrolls with it. A word without spaces (a long URL) wraps
