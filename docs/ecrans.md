@@ -1368,7 +1368,7 @@ and in every skin), radius `--radius-sm`. The text sits in the page's reading fo
 (`--font`, not `--font-code`), `white-space: pre-wrap`, wrapping at the bubble's width, no
 horizontal scroll: an email is read, not parsed. The button is at the top-right corner,
 overlaid on the first line's right padding (the box reserves that padding), an icon-only
-`.adestia-btn.adestia-btn--icon`, 44 px target on a phone as every icon control.
+`<Button icon="copy">` (`.adestia-btn--icon`, the design system's button, not a bare span as in the mockup), 44 px target on a phone: the rule of the composer's icons is repeated for `.adestia-copybox .adestia-btn--icon`. Spacing and radius come from tokens (`--space-1`, `--radius-sm`); the mockup's 4 px and 8 px are drawings. The frame is listed in `docs/charte.md` § 4 (Copy box).
 
 **States.**
 
