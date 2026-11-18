@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="maquette.css"><title>Copy box in the chat thread (B-copie-1)</title>
+<style>
+.cb{position:relative;margin:0 0 .7em;padding:10px 44px 10px 12px;background:var(--surface-sunken);border:1px solid var(--border);border-radius:8px;white-space:pre-wrap;font:14px/1.5 system-ui,sans-serif;color:var(--text)}
+.cb .btn{position:absolute;top:4px;right:4px;width:32px;height:32px;justify-content:center}
+.cb .btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cb .btn.ok{color:var(--accent-text)}.cb .btn.ko{color:var(--danger-text)}
+.bub{background:var(--surface-soft);border-radius:10px;padding:12px 14px;font:14px/1.5 system-ui,sans-serif;color:var(--text)}.bub p{margin:0 0 .7em}
+.st{font:600 11px var(--font-mono);color:var(--text-faint);margin:10px 0 4px}
+</style>
+<body><div class="sheetpage"><h1>Copy box in the chat thread (B-copie-1, AD-copie-1)</h1>
+<p class="lead">The agent's reply with a reworded email set apart in a box. The icon copies the box's text only. States below the thread: ready, copied (check + "Copied", two seconds), failed (x + "Copy failed"); while streaming there is no button.</p>
+<div class="show" data-tpl="t" data-sets="desk-light desk-dark phone-light phone-dark"></div>
+<template id="t"><div class="pg"><div class="bub"><p>Voici une version plus directe de ton email :</p>
+<div class="cb">Bonjour Claire,
+
+Je reviens vers vous au sujet de la livraison du 12 : elle n'est pas arrivée. Pourriez-vous m'indiquer où en est la commande ?
+
+Cordialement,
+Marc<span class="btn" role="button" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></span></div>
+<p>J'ai gardé le vouvoiement ; dis-moi si tu préfères un ton plus familier.</p></div>
+<div class="st">READY</div><div class="cb" style="padding-right:44px">Bonjour Claire, …<span class="btn" aria-label="Copy"><svg viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></span></div>
+<div class="st">COPIED · 2 s · aria-live "Copied"</div><div class="cb">Bonjour Claire, …<span class="btn ok" aria-label="Copied"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+<div class="st">FAILED · "Copy failed" · text stays selectable</div><div class="cb">Bonjour Claire, …<span class="btn ko" aria-label="Copy failed"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></span></div>
+<div class="st">STREAMING · no button</div><div class="cb">Bonjour Claire,
+
+Je reviens vers vous au sujet de</div></div></template>
+</div><script src="maquette.js"></script>

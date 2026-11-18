@@ -1354,3 +1354,44 @@ Keyboard: `Esc` closes (focus returns to the button), `Enter` in the field creat
 - **Meter**: a bar with `role=progressbar` and its value in words; a danger variant is not delivered.
 
 An error of the write is a line inside the sheet, never a toast.
+
+## The copy box in E-16 (`adestia-bloc-a-copier`)
+
+**B-copie-1** adds one element to the thread of E-16 (and wherever `Bubble`/`Prose` draw an
+agent's reply): the **copy box**, drawn from a code block whose info string is `copy` and only
+there. It is not a new screen, a state of the list or a new gesture of the conversation: the
+five of P-2 step 9 stay.
+
+**Anatomy.** A frame (`.adestia-copybox`) inside the reply: border `--border`, background
+`--surface-sunken` (the same sink as a code block, so it reads as "set apart" in light and dark
+and in every skin), radius `--radius-sm`. The text sits in the page's reading font
+(`--font`, not `--font-code`), `white-space: pre-wrap`, wrapping at the bubble's width, no
+horizontal scroll: an email is read, not parsed. The button is at the top-right corner,
+overlaid on the first line's right padding (the box reserves that padding), an icon-only
+`.adestia-btn.adestia-btn--icon`, 44 px target on a phone as every icon control.
+
+**States.**
+
+| State | Draws |
+|---|---|
+| streaming (reply still arriving, or fence not closed) | frame and text, **no button** |
+| ready | icon `copy`, accessible name and tooltip `t('Copy')` |
+| copied | icon `check`, name `t('Copied')`, two seconds, then ready; `aria-live="polite"` announces it |
+| failed | icon `x`, name `t('Copy failed')`, until the next press or three seconds; the text stays selectable |
+| empty text (a `copy` block with nothing in it) | drawn as an empty frame without button |
+
+Colour is never the only signal: the copied and failed states change the icon and the
+accessible name. The label is not drawn as visible text (an icon-only control, as the header's).
+No toast: the feedback is in the control (charte § 6, no toast system).
+
+**Copy.** What goes to the clipboard is the code block's value, character for character (the
+Markdown fence and its closing line are not part of it; neither is the final newline), as
+`text/plain`. `navigator.clipboard.writeText` where it exists; where it does not (an instance
+served over plain `http` on a LAN has no secure context), a hidden textarea selected and
+`document.execCommand('copy')`; if both fail, the failed state.
+
+**Mockup.** `docs/maquettes/copybox-e16.html`: the thread with a reworded email in a box among
+two paragraphs, desk and phone, light and dark, the four states.
+
+**Not built here.** Copying a whole reply, the box in a page (E-5 keeps drawing a `copy` fence as
+code), a download, a "send" button. A skin can restyle `.adestia-copybox` through tokens.
