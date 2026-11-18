@@ -68,7 +68,7 @@ test('McpServers.tsx seul : exactement E-9 E-10 E-20 E-32 (pages qui l\'importen
   const laisses = lignes(r.stdout, 'fichiers d\'écran laissés de côté')
   assert.ok(laisses.includes('packages/web/test/besoin-chat-browser.test.ts'))
   assert.ok(!laisses.includes('packages/web/test/besoin-mcp-browser.test.ts'))
-  assert.equal(laisses.length + E9_E10.length, 23)
+  assert.equal(laisses.length + E9_E10.length, 41)
 })
 
 test('Settings.tsx seul ne touche pas E-10 (McpServers importe Settings, pas l\'inverse)', () => {
@@ -92,7 +92,7 @@ test('un fichier partagé (useRoute.ts) touche les 33 écrans et joue tous les f
   assert.equal(e.length, 33)
   assert.equal(e[0], 'E-1')
   assert.equal(e[32], 'E-33')
-  assert.equal(lignes(r.stdout, 'fichiers d\'écran joués').length, 23)
+  assert.equal(lignes(r.stdout, 'fichiers d\'écran joués').length, 41)
   assert.deepEqual(lignes(r.stdout, 'fichiers d\'écran laissés de côté'), [])
 })
 
@@ -104,7 +104,7 @@ test('packages/server/src seul : aucun écran, aucun fichier d\'écran joué en 
   const r = niveaux('--lister', 'ecrans', base)
   assert.equal(touches(r.stdout), 'aucun')
   assert.deepEqual(lignes(r.stdout, 'fichiers d\'écran joués'), [])
-  assert.equal(lignes(r.stdout, 'fichiers d\'écran laissés de côté').length, 23)
+  assert.equal(lignes(r.stdout, 'fichiers d\'écran laissés de côté').length, 41)
 })
 
 test('fiche, serveur seul : laisse de côté les écrans non touchés mais jamais un fichier « toujours »', () => {
@@ -116,7 +116,7 @@ test('fiche, serveur seul : laisse de côté les écrans non touchés mais jamai
   const laisses = lignes(r.stdout, 'fichiers d\'écran laissés de côté')
   const joues = lignes(r.stdout, 'fichiers d\'écran joués')
   assert.deepEqual(joues.sort(), TOUJOURS)
-  assert.equal(laisses.length, 19)
+  assert.equal(laisses.length, 37)
   for (const t of TOUJOURS) assert.ok(!laisses.includes(t), t)
 })
 
@@ -136,7 +136,7 @@ test('fiche : la suite attestée reçoit exactement les fichiers laissés de cô
   const lf = lignes(niveaux('--lister', 'fiche', base).stdout, 'fichiers d\'écran laissés de côté')
   const ex = /EXCLURE=\[([^\]]*)\]/.exec(f.stdout)[1].split(' ').filter(Boolean)
   assert.deepEqual(ex.sort(), [...lf].sort())
-  assert.equal(ex.length, 10)
+  assert.equal(ex.length, 28)
   assert.ok(!ex.includes('packages/web/test/besoin-mcp-browser.test.ts'))
   const e = niveaux('ecrans', base)
   const jo = /JOUER=\[([^\]]*)\]/.exec(e.stdout)[1].split(' ').filter(Boolean)
@@ -265,11 +265,11 @@ test('garde : une entrée d\'écran qui n\'existe pas la fait échouer', () => {
   assert.match(r.stderr, /Fantome\.tsx/)
 })
 
-test('la carte déclare E-1 à E-33 et 23 fichiers d\'écran, chacun connu', () => {
+test('la carte déclare E-1 à E-33 et 41 fichiers d\'écran, chacun connu', () => {
   reset()
   const map = JSON.parse(readFileSync(join(repo, 'scripts/ecrans.json'), 'utf8'))
   assert.deepEqual(Object.keys(map.ecrans), Array.from({ length: 33 }, (_, i) => `E-${i + 1}`))
-  assert.equal(Object.keys(map.tests).length, 23)
+  assert.equal(Object.keys(map.tests).length, 41)
 })
 
 test('suite-locale.sh exclut tout fichier d\'écran quel que soit l\'environnement, et ne lit plus les variables d\'ecrans', () => {
