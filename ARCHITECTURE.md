@@ -1631,8 +1631,9 @@ tooling; it is proved by `attester` on the whole `fiche` level and by the bench 
 
 ### Proof
 
-- `bench/tests/niveaux-besoin.test.mjs` and `niveau-local-besoin.test.mjs` (hand-run `node --test`
-  files) move with the contract: `ecrans` calls `suite-ecrans.sh` with exactly the joués files and
+- `bench/tests/niveaux-besoin.test.mjs`, `niveau-local-besoin.test.mjs` and `niveaux-ensemble.test.mjs`
+  (hand-run `node --test` files; the last one's « rejouer autonome » case still demands `npm ci` in
+  `rejouer:`) move with the contract: `ecrans` calls `suite-ecrans.sh` with exactly the joués files and
   never `suite-locale.sh`; with nothing touched `suite-ecrans.sh` plays no step, writes a zero-case
   report, exits 0, and touches no `node_modules` (run in a clone without it); `suite-locale.sh`
   excludes every screen-test file whatever the environment; `.sdlc.yaml` declares `installation`,
