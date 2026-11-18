@@ -448,6 +448,10 @@ const FR: Readonly<Record<string, string>> = {
     'Connecté en tant que %name — ce compte n’a pas accès à cette instance.',
   'That app is not active on this instance.': 'Cette app n’est pas activée sur cette instance.',
   'Turn interrupted.': 'Tour interrompu.',
+  // The copy box of a reply (AD-copie-1)
+  'Copy': 'Copier',
+  'Copied': 'Copié',
+  'Copy failed': 'Échec de la copie',
   // Signatures asked for at the hub's façade
   'Signature requested': 'Signature demandée',
   'A held action waits for your signature.': 'Une action attend votre signature.',
