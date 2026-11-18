@@ -29,7 +29,7 @@ One instance is one agent, one workspace, one subscription.
 Form of the `exigences` skill; each need names the journeys it serves.
 
 ### Unchanged behaviour
-- **B-1** *(`adestia-qualite`; `adestia-correctifs` lifts it for its register, B-13; `adestia-ajouts` lifts it for B-17 to B-22 only; `adestia-pages` lifts it for B-23 to B-31 only)* — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
+- **B-1** *(`adestia-qualite`; `adestia-correctifs` lifts it for its register, B-13; `adestia-ajouts` lifts it for B-17 to B-22 only; `adestia-pages` lifts it for B-23 to B-31 only; `adestia-coller-tableau` lifts it for B-paste-1 only)* — Every journey `P-1` to `P-14` behaves after the epic as it did at v0.88.0: same
   routes, same API, same configuration keys, same files on disk and their formats, same MCP
   tools, same words where a word is not corrected by `B-8` or `B-9`. A visible change is limited to
   the look (`B-6`, `B-7`, `B-9`), to the language of a string (`B-8`), to the labels of back
@@ -47,6 +47,7 @@ Form of the `exigences` skill; each need names the journeys it serves.
 - **B-13** — Every defect of the register (`ARCHITECTURE.md` › AD-17) is either repaired with a
   test that failed before, or leaves the register as *not reproduced*, or is kept under Known
   defects with its reason. None disappears unwritten. *(all journeys)*
+- **B-paste-1** *(`adestia-coller-tableau`)* — A paste into the composer whose clipboard carries text or HTML beside an image (what a spreadsheet puts there) attaches nothing and inserts the text at the cursor; a table (HTML `<table>`, or tab-separated text on at least two lines) goes in as a Markdown table whose first row is the header. A table of one row or one column, and any other text, goes in as typed. A cell keeps its value only (`|` escaped, a line break as `<br>`, no colour or formula). An image alone is attached as before; a paste with no image is left to the browser. *(P-2)*
 - **B-14** — Where a journey states a behaviour the product did not keep — P-2 step 4 (a refused
   turn is explained to the user) — the product does what the journey says. P-5 step 7 said the
   open page is not reloaded: that stayed through `adestia-correctifs`, and `adestia-ajouts` changed it on purpose (B-17); step 7 now says the new behaviour. *(P-2)*
@@ -186,11 +187,12 @@ A user talks to the agent in the chat rail, beside whatever the canvas shows (on
 5. Under `permissions: ask` (claude-code or codex-cli only), the engine's question appears above the composer on E-17 (`AskPrompt`). The user answers **Refuse**, **Just this once** or **Always** (`POST /api/permission`); the composer stays blocked until they do. "Always" lets the engine write its own rule into `<workspace>/.claude/settings.local.json`. This posture is marked unfinished in `adestia.config.example.yaml`.
 6. On a desktop (or on a phone with the canvas showing), each message carries the open route and its breadcrumb as a hint (`screenView` in `trail.ts`, `frameView` in `screen.ts`). It is never sent from the home screen, and never what the page shows.
 7. The user drops or picks files in the composer (**More** › **Attach files**, or drag and drop) — `POST /api/upload`. The files go to an inbox under `dataDir`, outside the workspace, in a box per person (not per conversation), and are cleared after `attachments.ttlMs`. The prompt tells the agent that their contents are data, and the agent reads them with its own tools.
+   **Pasting** follows the clipboard's content, not the mere presence of a file (`chat/paste-table.ts`, B-paste-1). An image alone (a screenshot) is attached as above. When the clipboard carries text or HTML *beside* an image — what a spreadsheet puts there: tab-separated text, an HTML table, and a picture of the selection — nothing is attached and the text is inserted at the cursor. If the HTML holds a `<table>` of at least two rows and two columns, or the plain text is tab-separated on at least two lines of at least two cells, it is inserted as a Markdown table, the first row as the header, so the agent reads the cell values; any other text goes in as typed (a table of one row or one column too; HTML with no table gives its text, or the plain text when there is one). Cells keep their values only: a `|` is escaped, a line break in a cell becomes `<br>`, colours and formulas are dropped. A paste with no image is left to the browser, unchanged.
 8. The agent names the conversation with its `rename_conversation` tool (it also has `new_id` and `find_pages`). The new title shows on the tab and in the list.
 9. The user manages conversations from E-16. Tabs are desktop only; the browser remembers which are open (`adestia.tabs`) and which have been read (`adestia.read`). The user drags tabs to reorder them, closes one with the `x` icon or archives it with the `archive` icon, on the tab or on its list entry (`POST /api/conversations/:id/archive`). The `list` icon opens the conversation list, which is the only navigation on a phone, and the `plus` icon starts a new draft. From the screen the user creates and archives, nothing more: renaming is the agent's (step 8), and the server's rename (`PATCH /api/conversations/:id`), unarchive (`archived: false`) and delete (`DELETE /api/conversations/:id`) are reached by no screen. An archived conversation leaves the list, which never asks for archived ones.
 10. When a reply arrives while the user is reading something else, the dot on the tab or list entry marks the conversation as unread.
 
-Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16, B-14
+Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16, B-14, B-paste-1
 
 ### P-3 — Sign a ceremony
 The agent calls a tool held at a Tessera façade, and the user has to sign before the call goes through.
@@ -421,7 +423,7 @@ Needs: B-25, B-29, B-30
 
 ## Out of scope
 
-- **Any functional change, except the six of `adestia-ajouts` (B-17 to B-22) and the nine of `adestia-pages` (B-23 to B-31)** (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
+- **Any functional change, except the six of `adestia-ajouts` (B-17 to B-22), the nine of `adestia-pages` (B-23 to B-31) and B-paste-1 of `adestia-coller-tableau`** (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
   route or file, a changed data format, a changed MCP tool. A defect found on the way is
   written down (`ARCHITECTURE.md` › Known defects) and left for its own feature.
 - **Catalogue security corrections** belonged to the separate catalogue work, not
