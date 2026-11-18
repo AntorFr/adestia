@@ -43,5 +43,14 @@ export default async function scenario(bench) {
   for (const theme of ['light', 'dark']) {
     const phone = await bench.open({ theme, tab: id, width: 390, height: 844 })
     await bench.shoot(phone, `3-phone-${theme}`)
+    // E-16: the button stays inside the frame, even for a one-line text.
+    const boxes = await phone.$$eval('.adestia-copybox', (els) =>
+      els.map((el) => {
+        const f = el.getBoundingClientRect()
+        const b = el.querySelector('button').getBoundingClientRect()
+        return { top: b.top - f.top, bottom: f.bottom - b.bottom }
+      }),
+    )
+    for (const m of boxes) if (m.top < 0 || m.bottom < 0) throw new Error(`copy button overflows its frame: ${JSON.stringify(m)}`)
   }
 }
