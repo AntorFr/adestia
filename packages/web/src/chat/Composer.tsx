@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { Icon } from '../app/Icon.js'
 import { requestRaw } from '../app/request.js'
 import { useMobile } from '../app/useMobile.js'
+import { pasteText } from './paste-table.js'
 // The drag primitive is shared with the page screen: one answer to "is this
 // drag carrying files", so the two surfaces cannot disagree about it.
 import { carriesFiles } from '../editor/filedrop.js'
@@ -416,10 +417,24 @@ export function Composer({
           // Pasting an image is the same gesture as attaching one; gating it
           // behind the button would make a natural action fail silently.
           const files = [...event.clipboardData.files]
-          if (files.length > 0) {
-            event.preventDefault()
+          if (files.length === 0) return
+          event.preventDefault()
+          // A spreadsheet puts a picture beside its text: the text is what the
+          // agent can read, so it wins and nothing is attached (B-paste-1).
+          const inserted = pasteText({
+            html: event.clipboardData.getData('text/html'),
+            text: event.clipboardData.getData('text/plain'),
+          })
+          if (inserted === null) {
             void upload(files)
+            return
           }
+          const field = event.currentTarget
+          const from = field.selectionStart ?? text.length
+          const to = field.selectionEnd ?? from
+          setText(text.slice(0, from) + inserted + text.slice(to))
+          const caret = from + inserted.length
+          requestAnimationFrame(() => field.setSelectionRange(caret, caret))
         }}
       />
       {/* One button, two jobs: stop while a turn runs and the field is empty,
