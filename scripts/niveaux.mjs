@@ -1,6 +1,7 @@
 // The test levels a piece of work owes (AD-niveaux-1 to 3), computed from what it changed.
 //
-//   node scripts/niveaux.mjs ecrans <base>            play the local level + the screen tests of touched screens
+//   node scripts/niveaux.mjs ecrans <base>            play ONLY the screen tests of touched screens (scripts/suite-ecrans.sh: builds, then one vitest;
+//                                                     nothing touched: nothing installed, built or played, `1..0`)
 //   node scripts/niveaux.mjs fiche <base>             play the whole suite minus the screen tests of untouched screens
 //   node scripts/niveaux.mjs --lister ecrans|fiche <base>   print what that would play, play nothing
 //   node scripts/niveaux.mjs --liste ecrans <base>    print only the screen-test files `ecrans` would play, sorted, one per line
@@ -344,9 +345,8 @@ function main(argv) {
     script = 'scripts/suite-attestee.sh'
     env.ADESTIA_EXCLURE_ECRANS = laisses.join(' ')
   } else {
-    script = 'scripts/suite-locale.sh'
+    script = 'scripts/suite-ecrans.sh'
     env.ADESTIA_JOUER_ECRANS = joues.join(' ')
-    env.ADESTIA_ECRANS_AVEC_BUILD = joues.length ? '1' : ''
   }
   return spawnSync('sh', [join(root, script)], { cwd: root, env, stdio: 'inherit' }).status ?? 1
 }

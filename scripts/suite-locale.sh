@@ -47,16 +47,10 @@ step lint npm run lint
 # Files that drive a browser or the launcher are the suite's slow part and need the build:
 # found by grep, so a new browser test leaves this level without anyone listing it.
 exclusions=""
-# ADESTIA_JOUER_ECRANS (set by `scripts/niveaux.mjs ecrans`): screen-test files to play anyway,
-# space-separated; they need the builds, made when ADESTIA_ECRANS_AVEC_BUILD is set. Unset: unchanged.
+# The exclusion is unconditional: the screen tests are the `ecrans` level (scripts/suite-ecrans.sh).
 for f in $(grep -rlE 'playwright|chromium|launch\.mjs' packages/*/test 2>/dev/null | grep -E '\.test\.tsx?$' | sort); do
-  case " ${ADESTIA_JOUER_ECRANS:-} " in *" $f "*) continue ;; esac
   exclusions="$exclusions --exclude $f"
 done
-
-if [ -n "${ADESTIA_ECRANS_AVEC_BUILD:-}" ]; then
-  step build sh -c 'npm run build --workspace @antorfr/adestia-server && npm run build:web --workspace @antorfr/adestia-web'
-fi
 
 workers=$(nproc)
 if read -r quota period < /sys/fs/cgroup/cpu.max 2>/dev/null && [ "$quota" != max ]; then
