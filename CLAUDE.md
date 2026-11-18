@@ -28,14 +28,15 @@ Four levels, same test names, one `resultats.xml` format:
 | Level | Command | Plays | Duration |
 |---|---|---|---|
 | `local` | `scripts/suite-locale.sh` | install, typecheck, lint, vitest without browser files, plugins; no build, guards or boot | ~10 min |
-| `ecrans` | `node scripts/niveaux.mjs ecrans <base>` | the local level plus the screen tests of the screens the work touches | see README |
+| `ecrans` | `node scripts/niveaux.mjs ecrans <base>` | only the screen tests of the screens the work touches (`scripts/suite-ecrans.sh`: the builds, then one vitest); none touched: nothing is installed, built or played, `1..0` | see README |
 | `fiche` | `node scripts/niveaux.mjs fiche <base>` | the whole suite minus the screen tests of untouched screens | see README |
 | suite | `scripts/suite-attestee.sh` | everything: build, guards, boot | ~35 min |
 
-`<base>` is a commit, the feature's fork point from `main` (`git merge-base origin/main HEAD`); the chain passes it as `{base}`. `ecrans` is what a pod plays while working, `fiche` is the proof of a feature, the suite is the epic's end; the changed files are `git diff <base> HEAD`,
+`<base>` is a commit, the feature's fork point from `main` (`git merge-base origin/main HEAD`); the chain passes it as `{base}`. `ecrans` is what a pod plays for its screens (the local level is played apart: `scripts/suite-locale.sh`), `fiche` is the proof of a feature, the suite is the epic's end; the changed files are `git diff <base> HEAD`,
 read against the map `scripts/ecrans.json`. `node scripts/niveaux.mjs --lister ecrans|fiche <base>` prints what
 a level would play and plays nothing (no `npm ci` needed: the script reads imports with its own scanner); `node scripts/niveaux.mjs --liste ecrans <base>` prints only the screen-test files `ecrans` would play, one per line; `--verifier` checks the map. `scripts/rejouer.sh "<name>"…` replays only
 named tests (JUnit names, quoted if spaced), each with its whole file, and fails on a name that matches no test.
+`.sdlc.yaml` declares the install once (`tests.installation: npm ci`, played by the chain before `ecrans:` and `rejouer:`, which no longer start with it; `rejouer.sh` assumes it is done) and the selection tooling (`tests.outillage`, read from `origin/main`).
 The tag's check accepts only a `tests-complets` status whose description begins with « niveau » (`success niveau suite · …`); a bare `success` is refused.
 
 One test file: `npx vitest run packages/web/test/<file>.test.tsx` from the root.
