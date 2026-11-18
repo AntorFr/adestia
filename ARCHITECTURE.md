@@ -1415,6 +1415,8 @@ is off-screen, whether it starts the server or not.
 
 ### AD-niveaux-1 — One script computes the levels; `.sdlc.yaml` declares three more keys
 
+*Amended by AD-ecrans-sans-local-1 and -2: `ecrans` no longer plays the local level (it plays the screen tests alone, `scripts/suite-ecrans.sh`), and `ecrans:` and `rejouer:` no longer start with `npm ci &&` (`tests.installation` plays it once). The text below is the original decision.*
+
 `.sdlc.yaml` `tests:` gains `ecrans: npm ci && node scripts/niveaux.mjs ecrans {base}`,
 `fiche: npm ci && node scripts/niveaux.mjs fiche {base}` and
 `rejouer: npm ci && scripts/rejouer.sh {tests}` (replacing `scripts/rejouer.sh {tests}`). `commande:`
@@ -1477,6 +1479,8 @@ a file drives screens through a shared harness (`charte-browser.ts`), the harnes
 it follows the graph like any file, imported by the tests, which are declared.
 
 ### AD-niveaux-4 — `rejouer:` is self-contained, and replays a whole file
+
+*Amended by AD-ecrans-sans-local-2: the install moved to `tests.installation`; `rejouer:` is now `scripts/rejouer.sh {tests}` and assumes it is done.*
 
 `rejouer: npm ci && scripts/rejouer.sh {tests}` installs in a fresh extraction. Two changes to
 `scripts/rejouer.sh` and `scripts/rejouer-plan.mjs`: (1) a named test is replayed **with its whole
