@@ -1048,6 +1048,14 @@ branch and that `test:plugins` is replayed after a red vitest run.
 
 ## v0.98.4
 
+- **Pasting spreadsheet cells in the chat inserts a table** — cells copied from Excel used to
+  attach a picture of the range. A paste that carries text or HTML next to an image now attaches
+  nothing and inserts the cells as a Markdown table (at least two rows and two columns, from an
+  HTML `<table>` or tab-separated text). A lone image is still attached as before, and a paste
+  without an image stays native. Formulas and colours are not kept.
+
+## v0.98.5
+
 - **The browser-test helper waits for the shell on a signal** — `open()` in the browser-test
   helper (`packages/web/test/charte-browser.ts`) now waits for the instance to answer and for the
   chat shell to be drawn (up to 60 s) instead of a fixed 20 s, and a failed wait names the URL,
