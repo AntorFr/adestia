@@ -1374,7 +1374,7 @@ overlaid on the first line's right padding (the box reserves that padding), an i
 
 | State | Draws |
 |---|---|
-| streaming (reply still arriving, or fence not closed) | frame and text, **no button** |
+| streaming (reply still arriving) | frame and text, **no button** |
 | ready | icon `copy`, accessible name and tooltip `t('Copy')` |
 | copied | icon `check`, name `t('Copied')`, two seconds, then ready; `aria-live="polite"` announces it |
 | failed | icon `x`, name `t('Copy failed')`, until the next press or three seconds; the text stays selectable |
