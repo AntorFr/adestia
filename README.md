@@ -144,7 +144,9 @@ Adestia's own interface.
   this is an agent instruction, with no server-side write gate (see
   `docs/parcours.md`, P-12).
 - **Attachments** the agent reads with its own tools, framed as data — a file
-  that says "ignore your instructions" is reported, not obeyed.
+  that says "ignore your instructions" is reported, not obeyed. Pasting
+  spreadsheet cells puts a Markdown table in the message instead of the
+  picture of the selection; a screenshot pasted alone is still attached.
 - **The screen next to the chat**, joined to each message as a hint: the route
   and its breadcrumb, never what the page renders, and nothing at all from the
   home canvas or from a phone folded onto the conversation.

@@ -93,11 +93,12 @@ describe('tests d\'écran hors écran — inventaire (docs/tests-ecran)', () => 
     const horsInventaire = nomment.filter((f) => !classes.has(f))
     // the declared exceptions: files that name the browser without driving a screen (a guard of the
     // suite; two tests of scripts/niveaux.mjs that only carry it in a fixture string; the screen tests
-    // born on epic/adestia-pages after the inventory, listed in docs/tests-ecran/README.md and still to classify)
+    // born after the inventory (epic/adestia-pages, feature adestia-coller-tableau), listed in docs/tests-ecran/README.md and still to classify)
     expect(horsInventaire).toEqual([
       'bench/tests/bench-once.test.mjs',
       'bench/tests/niveaux-besoin.test.mjs',
       'bench/tests/niveaux-ensemble.test.mjs',
+      'packages/web/test/besoin-coller-tableau-browser.test.ts',
       'packages/web/test/besoin-pages-structure-browser.test.ts',
       'packages/web/test/besoin-popover-bandeau-tardif-browser.test.ts',
       'packages/web/test/besoin-rouge-23-spinner-config.test.ts',
