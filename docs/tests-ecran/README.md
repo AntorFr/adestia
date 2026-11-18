@@ -57,6 +57,7 @@ ligne `sans-porte` n'a pas de raison ; un inventaire `complet` a perdu la ligne 
 
 - `packages/web/test/besoin-chat-browser.test.ts`
 - `packages/web/test/besoin-chat-narrow-browser.test.ts`
+- `packages/web/test/besoin-coller-tableau-browser.test.ts`
 - `packages/web/test/besoin-chargements-browser.test.ts`
 - `packages/web/test/besoin-charte-browser.test.ts`
 - `packages/web/test/besoin-charte-comportement.test.ts`
