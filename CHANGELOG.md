@@ -1045,3 +1045,11 @@ branch and that `test:plugins` is replayed after a red vitest run.
   (`attestation` and `build`) now stops after two hours instead of the forge's 360-minute
   default, so a frozen build is cut and replayed rather than blocking a release for six hours.
   A stable build usually takes about 5 minutes. Tooling only: nothing changes for users.
+
+## v0.98.4
+
+- **Pasting spreadsheet cells in the chat inserts a table** — cells copied from Excel used to
+  attach a picture of the range. A paste that carries text or HTML next to an image now attaches
+  nothing and inserts the cells as a Markdown table (at least two rows and two columns, from an
+  HTML `<table>` or tab-separated text). A lone image is still attached as before, and a paste
+  without an image stays native. Formulas and colours are not kept.
