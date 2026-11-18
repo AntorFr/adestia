@@ -57,7 +57,6 @@ ligne `sans-porte` n'a pas de raison ; un inventaire `complet` a perdu la ligne 
 
 - `packages/web/test/besoin-chat-browser.test.ts`
 - `packages/web/test/besoin-chat-narrow-browser.test.ts`
-- `packages/web/test/besoin-coller-tableau-browser.test.ts`
 - `packages/web/test/besoin-chargements-browser.test.ts`
 - `packages/web/test/besoin-charte-browser.test.ts`
 - `packages/web/test/besoin-charte-comportement.test.ts`
@@ -132,6 +131,7 @@ Gardes de la suite, qui nomment le navigateur sans en piloter un écran :
 Tests d'écran nés dans `epic/adestia-pages`, après l'inventaire par grappe : ils pilotent un navigateur et restent entiers à l'écran, mais leurs tests ne sont pas encore classés ligne à ligne (classement à faire, avec une grappe ; un fichier d'écran de plus n'entre dans aucune grappe sans que ses lignes y soient).
 
 - `packages/web/test/besoin-pages-structure-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/besoin-coller-tableau-browser.test.ts` — écran de la feature `adestia-coller-tableau` (B-paste-1), classement à faire
 - `packages/web/test/besoin-popover-bandeau-tardif-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/besoin-rouge-23-spinner-config.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/besoin-rouge-25-menu-rouage-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
