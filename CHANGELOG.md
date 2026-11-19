@@ -1072,3 +1072,11 @@ branch and that `test:plugins` is replayed after a red vitest run.
   without the fence or a trailing line break, and the button shows « Copied » for two seconds
   (or « Copy failed »). The button is a 44 px target on a phone. Other code blocks get no
   button, and nothing is drawn while the reply is still streaming.
+
+## v0.98.7
+
+- **The ⚙ menu shows the version on any install** — the last line of the menu used to show the
+  version only inside the Docker image. It now also shows it for an install from the sources,
+  read from the latest release heading of `CHANGELOG.md`. When no version can be found, nothing
+  is shown rather than an invented number. A development branch shows the latest version of its
+  own changelog, without suffix or hash.

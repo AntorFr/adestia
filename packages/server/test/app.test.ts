@@ -1,3 +1,8 @@
+import { readFile, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TurnEvent } from '@antorfr/adestia-drivers'
 
@@ -90,15 +95,87 @@ describe('/api/instance', () => {
     }
   })
 
-  it('says nothing rather than inventing a version for a checkout', async () => {
+  /** Runs `body` with ADESTIA_VERSION set to `stamp` (undefined = unset), then restores it. */
+  const withStamp = async (stamp: string | undefined, body: () => Promise<void>) => {
     const previous = process.env['ADESTIA_VERSION']
-    delete process.env['ADESTIA_VERSION']
+    if (stamp === undefined) delete process.env['ADESTIA_VERSION']
+    else process.env['ADESTIA_VERSION'] = stamp
     try {
-      const app = await buildApp(deps())
-      expect((await app.inject({ url: '/api/instance' })).json().version).toBeUndefined()
-      await app.close()
+      await body()
     } finally {
-      if (previous !== undefined) process.env['ADESTIA_VERSION'] = previous
+      if (previous === undefined) delete process.env['ADESTIA_VERSION']
+      else process.env['ADESTIA_VERSION'] = previous
+    }
+  }
+  const versionWith = async (stamp: string | undefined, changelog: string | undefined) => {
+    let version: unknown
+    await withStamp(stamp, async () => {
+      const dir = await tmpDir('adestia-changelog-')
+      const changelogPath = join(dir, 'CHANGELOG.md')
+      if (changelog !== undefined) await writeFile(changelogPath, changelog)
+      const app = await buildApp(deps({ changelogPath }))
+      version = (await app.inject({ url: '/api/instance' })).json().version
+      await app.close()
+    })
+    return version
+  }
+
+  it('says nothing when the changelog is absent', async () => {
+    expect(await versionWith(undefined, undefined)).toBeUndefined()
+  })
+
+  it('says nothing when the changelog has no version heading', async () => {
+    const text = '# Changelog\n\n## Earlier than v0.61.0\n\n- **v0.58.0** — old\n\n## Unreleased\n'
+    expect(await versionWith(undefined, text)).toBeUndefined()
+    expect(await versionWith('', text)).toBeUndefined()
+    expect(await versionWith('  ', text)).toBeUndefined()
+  })
+
+  it('falls back to the LAST release heading of the changelog, without its v', async () => {
+    const text = [
+      '# Changelog', '', '## Earlier than v0.61.0', '', '## v0.9.0 — 2026-01-01', '', '- a', '',
+      '## v0.10.2', '', '## v0.11.0-serie.3 — 2026-02-02', '', '- **v9.9.9** — not a heading', '',
+      '### v8.8.8', '', '## vNext', '', '## v1.2 — short', '',
+    ].join('\n')
+    expect(await versionWith(undefined, text)).toBe('0.11.0-serie.3')
+    expect(await versionWith('', text)).toBe('0.11.0-serie.3')
+  })
+
+  it('reads CRLF changelogs and takes the last heading when it is also the only one', async () => {
+    expect(await versionWith(undefined, '# C\r\n\r\n## v2.0.0 — d\r\n')).toBe('2.0.0')
+    expect(await versionWith(undefined, '## v3.1.4')).toBe('3.1.4')
+  })
+
+  it('lets ADESTIA_VERSION win over the changelog', async () => {
+    expect(await versionWith('0.32.0', '## v9.9.9\n')).toBe('0.32.0')
+  })
+
+  it('does not throw when the changelog path is unreadable', async () => {
+    const dir = await tmpDir('adestia-changelog-dir-')
+    let version: unknown = 'unset'
+    await withStamp(undefined, async () => {
+      const app = await buildApp(deps({ changelogPath: dir })) // a directory: readFile fails
+      version = (await app.inject({ url: '/api/instance' })).json().version
+      await app.close()
+    })
+    expect(version).toBeUndefined()
+  })
+
+  it('reads the repository changelog by default, wherever the process runs from', async () => {
+    const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
+    const text = await readFile(join(root, 'CHANGELOG.md'), 'utf8')
+    const headings = [...text.matchAll(/^## v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)(?=\s|$)/gm)]
+    const expected = headings[headings.length - 1]![1]
+    const cwd = process.cwd()
+    process.chdir(tmpdir())
+    try {
+      await withStamp(undefined, async () => {
+        const app = await buildApp(deps())
+        expect((await app.inject({ url: '/api/instance' })).json().version).toBe(expected)
+        await app.close()
+      })
+    } finally {
+      process.chdir(cwd)
     }
   })
 
@@ -106,18 +183,8 @@ describe('/api/instance', () => {
     // `docker build` with no `--build-arg` leaves the ARG empty, not unset:
     // the variable exists and holds "". A shell that trusted mere presence
     // would draw "Adestia" followed by a gap.
-    const previous = process.env['ADESTIA_VERSION']
-    try {
-      for (const [stamp, expected] of [['  ', undefined], [' main ', 'main']] as const) {
-        process.env['ADESTIA_VERSION'] = stamp
-        const app = await buildApp(deps())
-        expect((await app.inject({ url: '/api/instance' })).json().version).toBe(expected)
-        await app.close()
-      }
-    } finally {
-      if (previous === undefined) delete process.env['ADESTIA_VERSION']
-      else process.env['ADESTIA_VERSION'] = previous
-    }
+    expect(await versionWith('  ', '# C\n')).toBeUndefined()
+    expect(await versionWith(' main ', '# C\n')).toBe('main')
   })
 })
 
