@@ -1063,3 +1063,12 @@ branch and that `test:plugins` is replayed after a red vitest run.
   under load in `besoin-etat-projet-browser.test.ts`. The form helper of that file also waits for the
   save that carries the typed label and for the sheet to close, so a risk is not read before it is
   stored. Tests only: nothing changes for users.
+
+## v0.98.6
+
+- **A reply can offer a block to copy in one click** — when the agent marks part of its answer
+  as text to reuse (an email, a command, a message to send), the chat draws it in a box with a
+  copy button at the top right. One click puts the text on the clipboard exactly as written,
+  without the fence or a trailing line break, and the button shows « Copied » for two seconds
+  (or « Copy failed »). The button is a 44 px target on a phone. Other code blocks get no
+  button, and nothing is drawn while the reply is still streaming.

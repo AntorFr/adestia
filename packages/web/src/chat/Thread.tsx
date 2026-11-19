@@ -73,9 +73,9 @@ export function Thread({ active, t, retry, adopting = false, openPage, signing, 
               <ToolTrace tools={part.tools} t={t} />
               {part.text &&
                 (last ? (
-                  <LiveProse text={part.text} {...(openPage ? { openPage } : {})} />
+                  <LiveProse text={part.text} t={t} {...(openPage ? { openPage } : {})} />
                 ) : (
-                  <Prose markdown={part.text} {...(openPage ? { openPage } : {})} />
+                  <Prose markdown={part.text} t={t} {...(openPage ? { openPage } : {})} />
                 ))}
               <SignatureCards signatures={part.signatures} signing={signing} t={t} />
               {/* The indicator stays UP for as long as the turn runs, under

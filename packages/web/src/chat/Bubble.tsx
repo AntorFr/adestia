@@ -85,7 +85,7 @@ export function Bubble({
       {message.role === 'agent' && <ToolTrace tools={message.tools} t={t} />}
       {message.text &&
         (message.role === 'agent' ? (
-          <Prose markdown={message.text} {...(openPage ? { openPage } : {})} />
+          <Prose markdown={message.text} t={t} {...(openPage ? { openPage } : {})} />
         ) : (
           <div className="adestia-bubble__text">{message.text}</div>
         ))}
@@ -126,10 +126,12 @@ export function livePartsOf(state: TurnState): readonly TurnPart[] {
 export function LiveProse({
   text,
   openPage,
+  t,
 }: {
   text: string
   openPage?: (path: string) => void
+  t?: (key: string) => string
 }) {
   const shown = useCadence(text, PROSE_CADENCE_MS)
-  return <Prose markdown={shown} {...(openPage ? { openPage } : {})} />
+  return <Prose markdown={shown} live {...(t ? { t } : {})} {...(openPage ? { openPage } : {})} />
 }

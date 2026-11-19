@@ -57,6 +57,7 @@ node bench/scenarios/page-suivie.mjs   # the open page follows the agent, B-17 (
 node bench/scenarios/hors-ligne.mjs     # stops and restarts a real bench instance: the offline banner E-32 on E-2, E-4 and E-14 (needs the build; images in $BENCH_OUT)
 BENCH_URL=<printed-url> node bench/scenarios/pages-matrix.mjs bench/scenarios/galerie.mjs   # the block gallery, E-34: Add block, search, empty search, insertion (needs the build and a launcher on `node bench/launch.mjs --engine fake --seed pages --skin alfred --locale en`, the skin and locale `pages-matrix.mjs` plays with `BENCH_URL`, read from `BENCH_SKIN` and `BENCH_LOCALE`, default `alfred` and `en`; images in $BENCH_OUT). Moving a block (B-23) has no scenario: its proof is `packages/web/test/move-block.test.ts` (the operation) and, in a browser, `packages/web/test/ensemble-pages-deplacer-browser.test.ts` (`Alt+↑/↓`, the long press and drag, the phone buttons)
 node bench/scenarios/chat-ajouts.mjs   # the chat's loading, Retry and context-lost line, E-16 (needs the build; seed `chat-ajouts`; about 20 s per skin × language, `BENCH_SKINS` and `BENCH_LOCALES` narrow it, it always plays desk and phone; images in $BENCH_OUT, `bench/shots-chat-ajouts/`)
+bench/run.sh bench/scenarios/copy-block.mjs   # the copy box of a reply, E-16 (AD-copie-1): a seeded reply with two copy fences and a sh block, the button then its copied state, light and dark, desk and phone (needs docker and the bench image that `bench/run.sh` builds; without docker, no pictures: `node bench/launch.mjs --engine fake --seed besoin-copie` for the seeded threads without the shots; bench.mjs runs a scenario module in the bench image, see its header)
 BENCH_URL=<printed-url> node bench/scenarios/etat-projet-gabarit.mjs   # B-30: New from template → Project status → Create, then the page filled by its forms (needs the build and a launcher on `node bench/launch.mjs --engine fake --seed etat-projet-gabarit`; desk and phone, light and dark; images in $BENCH_OUT)
 BENCH_URL=<printed-url> node bench/scenarios/reglages-blocs.mjs   # the block settings E-6 on a `figures` block; `saisie-formulaire.mjs` the same way plays the data form E-35 (each runs alone; needs the build and a launcher on `node bench/launch.mjs --engine fake --seed saisie`; desk and phone, light and dark; images in $BENCH_OUT)
 ```
@@ -130,6 +131,7 @@ Adestia's own interface.
   copied, and a repository address or ref starting with `-` is refused. An item whose kind the active engine has no
   folder for is listed but cannot be imported. The list lives in
   `<dataDir>/instruction-catalogues.json`, not in the config file.
+- **Copy boxes in the chat**: when the agent writes a text for you to paste elsewhere (an email, a message), it sets it in a fenced block `copy`; the reply draws a framed box with a copy button (`copy-block` skill, AD-copie-1). Any other code block, and a `copy` block on a page, stays plain code.
 - **Three ways in**: none (local), a trusted proxy header, or any OIDC issuer.
   No local accounts, ever.
 - **Contracts the agent reads**: `plugin-author` and `skin-author` ship with

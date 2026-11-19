@@ -72,6 +72,8 @@ export type Ctx = {
    * the source tells the two apart, so only the head reads this.
    */
   readonly prose?: boolean
+  /** Prose still arriving: a copy box draws no button until the turn ends. */
+  readonly live?: boolean
   /** Inside a `col`: `w` is ignored at render time (it stays in the file). */
   readonly inColumns?: boolean
 }

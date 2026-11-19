@@ -43,7 +43,7 @@ Outside `packages/`:
 - `skins/` — four bodies (alfred, dobby, nestor, skippy): `adestia-skin.json`, `skin.css`,
   an optional `skin.js` module, icon, web manifest fragment.
 - `skills/` — the product's authoring contracts (`plugin-author`, `skin-author`,
-  `page-author`, `persona-author`, `schedule-author`, `collections`), delivered to the agent.
+  `page-author`, `persona-author`, `schedule-author`, `collections`, `copy-block`), delivered to the agent.
 - `bench/` — screenshot bench: `run.sh` builds the image and drives Chromium in docker,
   `bench.mjs` and `scenarios/`; `live-codex.sh` boots a real Codex engine. Without docker:
   `launch.mjs` (fake or real engine), `fake-engine.mjs`, `seed/`, `oidc-stub.mjs`, `sweep.mjs` and its
@@ -107,7 +107,7 @@ Outside `packages/`:
   `paths.ts` holds path naming/index rules, `request.ts` the injected request helpers;
   `Problems.tsx`, skin slot (`skin.ts`, `SkinSlot.tsx`), `i18n.ts`, `tokens.css`, `shell.css`.
 - `chat/` — `Chat.tsx` wires `ChatHeader.tsx`, `TabStrip.tsx`, `ConversationList.tsx` and
-  `Thread.tsx` (`Bubble.tsx`, `StatusDot.tsx`); `ModelPicker.tsx`, `ContextPill.tsx`,
+  `Thread.tsx` (`Bubble.tsx`, `CopyBox.tsx` the copy box of a `copy` fence, `StatusDot.tsx`); `ModelPicker.tsx`, `ContextPill.tsx`,
   `Composer.tsx` (uploads and fold; `paste-table.ts` turns pasted spreadsheet cells into a Markdown table), `AskPrompt.tsx`, `Signatures.tsx` (shared sheet).
   `useConversations.ts` holds the open-store, turn and tab-action hooks; `conversations.ts`
   is the HTTP store client, `messages.ts` the shared `toMessage`, `stream.ts` the SSE client
@@ -1577,6 +1577,43 @@ of the provider too: the same mechanism, not a second one. `OidcClient` gains
 provider's client lists the post-logout redirect URI; this tranche changes no provider
 configuration. *Rejected:* clearing the session only and relying on `prompt=login` always (a
 provider that ignores `prompt` reconnects the same account silently).
+
+## Decisions of adestia-bloc-a-copier
+
+### AD-copie-1 — The agent marks a copy box with a fenced block whose info string is `copy`
+
+A reply is Markdown (`Bubble` renders it through `Prose`). The agent sets a copyable text in a
+fenced code block, ```` ```copy ````; when the text itself holds a fence it opens with a longer one
+(four backticks, or `~~~`), which CommonMark already allows. `render.tsx`'s `code` case, in the
+prose context only (`ctx.prose`) and for a settled reply, draws a `CopyBox` (`chat/CopyBox.tsx`)
+when `node.lang === 'copy'`; every other block, and a `copy` block on a page, stays the `<pre>`.
+The text copied is `node.value`. A reply being streamed (`LiveProse`) passes `live`, and the box has no
+button until the turn ends: an unclosed fence parses as a block to the end of the text, and a
+half-written email must not be copyable as if it were whole. The grammar (`packages/content`) is
+untouched. The agent learns the convention from a new core skill, `copy-block`
+(`skills/copy-block/SKILL.md`, delivered like `page-author` by `deliverSkills`): its description
+says when it applies (a text the user will paste elsewhere: an email, a message, a reply to a
+third party; not code, not commands, not the whole answer), its body says how, with one worked
+example, and that the text outside the box carries the commentary. Both the surrounding words and the
+box are the agent's to write; the box holds only the text to paste.
+*Rejected:* a plain code block for every piece of text to copy (the agent cannot tell code from an
+email by looking at the fence, the monospace font suits a command and not an email, and a copy
+button on every code block would be a feature nobody asked for); a `:::copy` directive
+(the shared grammar would grow a block that the server, the editor and every other driver's
+transcript meet; a client without the directive draws `\:::`, and a longer text containing `:::`
+needs escaping the agent gets wrong), an HTML tag in the reply (the pipeline drops raw HTML).
+A `copy` fence degrades by itself: any other Markdown reader shows a code block, with the text
+intact. *Reversed if:* the agent engines prove unable to hold the convention (the bench's real-engine run
+shows the fence missing on a reworded email), then the skill's wording changes, not the marker.
+**Dimensions.** *Data:* none; nothing stored, the fence is part of the message text, so a
+reopened conversation draws its boxes again. *Security:* the text is drawn as text (React), never
+as HTML. *Accessibility:* a named button, state in its name and `aria-live`. *i18n:* `Copy`,
+`Copied`, `Copy failed` through `t()`, with French in `app/i18n.ts`. *Tests:* a unit test on
+`Prose` (lang `copy` gives one button, the block's value is what `writeText` receives, other
+fences and a page render give none, a longer fence round-trips a text that holds ```), a component
+test of the four states with the clipboard stubbed (and its absence falling back), a skill
+test (the file exists with a `name` and `description`, and `deliverSkills` ships it), a bench
+scenario `bench/scenarios/copy-block.mjs` for the pictures.
 
 ## Refactoring targets
 

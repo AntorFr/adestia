@@ -6,6 +6,7 @@ import type { Ctx } from './types.js'
 import { Meta } from './Meta.js'
 import { sayOf } from './Note.js'
 import { directive } from './directive.js'
+import { CopyBox } from '../../chat/CopyBox.js'
 
 /**
  * A single newline, kept as one — in prose only.
@@ -136,6 +137,10 @@ export function render(node: Node, ctx: Ctx): ReactNode {
     case 'inlineCode':
       return <code>{node.value}</code>
     case 'code':
+      // A reply's ```copy fence is a text to carry away; on a page it is code.
+      if (ctx.prose && node.lang === 'copy') {
+        return <CopyBox value={node.value ?? ''} live={ctx.live === true} {...(ctx.t ? { t: ctx.t } : {})} />
+      }
       return (
         <pre>
           <code>{node.value}</code>

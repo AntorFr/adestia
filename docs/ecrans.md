@@ -108,7 +108,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-13 | Delegations | `#/settings/delegations[/<id>]` | `app/Delegations.tsx` | Tasks other agents delegated, grouped by caller, with state chips; open one | P-13 |
 | E-14 | Configuration and restart | `#/settings/config` | `app/Configuration.tsx`, `styles/settings-pages.css` | Form of `adestia.config.yaml` from the settings catalogue; read-only notice; Save/Discard; restart bar once a restart-bound value is written | P-10 |
 | E-15 | Cog menu | ⚙ in the canvas header, any screen | `app/SettingsMenu.tsx`, `Settings.tsx` (credential panel), `styles/settings.css` | Agent token state and arming flow, theme (System/Light/Dark), sign out (OIDC), build version | P-1, P-7 |
-| E-16 | Chat rail | always (left; full screen on a phone) | `chat/Chat.tsx`, `ChatHeader.tsx`, `TabStrip.tsx`, `ConversationList.tsx`, `Thread.tsx`, `StatusDot.tsx`, `Composer.tsx`, `paste-table.ts`, `ModelPicker.tsx`, `ContextPill.tsx`, `Bubble.tsx`, `tabs.ts`, `useConversations.ts`, `styles/chat.css`, `conversations.css`, `attachments.css` | Header (crest, brand, model picker, context pill, `list` conversations, `plus` new, `panel-right-open` apps), tab strip (desktop), conversation list, thread of bubbles with live turn, MCP connect prompts, composer (attach, plugin buttons in the `More` fold, send/stop) | P-2, P-3, P-14 |
+| E-16 | Chat rail | always (left; full screen on a phone) | `chat/Chat.tsx`, `ChatHeader.tsx`, `TabStrip.tsx`, `ConversationList.tsx`, `Thread.tsx`, `StatusDot.tsx`, `Composer.tsx`, `paste-table.ts`, `CopyBox.tsx`, `ModelPicker.tsx`, `ContextPill.tsx`, `Bubble.tsx`, `tabs.ts`, `useConversations.ts`, `styles/chat.css`, `conversations.css`, `attachments.css` | Header (crest, brand, model picker, context pill, `list` conversations, `plus` new, `panel-right-open` apps), tab strip (desktop), conversation list, thread of bubbles with live turn, MCP connect prompts, composer (attach, plugin buttons in the `More` fold, send/stop) | P-2, P-3, P-14 |
 | E-17 | Permission question | above the composer while a turn waits on a permission | `chat/AskPrompt.tsx` (`.adestia-ask`) | `triangle-alert` question; neutral Refuse / Just this once, accent Always only when the engine offers a lasting rule | P-2 |
 | E-18 | Signature sheet | a signature card in the thread, opened | `chat/Signatures.tsx` (`SignatureCards`, `SignatureSheet`), `app/ui/Sheet.tsx`, `styles/components.css` | State cards with icons and text; sign a held action or a standing grant in the shared sheet (or in a tab) | P-3 |
 | E-19 | Problems band | top of the canvas body, any screen | `app/Problems.tsx` (`.adestia-problems--refused`, `--degraded`) | Background reading interrupted; extensions refused; running with something missing; stray `app:` | P-11, P-14 |
@@ -1354,3 +1354,78 @@ Keyboard: `Esc` closes (focus returns to the button), `Enter` in the field creat
 - **Meter**: a bar with `role=progressbar` and its value in words; a danger variant is not delivered.
 
 An error of the write is a line inside the sheet, never a toast.
+
+## The copy box in E-16 (`adestia-bloc-a-copier`)
+
+**B-copie-1** adds one element to the thread of E-16 (and wherever `Bubble`/`Prose` draw an
+agent's reply): the **copy box**, drawn from a code block whose info string is `copy` and only
+there. It is not a new screen, a state of the list or a new gesture of the conversation: the
+five of P-2 step 9 stay.
+
+**Anatomy.** A frame (`.adestia-copybox`) inside the reply: border `--border`, background
+`--surface-sunken` (the same sink as a code block, so it reads as "set apart" in light and dark
+and in every skin), radius `--radius-sm`. The text sits in the page's reading font
+(`--font`, not `--font-code`), `white-space: pre-wrap`, wrapping at the bubble's width, no
+horizontal scroll: an email is read, not parsed. The button is at the top-right corner,
+overlaid on the first line's right padding (the box reserves that padding), an icon-only
+`<Button icon="copy">` (`.adestia-btn--icon`, the design system's button, not a bare span as in the mockup), 44 px target on a phone: the rule of the composer's icons is repeated for `.adestia-copybox .adestia-btn--icon`. Spacing and radius come from tokens (`--space-1`, `--radius-sm`); the mockup's 4 px and 8 px, and its 32 px button, are drawings: the built target is 44 px on a phone. The frame is listed in `docs/charte.md` § 4 (Copy box).
+
+**States.**
+
+| State | Draws |
+|---|---|
+| streaming (reply still arriving) | frame and text, **no button** |
+| ready | icon `copy`, accessible name and tooltip `t('Copy')` |
+| copied | icon `check`, name `t('Copied')`, two seconds, then ready; `aria-live="polite"` announces it |
+| failed | icon `x`, name `t('Copy failed')`, until the next press or three seconds; the text stays selectable |
+| empty text (a `copy` block with nothing in it) | drawn as an empty frame without button |
+| settled reply, fence never closed (turn interrupted, errored, or reloaded from history) | the text after the opening fence is the box, **with** its button: only a reply still streaming hides it, since a settled message cannot say whether the fence was closed |
+
+Texts. `t()` keys, with their French value: `Copy` → « Copier », `Copied` → « Copié »,
+`Copy failed` → « Échec de la copie ». Accessible name and tooltip are the same string in each
+state (ready, copied, failed).
+
+Given a settled reply with a `copy` block, When the reader presses the icon, Then the clipboard
+holds the block's text and the icon turns to `check` for two seconds. Given the copy is refused,
+Then the icon turns to `x` and the text stays selectable. Given the reply is still streaming,
+Then the box has no button. Given a `copy` block with nothing in it, Then an empty frame is drawn
+and has no button. Given a settled reply whose `copy` fence was never closed, Then the text after
+the opening fence is in the box and the button is there. Given two `copy` blocks in one reply, When
+the reader presses the second icon, Then the clipboard holds the second block's text only. Given a
+long word without spaces, Then the box wraps it and shows no horizontal scroll. Given an Owner or a
+User, Then both see the same box and the same button.
+
+Exact text. Given a block whose value is three lines with a blank line between two of them
+(`Bonjour Anne,`, an empty line, `Je confirme jeudi.`), When the reader presses the icon, Then the
+clipboard holds those exact characters, line breaks and blank line kept, with no fence line, no
+final newline and no markup, and pasting it in a mail client shows the same three lines.
+
+Extreme content. A long text (three pages): the frame grows with it, the button stays at the
+top-right corner of the frame and scrolls with it. A word without spaces (a long URL) wraps
+(`overflow-wrap: anywhere`). A one-line text: the frame is as tall as the button. Several `copy`
+blocks in one reply: each has its own frame and its own button, each copies its own text.
+
+Offline, permission refused: not applicable. The copy is local to the browser; the offline banner
+(E-32) changes nothing about it, and no server call is made. Roles: Owner and User see the same
+box and the same button, nothing is hidden or refused, including in a conversation read under
+OIDC. The agent's only action here is writing the fence (skill `copy-block`). E-13: its delegated
+threads share `Bubble`, so a `copy` fence in a delegated reply draws the same box with the same
+button (the copy needs no right the reader lacks); this is rendering shared, not a new gesture of E-13.
+
+Colour is never the only signal: the copied and failed states change the icon and the
+accessible name. The label is not drawn as visible text (an icon-only control, as the header's).
+No toast: the feedback is in the control (charte § 6, no toast system).
+
+**Copy.** What goes to the clipboard is the code block's value, character for character (the
+Markdown fence and its closing line are not part of it; neither is the final newline), as
+`text/plain`. `navigator.clipboard.writeText` where it exists; where it does not (an instance
+served over plain `http` on a LAN has no secure context), a hidden textarea selected and
+`document.execCommand('copy')`; if both fail, the failed state.
+
+**Mockup.** `docs/maquettes/copybox-e16.html`: the thread with a reworded email (French sample text, to paste
+and compare, line breaks kept) in a box among two paragraphs, desk and phone, light and dark; it
+draws four states (ready, copied, failed, streaming); the empty and unclosed-fence states are
+specified above and not drawn.
+
+**Not built here.** Copying a whole reply, the box in a page (E-5 keeps drawing a `copy` fence as
+code), a download, a "send" button. A skin can restyle `.adestia-copybox` through tokens.
