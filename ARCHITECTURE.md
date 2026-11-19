@@ -1373,7 +1373,7 @@ P-15 step 2 and the Tests line of *Cross-cutting* follow.
 `.sdlc.yaml` also declares `tests.local` (`scripts/suite-locale.sh`) and `tests.rejouer`
 (`scripts/rejouer.sh {tests}`), under the unchanged `commande:`. The local level plays install,
 typecheck, lint, vitest without the test files that drive a browser or `bench/launch.mjs`
-(found by `node scripts/niveaux.mjs --fichiers-ecran`, the one rule `estTestDEcran`: a test file citing
+(found by `node scripts/niveaux.mjs --fichiers-ecran`, the rule `estTestDEcran` that also picks the screen tests of the levels: a test file citing
 `playwright|chromium|launch.mjs`, or importing `./charte-browser` and using `launch`, `open` or `newBrowser`;
 a new browser test leaves the level by itself) and the plugins' tests; no build, guards or boot. It writes the same
 `resultats.xml` through `scripts/suite-rapport.mjs`, so a test keeps its name in both levels (the
@@ -1413,7 +1413,10 @@ chain plays the whole suite as proof and only the local level at work. Nothing i
 changes. A *screen test* is a test that drives a browser (the files `scripts/niveaux.mjs`'s
 `estTestDEcran` finds under `packages/*/test`, which `scripts/suite-locale.sh` asks for: they cite
 `playwright|chromium|launch.mjs`, or reach the browser through the shared `charte-browser` helper); every other test
-is off-screen, whether it starts the server or not.
+is off-screen, whether it starts the server or not. There are two rules, for two jobs: `estTestDEcran` decides what
+the levels play and exclude; the inventory guard `scripts/tests-ecran.mjs` keeps its narrower `MOTIF_ECRAN`
+(`chromium|playwright`), so a helper-only browser test such as `besoin-etat-projet-browser.test.ts` is a screen test for the
+levels but not yet seen by the guard (it is listed under « Hors inventaire » of `docs/tests-ecran/README.md` until its cluster is classified).
 
 ### AD-niveaux-1 — One script computes the levels; `.sdlc.yaml` declares three more keys
 
