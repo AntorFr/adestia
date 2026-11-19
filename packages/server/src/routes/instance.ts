@@ -3,6 +3,10 @@
  * which models its engine can name.
  */
 
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import type { Driver, DriverDescriptor, ModelSelection } from '@antorfr/adestia-drivers'
 
@@ -31,25 +35,57 @@ interface InstanceDependencies {
   readonly background?: (() => BackgroundTrouble | undefined) | undefined
   /** Turns running at this instant. */
   readonly running: () => number
+  /** Where the release headings are read from; the repository's own by default. */
+  readonly changelogPath?: string | undefined
+}
+
+const VERSION_HEADING = /^## v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)(?=\s|$)/gm
+
+/** The last release heading of a changelog, without its `v`: the newest entry. */
+export function lastReleaseOf(changelog: string): string | undefined {
+  let last: string | undefined
+  for (const match of changelog.matchAll(VERSION_HEADING)) last = match[1]
+  return last
 }
 
 /**
- * Which build of Adestia is running, when the build said so.
- *
- * Read from the environment rather than from a manifest because nothing in
- * the tree carries the number: a release is cut as `git tag vX.Y.Z`, the
- * package manifests all read `0.0.0`, and the thing an operator actually
- * wants to match against is the IMAGE TAG they deployed. The publish workflow
- * bakes exactly that tag into the image, so what the instance says and what
- * the registry holds cannot drift apart.
- *
- * A local run therefore has no version, and says so by saying nothing: a
- * checkout is not a release, and inventing `0.0.0-dev` for it would put a
- * number on screen that answers no question anyone asked.
+ * The repository's `CHANGELOG.md`, found by walking up from this module: the
+ * source sits four levels under the root and the compiled `dist/src/routes`
+ * five, so no fixed relative path serves both.
  */
-function buildVersion(env: NodeJS.ProcessEnv = process.env): string | undefined {
+function findChangelog(from: string = import.meta.url): string | undefined {
+  let dir = dirname(fileURLToPath(from))
+  for (;;) {
+    const candidate = join(dir, 'CHANGELOG.md')
+    if (existsSync(candidate)) return candidate
+    const parent = dirname(dir)
+    if (parent === dir) return undefined
+    dir = parent
+  }
+}
+
+/**
+ * Which published version of Adestia is running, when one can be named.
+ *
+ * The image says it: the publish workflow bakes the tag it pushes into
+ * `ADESTIA_VERSION`, and that wins. Without it (an installation from the
+ * sources) the answer is the last `## vX.Y.Z` heading of the root
+ * `CHANGELOG.md`, the same number as the tag without its `v`, because the
+ * package manifests all read `0.0.0`. A missing, unreadable or version-less
+ * changelog gives no version, silently: nothing is invented.
+ */
+function buildVersion(
+  env: NodeJS.ProcessEnv = process.env,
+  changelogPath: string | undefined = findChangelog(),
+): string | undefined {
   const raw = env['ADESTIA_VERSION']?.trim()
-  return raw === undefined || raw === '' ? undefined : raw
+  if (raw !== undefined && raw !== '') return raw
+  if (changelogPath === undefined) return undefined
+  try {
+    return lastReleaseOf(readFileSync(changelogPath, 'utf8'))
+  } catch {
+    return undefined
+  }
 }
 
 export function registerInstance(app: FastifyInstance, deps: InstanceDependencies): void {
@@ -59,7 +95,7 @@ export function registerInstance(app: FastifyInstance, deps: InstanceDependencie
 
   // Read once: the environment of a running process does not change, and a
   // colophon is not worth an `env` lookup per request.
-  const version = buildVersion()
+  const version = buildVersion(process.env, deps.changelogPath ?? findChangelog())
 
   /**
    * What the UI is built from. The driver's *name* never appears — the front
@@ -75,8 +111,8 @@ export function registerInstance(app: FastifyInstance, deps: InstanceDependencie
     const backgroundTrouble = deps.background?.()
     return {
       /**
-       * Which build is answering. Absent from a checkout, and that absence is
-       * the honest answer rather than a gap — see `buildVersion`.
+       * Which build is answering. Absent when neither the image nor a changelog names one, and that
+       * absence is the honest answer rather than a gap — see `buildVersion`.
        */
       ...(version ? { version } : {}),
       driver: {
