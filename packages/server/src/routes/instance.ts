@@ -42,7 +42,7 @@ interface InstanceDependencies {
 const VERSION_HEADING = /^## v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)(?=\s|$)/gm
 
 /** The last release heading of a changelog, without its `v`: the newest entry. */
-export function lastReleaseOf(changelog: string): string | undefined {
+function lastReleaseOf(changelog: string): string | undefined {
   let last: string | undefined
   for (const match of changelog.matchAll(VERSION_HEADING)) last = match[1]
   return last
