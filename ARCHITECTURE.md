@@ -1586,9 +1586,9 @@ provider that ignores `prompt` reconnects the same account silently).
 
 Since rule R30 of the chain, the runner checks, at the end of dev, review and assembly, that the
 screens a branch touches were played by `jouer-ecrans` (which runs `tests.ecrans`) and that each
-red is told apart by `rejouer:` (three replays on the head, then on the target). Today `ecrans:`
-also plays the local level, so an « empty » screen run (no screen touched) skips that local level,
-and a registry failure inside `npm ci` is a counted send-back. The local level stays the agent's
+red is told apart by `rejouer:` (three replays on the head, then on the target). Before this feature `ecrans:`
+also played the local level, so an « empty » screen run (no screen touched) skipped that local level,
+and a registry failure inside `npm ci` was a counted send-back. The local level stays the agent's
 (`tests.local`); `ecrans:` must play screens and nothing else. Nothing in the product changes.
 
 ### AD-ecrans-sans-local-1 — `ecrans` plays the touched screen tests alone, from a script of its own
