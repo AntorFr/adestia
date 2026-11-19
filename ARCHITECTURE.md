@@ -1373,8 +1373,9 @@ P-15 step 2 and the Tests line of *Cross-cutting* follow.
 `.sdlc.yaml` also declares `tests.local` (`scripts/suite-locale.sh`) and `tests.rejouer`
 (`scripts/rejouer.sh {tests}`), under the unchanged `commande:`. The local level plays install,
 typecheck, lint, vitest without the test files that drive a browser or `bench/launch.mjs`
-(found by grep for `playwright|chromium|launch.mjs` under `packages/*/test`, so a new browser test
-leaves the level by itself) and the plugins' tests; no build, guards or boot. It writes the same
+(found by `node scripts/niveaux.mjs --fichiers-ecran`, the one rule `estTestDEcran`: a test file citing
+`playwright|chromium|launch.mjs`, or importing `./charte-browser` and using `launch`, `open` or `newBrowser`;
+a new browser test leaves the level by itself) and the plugins' tests; no build, guards or boot. It writes the same
 `resultats.xml` through `scripts/suite-rapport.mjs`, so a test keeps its name in both levels (the
 `build` and `boot` cases are dropped from its report, not reported red). Measured in the same pod:
 local ~10 min (2846 tests), whole suite ~35 min (3491 tests). `rejouer.sh` takes JUnit names as
@@ -1409,8 +1410,9 @@ Since rule R27 of the SDLC chain, a pod's work plays the local level plus the sc
 screens it touches, a feature's proof plays the *fiche* level (the suite minus the screen tests of
 untouched screens), and only an epic's end plays everything. Without the declarations below the
 chain plays the whole suite as proof and only the local level at work. Nothing in the product
-changes. A *screen test* is a test that drives a browser (the files `scripts/suite-locale.sh`
-already finds by grep: `playwright|chromium|launch.mjs` under `packages/*/test`); every other test
+changes. A *screen test* is a test that drives a browser (the files `scripts/niveaux.mjs`'s
+`estTestDEcran` finds under `packages/*/test`, which `scripts/suite-locale.sh` asks for: they cite
+`playwright|chromium|launch.mjs`, or reach the browser through the shared `charte-browser` helper); every other test
 is off-screen, whether it starts the server or not.
 
 ### AD-niveaux-1 — One script computes the levels; `.sdlc.yaml` declares three more keys
