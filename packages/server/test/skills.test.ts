@@ -460,3 +460,68 @@ describe('where the managed marker sits', () => {
     await expect(readFile(join(root, 'gone', 'SKILL.md'), 'utf8')).rejects.toThrow()
   })
 })
+
+describe('the copy-block core skill', () => {
+  // The skill that teaches the agent to set a text to paste in a ```copy box.
+  // Panne guarded: a skill folder whose frontmatter does not parse, or whose
+  // body drops the fence rule or the example, is delivered and silently useless.
+  const core = async () => {
+    const { skills } = await collectSkills([])
+    const skill = skills.find((s) => s.path === 'copy-block/SKILL.md')
+    expect(skill, 'copy-block is a core skill').toBeDefined()
+    return skill!
+  }
+
+  it('is a core skill with a name and a one-line description', async () => {
+    const skill = await core()
+    expect(skill.source).toBe('core')
+    const match = /^---\nname: copy-block\ndescription: (.+)\n---\n/.exec(skill.contents)
+    expect(match, 'frontmatter opens the file, name first').not.toBeNull()
+    expect(match![1]!.trim().length).toBeGreaterThan(40)
+  })
+
+  it('says in its description when to use it and when not', async () => {
+    const description = /description: (.+)\n/.exec((await core()).contents)![1]!
+    for (const word of ['email', 'message', 'code', 'whole answer']) {
+      expect(description.toLowerCase()).toContain(word)
+    }
+  })
+
+  it('teaches the copy fence, the longer fence and an email example', async () => {
+    const body = (await core()).contents
+    expect(body).toContain('```copy')
+    expect(body).toMatch(/longer/i)
+    expect(body).toMatch(/four backticks/i)
+    expect(body).toMatch(/Objet|Subject/)
+    // The example itself is set in a fence longer than the one it shows.
+    expect(body).toContain('````markdown')
+  })
+
+  it('shows an example whose copy block holds only the text to paste', async () => {
+    const body = (await core()).contents
+    const block = /```copy\n([\s\S]*?)\n```\n/.exec(body.slice(body.indexOf('````markdown')))
+    expect(block).not.toBeNull()
+    expect(block![1]).toContain('Bonjour')
+    expect(block![1]).not.toContain('J\'ai remplacé')
+    expect(block![1]).not.toContain('Voici une version')
+  })
+
+  it('lands in each of the three skill zones, frontmatter on the first byte', async () => {
+    const { skills } = await collectSkills([])
+    for (const zone of ['.claude/skills', '.github/skills', '.codex/skills']) {
+      const zoneRoot = join(root, zone)
+      await deliverSkills(zoneRoot, skills)
+      const written = await readFile(join(zoneRoot, 'copy-block', 'SKILL.md'), 'utf8')
+      expect(written.startsWith('---\nname: copy-block\n')).toBe(true)
+      expect(written).toContain(MANAGED_MARKER)
+      expect(written).toContain('```copy')
+    }
+  })
+
+  it('is withdrawn again when no longer wanted, like any managed skill', async () => {
+    await deliverSkills(root, (await collectSkills([])).skills)
+    const { removed } = await deliverSkills(root, [])
+    expect(removed).toBeGreaterThanOrEqual(1)
+    await expect(readFile(join(root, 'copy-block', 'SKILL.md'), 'utf8')).rejects.toThrow()
+  })
+})
