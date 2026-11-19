@@ -63,9 +63,14 @@ function raw(markdown: string): ReactNode {
 export function Prose({
   markdown,
   openPage,
+  live,
+  t,
 }: {
   readonly markdown: string
   readonly openPage?: (path: string) => void
+  /** The reply is still arriving: a copy box has no button yet. */
+  readonly live?: boolean
+  readonly t?: (key: string) => string
 }) {
   let tree: Node
   try {
@@ -75,7 +80,7 @@ export function Prose({
   }
   return (
     <div className="adestia-prose">
-      {render(tree, { base: '', prose: true, ...(openPage ? { openPage } : {}) })}
+      {render(tree, { base: '', prose: true, ...(live ? { live } : {}), ...(t ? { t } : {}), ...(openPage ? { openPage } : {}) })}
     </div>
   )
 }
