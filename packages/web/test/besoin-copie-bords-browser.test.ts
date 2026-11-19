@@ -1,6 +1,6 @@
 /**
  * Feature `adestia-bloc-a-copier`, extreme contents and the failed state's return (B-copie-1, E-16), through a driven browser
- * on the bench instance (`--seed besoin-copie-bords`). Expectations are written by hand from docs/ecrans.md § "The copy box in E-16".
+ * on the bench instance (`bench/launch.mjs --seed besoin-copie-bords`). Expectations are written by hand from docs/ecrans.md § "The copy box in E-16".
  * Needs `npm run build`.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
