@@ -166,7 +166,7 @@ async function discoverExtensions(config: AdestiaConfig, cwd: string, log: BootL
   // folders are walked it has to be as ordinary as the bundled one. The clone
   // lives in `dataDir` — the one place an instance can always write and always
   // keeps, unlike a plugins folder that is part of a read-only image.
-  const { roots: sourceRoots, problems: sourceProblems } = await fetchSources(
+  const { named: sourceRoots, problems: sourceProblems } = await fetchSources(
     config.extensions.sources,
     join(resolve(cwd, config.dataDir), 'extensions'),
     log,
@@ -175,12 +175,13 @@ async function discoverExtensions(config: AdestiaConfig, cwd: string, log: BootL
   // The bundled directory FIRST: a fetched repository adds plugins, it never
   // stands in for one the image ships. See `discoverPlugins`.
   const { plugins, problems } = await discoverPlugins(
-    [resolve(cwd, config.extensions.pluginsDir), ...sourceRoots],
+    [resolve(cwd, config.extensions.pluginsDir), ...sourceRoots.map((root) => root.path)],
     config.extensions,
+    new Map(sourceRoots.map((root) => [root.path, root.name])),
   )
   const { skins, problems: skinProblems } = await discoverSkins([
     resolve(cwd, config.extensions.skinsDir),
-    ...sourceRoots,
+    ...sourceRoots.map((root) => root.path),
   ])
 
   for (const problem of [...sourceProblems, ...problems, ...skinProblems]) {
@@ -537,6 +538,7 @@ async function mountBootApp(
     driver,
     plugins,
     pluginProblems,
+    pluginsDir: resolve(cwd, config.extensions.pluginsDir),
     ...(rebound ? { userTokens: rebound } : {}),
     // The boot log, so what the app must say out loud (a background reach
     // that failed to mint) lands where the clock's own refusals already do.
