@@ -9,6 +9,7 @@
  * browser suite is not a seen screen. Needs `npm run build` first.
  */
 
+import { existsSync } from 'node:fs'
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
@@ -130,6 +131,43 @@ export type Theme = 'light' | 'dark'
 
 export type { Browser, Context }
 
+/** Generous: a busy host may take a minute to serve and paint the shell. */
+export const SHELL_TIMEOUT_MS = 60_000
+
+/**
+ * Waits for the instance to answer, then for the chat shell, and on expiry throws an error
+ * that says where it was and what the page showed, never a bare TimeoutError. It never
+ * builds the shell: a missing `packages/web/dist-web` is reported as such.
+ */
+export async function awaitShell(page: Page, base: string, route: string, timeout = SHELL_TIMEOUT_MS): Promise<void> {
+  const deadline = Date.now() + timeout
+  const where = `${base}/#${route}`
+  let answered = false
+  let lastError = ''
+  while (!answered) {
+    try {
+      const res = await fetch(base, { signal: AbortSignal.timeout(Math.max(1, Math.min(5_000, deadline - Date.now()))) })
+      await res.arrayBuffer()
+      answered = true
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error)
+      if (Date.now() >= deadline) throw new Error(`instance did not answer within ${timeout} ms at ${where}: ${lastError}${shellHint()}`)
+      await new Promise((r) => setTimeout(r, 250))
+    }
+  }
+  try {
+    await page.waitForSelector('.adestia-chat', { timeout: Math.max(1_000, deadline - Date.now()) })
+  } catch (error) {
+    const body = await page.evaluate(() => (document.body?.innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 300)).catch(() => '(page unreadable)')
+    const cause = error instanceof Error ? error.message.split('\n')[0] : String(error)
+    throw new Error(`.adestia-chat never appeared at ${where} within ${timeout} ms (${cause}); the page shows: « ${body} »${shellHint()}`)
+  }
+}
+
+function shellHint(): string {
+  return existsSync(join(repo, 'packages', 'web', 'dist-web')) ? '' : ' — coque non construite: packages/web/dist-web is missing, run npm run build'
+}
+
 export async function open(browser: Browser, base: string, options: { theme: Theme; size: Size; locale: string; signIn?: boolean | undefined; before?: ((page: Page, base: string) => Promise<void>) | undefined; route?: string | undefined; reload?: boolean | undefined; shell?: boolean | undefined }) {
   const context = await browser.newContext({
     ...VIEWPORTS[options.size],
@@ -147,13 +185,13 @@ export async function open(browser: Browser, base: string, options: { theme: The
   }, options.theme)
   if (options.signIn) {
     await page.goto(`${base}/auth/login?returnTo=%2F`, { waitUntil: 'domcontentloaded' })
-    await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
+    await awaitShell(page, base, '/')
   }
   await options.before?.(page, base)
   await page.goto(`${base}/#${options.route ?? '/'}`, { waitUntil: 'domcontentloaded' })
   if (options.reload) await page.reload({ waitUntil: 'domcontentloaded' })
   if (options.shell !== false) {
-    await page.waitForSelector('.adestia-chat', { timeout: 20_000 })
+    await awaitShell(page, base, options.route ?? '/')
     if (options.size === 'phone') {
       const onCanvas = await page.evaluate(() => document.querySelector('.adestia-shell')?.getAttribute('data-screen') === 'canvas')
       if (!onCanvas)
