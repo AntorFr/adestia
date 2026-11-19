@@ -1927,3 +1927,61 @@ built without `ADESTIA_VERSION`, which does not copy it), the line says "Adestia
 **Dimensions.** Security: no input, a file of the repository read once, the string is matched by
 `^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$` before it is served. Cost: one read of ~65 KB at boot.
 Observability: the line of E-15 is the check. No data, no migration, no new setting.
+
+## Decisions of adestia-plugins-reglages
+
+### AD-plugins-1 — Plugins have their own route and writer; the settings catalogue stays scalar
+
+**Invariant.** The browser can change exactly one thing about extensions: whether a plugin the instance
+*already found* is named in the list of its kind. It cannot name a plugin the instance did not
+discover, add a source, or write any other key. `extensions.sources`, `driver.command` and the
+secrets keep their frontier (the file, edited from the machine), as `settings.ts` states.
+
+**Decision.** `GET /api/plugins` and `PUT /api/plugins/:id` (`routes/plugins.ts`), not a new
+`SETTINGS` entry (the catalogue is scalar keys: a list is not one, and adding it would let a "write
+any list" path in). The body is `{ active: boolean, revision?: string }`. The route looks `:id` up in
+the discovered plugins (`404` otherwise; `409` for `core`, always on), takes the list from its
+manifest kind (`apps`, `features`, `tools`) and calls a new `setActivation(file, list, id, active,
+revision)` in `settings-file.ts`: the same `readDocument` / revision / safe-write / `writability`
+round trip as `applyChanges` (comments, layout and file mode kept; `409 stale` on a changed revision;
+`503` read-only), adding or removing that one entry of that one sequence (creating `extensions.<list>` when absent, and
+leaving the key as an empty list rather than deleting it when the last entry goes). Alternatives
+rejected: a catalogue `list` kind (opens generic list writes); a second state file for overrides
+(a second source of truth: `adestia.config.yaml` stays the only one, as AD of E-14).
+
+**Why this is not widening the frontier.** Turning on a plugin runs code the owner already put on the
+instance (image, plugins folder, or a source already in the file); installing stays out. An instance
+with `auth.mode: none` already lets any visitor rewrite settings and restart (E-14, `/api/restart`);
+this route has the same reach and the same absence of role (P-1 "Who it is for"), and is mounted only
+when the server has a `configPath`, like `registerSettings`.
+
+### AD-plugins-2 — The payload says what is found, what is loaded and what the file wants
+
+**Decision.** `GET /api/plugins` returns `{ plugins: [...], refused: [...], file, writable,
+readOnlyReason?, revision, pluginsDir }`. Per found plugin: `id`, `kind`, `description`, `version?`,
+`origin` (`{ kind: 'folder' }` or `{ kind: 'source', name }`), `loaded` (the `active` of discovery, i.e. the
+boot-time answer), `wanted` (from the file: the id is in the list of its kind; `core` always true),
+`problems` (the degraded `DiscoveryProblem`s of that id). `refused`: every `DiscoveryProblem` with no
+`severity` or `refused` — id, reason, `code`/`params` — including the loser of a duplicate id, whose
+row is the problem, not a plugin. `DiscoveredPlugin` gains `origin` (set by `discoverPlugins` from the
+root it came from; `extensionFolders` already knows the root). The frontend payload of
+`/api/instance` (`frontendPayload`) is unchanged: it lists only active plugins, which is why a
+separate route exists. `wanted` is read from the file, not the loaded config, for the reason `routes/settings.ts`
+gives; a file that does not parse gives `wanted = loaded` and the read-only reason. Types in `packages/schemas`
+(`PluginsPayload`), the web reads them with the existing `request` helper.
+
+### AD-plugins-3 — Applying is the restart that exists
+
+**Decision.** Plugins are discovered, set up and mounted at boot (`start.ts`: `discoverExtensions`,
+`runSetups`, `mountPluginApis`, the manifest merge), and a plugin's vocabulary, MCP servers and skills
+are all registered there; no in-place reload exists and none is built (it would touch six
+modules for a rare action). A change therefore always *applies after a restart*, through
+`POST /api/restart` and the E-14 components (`RestartBar`, `useRestart`) reused unchanged: refused
+while turns run, `force`, "Coming back…". The criterion "after application the app appears" is proved
+through a real restart of a booted instance (the launcher loop), not a mocked one.
+
+**Dimensions.** Security: AD-plugins-1; `id` is matched against the discovered set, never interpolated;
+YAML written through the document API only. Failure: a plugin that fails at the next boot is refused and
+listed on E-19 and E-37, the instance still boots (existing behaviour); the owner switches it off from E-37.
+Concurrency: revision check; two tabs get `409 stale`. Observability: the page is the check; the restart
+log line of the launcher. Data: no migration, no new store. i18n: new strings in `i18n.ts`, English and French.
