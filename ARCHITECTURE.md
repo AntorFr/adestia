@@ -1602,7 +1602,7 @@ files, with the flags `suite-locale.sh` gives vitest (`ADESTIA_PATIENCE=4`, `--t
 step `etape > build`; the steps it does not play are not reported red, as `suite-locale.sh` already
 does for build and boot). **An empty selection** (`ADESTIA_JOUER_ECRANS` empty: nothing touched, or a
 doc-only or server-only change) installs, builds and plays nothing: it writes a report with zero
-test cases and exits 0, the « vide » run of the chain (`1..0` in TAP). `suite-locale.sh` loses
+test cases and exits 0, the « vide » run of the chain (`1..0` in TAP; an undeclared screen test is always selected, so the run is empty only while `--verifier` is green). `suite-locale.sh` loses
 `ADESTIA_JOUER_ECRANS` and `ADESTIA_ECRANS_AVEC_BUILD`: it is the local level only, as `tests.local`
 declares it, and its screen-file exclusion becomes unconditional. `fiche` is unchanged
 (`ADESTIA_EXCLURE_ECRANS`). The selection stays computed by the same functions (`--liste`,
