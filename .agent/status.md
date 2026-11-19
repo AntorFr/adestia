@@ -1,6 +1,5 @@
 # Status — Adestia
-> MàJ : 2026-11-18
-
+> MàJ : 2026-11-19
 ## Version courante
 - Feature `adestia-acces-refuse` (livrée en `v0.97.14`) : un compte OIDC hors des groupes autorisés voit la `RefusedGate` (E-1) qui le nomme, avec **Se déconnecter** ; `POST /auth/logout` ferme aussi la session du fournisseur (`end_session_endpoint`, sinon `/auth/login?switch=1` → `prompt=login`). AD-acces-refuse-1 et -2 dans ARCHITECTURE.md. Recette en bouchon : `node bench/scenarios/acces-refuse.mjs` (`--no-end-session` joue le repli). **Reste côté déploiement, hors dépôt** : le client OIDC du fournisseur doit lister l'URI de retour de déconnexion (`auth.oidc.postLogoutRedirectUri`). **Piège** : le cookie `adestia_refused` porte l'id_token ; au-delà de 4000 caractères (`COOKIE_LIMIT`) l'indice est abandonné et la déconnexion retombe sur le repli.
 - Feature `adestia-mcp-cle-par-serveur` (correctif du connecteur MCP de `v0.92.0`, livré en `v0.98.2`) : `McpSignIn` (`mcp-signin.ts`) tient un minteur par (serveur, personne), lié à son entrée de `mcp-signin.json` pour la graine et la rotation ; deux serveurs derrière un même `tokenUrl|clientId` ne partagent plus la clé ni le jeton du premier. Preuve : `mcp-signin.test.ts` et, par les routes de connexion et un tour, `mcp-signin-passerelle.ensemble.test.ts`. **Piège** : `McpTokens` ne distingue les serveurs que par `tokenUrl|clientId`, d'où un minteur par entrée.
