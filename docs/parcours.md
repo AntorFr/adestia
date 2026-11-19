@@ -258,7 +258,7 @@ The owner or a user adjusts this session without leaving the screen they are on.
 3. **Arm a token** / **Renew the token** starts the flow (`POST /api/auth/driver/begin`), and its screens follow the driver's `mode`. With `url+code` (claude-code), the user opens the link and pastes the code back, then **Validate**. With `device-code` (copilot-cli, codex-cli), the user enters the code shown at the link, then **I have approved — finish**. Both end with `POST /api/auth/driver/complete`. The contract also declares `api-key`, which no bundled driver uses today.
 4. The token stays on the server (`<dataDir>/secrets/<driver>.token`, mode 0600) and is never sent to a browser. **Forget it** removes it (`DELETE /api/auth/driver`), and **Cancel** stops a flow (`POST /api/auth/driver/cancel`).
 5. **Appearance** offers System / Light / Dark, kept in this browser (`adestia.theme`). A skin with its own `scheme` sets the default.
-6. Under OIDC, **Sign out** shows who is signed in. The last line shows "Adestia" and the version (`ADESTIA_VERSION`) when there is one.
+6. Under OIDC, **Sign out** shows who is signed in. The last line shows "Adestia" and the published version number (as in the image tag, without the `v`). An image says its own (`ADESTIA_VERSION`); an installation from the sources says the number of the last release heading of `CHANGELOG.md` (AD-version-1). Only when neither is available does the line show "Adestia" alone.
 
 Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 

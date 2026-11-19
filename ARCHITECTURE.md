@@ -1885,3 +1885,44 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   nothing. A whitespace-only fill does the same. `Composer.tsx` already focuses
   before ignoring an empty fill (`4e6f16f`). E-30 is repaired separately by AD-24 c:
   `scan/web/scanner.js` focuses the composer field when its opener has disappeared or was the body.
+
+## Decisions of adestia-version-hors-image
+
+### AD-version-1 — An installation from the sources reads its version from the last release heading of `CHANGELOG.md`
+
+**Invariant.** The number shown on the last line of E-15 is the published one, the number of the
+git tag without its `v` (the image tag), whatever the installation. `GET /api/instance` carries
+it as `version`, or omits it; the shell is unchanged.
+
+**Decision.** `buildVersion` in `routes/instance.ts` takes, in this order: (1) `ADESTIA_VERSION`
+when set and not blank (the image: unchanged, so the image shows what it showed); (2) the last
+`## vX.Y.Z` (or `## vX.Y.Z-serie.K`) heading of `CHANGELOG.md` at the repository root, found from
+the module's own location by walking up the parents until one holds a `CHANGELOG.md` (the
+source is four levels under the root, the compiled `dist/src/routes` five: no fixed relative path
+serves both), read once at boot; (3) nothing. Any read or parse failure is (3), silently.
+
+**Why this source.** `CHANGELOG.md` is already written at every release by the integrate step
+(`Version vX.Y.Z`), and `bench/tests/doc-version.test.mjs` already guarantees that its last title is
+the latest tag or the one the merge is about to lay: it cannot drift, and no new step is added to
+a release. No second place holds the number.
+
+**Rejected.**
+- *`version` in the root `package.json`, bumped at release.* A second number to keep in step, a step
+  the release does not have today, and a new guard to write; the five workspace manifests would
+  stay at `0.0.0` beside it.
+- *`git describe` at boot or build.* Needs `.git` and the tags, absent from a tarball or a shallow
+  clone; and it would give `v0.98.6-12-gabc` for a branch, a string that is no published number.
+- *A build-time stamp file.* More machinery (a build step, a file in `dist`) for what a read at boot
+  gives; it would also be missing for `tsx`/dev runs.
+- *`ADESTIA_VERSION` set by hand for source installs.* Is today's behaviour; it is what the
+  request reports.
+
+**A build that does not start from a published version.** A checkout on a branch shows the last
+release heading of its own `CHANGELOG.md`: the version it was cut from (or, in the window
+between the integrate step and the tag, the one about to be laid). No suffix, no `-dev`, no hash:
+nothing is invented, and it is the number a reader can look up. If the file is absent (an image
+built without `ADESTIA_VERSION`, which does not copy it), the line says "Adestia" alone, as today.
+
+**Dimensions.** Security: no input, a file of the repository read once, the string is matched by
+`^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$` before it is served. Cost: one read of ~65 KB at boot.
+Observability: the line of E-15 is the check. No data, no migration, no new setting.
