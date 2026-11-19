@@ -310,7 +310,7 @@ describe('E-9 the Plugins tile', () => {
         : response(200, { servers: [], files: [], delegations: [] }),
     ) as unknown as typeof fetch
     const onPage = vi.fn()
-    render(<Preferences page="" onPage={onPage} fetchImpl={routed} t={T} {...({} as object)} />)
+    render(<Preferences page="" onPage={onPage} onItem={vi.fn()} fetchImpl={routed} t={T} {...({} as object)} />)
     await waitFor(() => expect(screen.getByText('3 active of 4')).toBeTruthy())
     fireEvent.click(screen.getByText('Plugins'))
     expect(onPage).toHaveBeenCalledWith('plugins')
@@ -320,7 +320,7 @@ describe('E-9 the Plugins tile', () => {
     const routed = vi.fn((input: unknown) =>
       response(String(input) === '/api/plugins' ? 404 : 200, { servers: [], files: [], delegations: [] }),
     ) as unknown as typeof fetch
-    render(<Preferences page="" onPage={vi.fn()} fetchImpl={routed} t={T} {...({} as object)} />)
+    render(<Preferences page="" onPage={vi.fn()} onItem={vi.fn()} fetchImpl={routed} t={T} {...({} as object)} />)
     await waitFor(() => expect(screen.getByText('Plugins')).toBeTruthy())
     expect(screen.queryByText(/active of/)).toBeNull()
   })
