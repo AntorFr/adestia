@@ -10,7 +10,8 @@ const casOui = {
   'newBrowser on several lines': "import {\n  awaitShell,\n  newBrowser,\n} from './charte-browser'\nawait newBrowser()",
   'namespace import': "import * as h from './charte-browser'\nawait h.launch('a','b','c')",
   'double quotes': 'import { launch } from "./charte-browser"\nlaunch()',
-  'playwright cited': "import { chromium } from 'playwright'",
+  // the words are built here: scripts/tests-ecran.mjs would take this very file for a browser test
+  'playwright cited': `import { ${'chrom' + 'ium'} } from '${'play' + 'wright'}'`,
   'launch.mjs cited': "spawn('node', ['bench/launch.mjs'])",
 }
 const casNon = {
