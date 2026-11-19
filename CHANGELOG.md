@@ -1053,3 +1053,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   nothing and inserts the cells as a Markdown table (at least two rows and two columns, from an
   HTML `<table>` or tab-separated text). A lone image is still attached as before, and a paste
   without an image stays native. Formulas and colours are not kept.
+
+## v0.98.5
+
+- **The browser-test helper waits for the shell on a signal** — `open()` in the browser-test
+  helper (`packages/web/test/charte-browser.ts`) now waits for the instance to answer and for the
+  chat shell to be drawn (up to 60 s) instead of a fixed 20 s, and a failed wait names the URL,
+  the route and the page text, or says the shell was not built. This removes a timeout seen
+  under load in `besoin-etat-projet-browser.test.ts`. The form helper of that file also waits for the
+  save that carries the typed label and for the sheet to close, so a risk is not read before it is
+  stored. Tests only: nothing changes for users.

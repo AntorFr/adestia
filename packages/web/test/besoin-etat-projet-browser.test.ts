@@ -252,6 +252,9 @@ describe.skipIf(!hasBrowser)('Project status page from a template (P-20)', () =>
     await sheet.waitFor({ timeout: 10_000 })
     return sheet
   }
+  /** The PUT of this folder whose body carries the label just typed: another PUT (an earlier one, still in flight) must not satisfy the wait. */
+  const putWith = (page: any, folder: string, label: string) =>
+    page.waitForResponse((r: any) => r.request().method() === 'PUT' && r.url().includes(`/api/pages/${folder}/`) && (r.request().postData() ?? '').includes(label))
   const fill = async (page: any, folder: string, title: string) => {
     await create(page, folder, title)
     await inEditing(page)
@@ -259,22 +262,25 @@ describe.skipIf(!hasBrowser)('Project status page from a template (P-20)', () =>
     await milestones.getByRole('button', { name: 'Add' }).click()
     await milestones.locator('input[type=text]').first().fill('Recette finale')
     await milestones.locator('input[type=date]').first().fill('2031-03-04')
-    const saved = page.waitForResponse((r: any) => r.request().method() === 'PUT' && r.url().includes(`/api/pages/${folder}/`))
+    const saved = putWith(page, folder, 'Recette finale')
     await milestones.getByRole('button', { name: 'Apply' }).click()
     await saved
+    await milestones.waitFor({ state: 'detached', timeout: 10_000 })
     const risks = await openData(page, 'No risk recorded')
     await risks.getByRole('button', { name: 'Add' }).click()
     await risks.locator('input[type=text]').first().fill('Fournisseur unique')
     await risks.locator('select').first().selectOption({ label: 'High' })
-    const saved2 = page.waitForResponse((r: any) => r.request().method() === 'PUT' && r.url().includes(`/api/pages/${folder}/`))
+    const saved2 = putWith(page, folder, 'Fournisseur unique')
     await risks.getByRole('button', { name: 'Apply' }).click()
     await saved2
+    await risks.waitFor({ state: 'detached', timeout: 10_000 })
   }
   it('B-29 jalons et risques saisis par leur formulaire s’affichent dans la bande, les phrases vides disparaissent', async () => {
     const { context, page } = await visit(main.url, '/section/p6')
     await fill(page, 'p6', 'Complete')
     await page.getByRole('button', { name: 'Done' }).click()
     await page.getByText('Fournisseur unique').first().waitFor({ timeout: 10_000 })
+    await expect.poll(async () => (await bodyText(page)).includes('No risk recorded'), { timeout: 10_000 }).toBe(false)
     const text = await bodyText(page)
     expect(text).toContain('Recette finale')
     expect(text).toContain('Fournisseur unique')
