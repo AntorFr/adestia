@@ -1891,7 +1891,8 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
 ### AD-version-1 — An installation from the sources reads its version from the last release heading of `CHANGELOG.md`
 
 **Invariant.** The number shown on the last line of E-15 is the published one, the number of the
-git tag without its `v` (the image tag), whatever the installation. `GET /api/instance` carries
+git tag without its `v` (the image tag), whatever the installation; the one exception is the
+dev image, whose tag is `main` and which therefore shows `main`. `GET /api/instance` carries
 it as `version`, or omits it; the shell is unchanged.
 
 **Decision.** `buildVersion` in `routes/instance.ts` takes, in this order: (1) `ADESTIA_VERSION`
