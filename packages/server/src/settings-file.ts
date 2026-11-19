@@ -43,7 +43,7 @@ export interface SettingChange {
   readonly value: unknown
 }
 
-export interface WriteRefusal {
+interface WriteRefusal {
   readonly reason: string
   /** Which of the two kinds of no this is, so the route can pick its status. */
   readonly kind: 'invalid' | 'stale' | 'read-only' | 'unreadable'

@@ -46,8 +46,6 @@ const GIT_TIMEOUT_MS = 60_000
 interface FetchedSources {
   /** Discovery roots, in the order they were declared. */
   readonly roots: readonly string[]
-  /** The same roots, each with the source name its plugins are attributed to. */
-  readonly named: readonly { readonly path: string; readonly name: string }[]
   readonly problems: readonly DiscoveryProblem[]
 }
 
@@ -128,10 +126,9 @@ export async function fetchSources(
   cacheDir: string,
   log: (message: string) => void,
 ): Promise<FetchedSources> {
-  if (sources.length === 0) return { roots: [], named: [], problems: [] }
+  if (sources.length === 0) return { roots: [], problems: [] }
 
   const roots: string[] = []
-  const named: { path: string; name: string }[] = []
   const problems: DiscoveryProblem[] = []
 
   for (const source of sources) {
@@ -139,7 +136,6 @@ export async function fetchSources(
       const dir = resolve(source.dir)
       if (await isDirectory(dir)) {
         roots.push(dir)
-        named.push({ path: dir, name: source.name })
         log(`extensions: reading ${dir}`)
       } else {
         problems.push({
@@ -219,8 +215,7 @@ export async function fetchSources(
     }
 
     roots.push(dir)
-    named.push({ path: dir, name: source.name })
   }
 
-  return { roots, named, problems }
+  return { roots, problems }
 }

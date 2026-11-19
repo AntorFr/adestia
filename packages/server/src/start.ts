@@ -166,22 +166,31 @@ async function discoverExtensions(config: AdestiaConfig, cwd: string, log: BootL
   // folders are walked it has to be as ordinary as the bundled one. The clone
   // lives in `dataDir` — the one place an instance can always write and always
   // keeps, unlike a plugins folder that is part of a read-only image.
-  const { named: sourceRoots, problems: sourceProblems } = await fetchSources(
+  const cacheDir = join(resolve(cwd, config.dataDir), 'extensions')
+  const { roots: sourceRoots, problems: sourceProblems } = await fetchSources(
     config.extensions.sources,
-    join(resolve(cwd, config.dataDir), 'extensions'),
+    cacheDir,
     log,
+  )
+  // Which declared source each root came of, for the Plugins screen: the
+  // fetch hands back bare paths, and both kinds of source have a name.
+  const sourceNames = new Map(
+    config.extensions.sources.map((source) => [
+      source.kind === 'dir' ? resolve(source.dir) : join(cacheDir, source.name),
+      source.name,
+    ]),
   )
 
   // The bundled directory FIRST: a fetched repository adds plugins, it never
   // stands in for one the image ships. See `discoverPlugins`.
   const { plugins, problems } = await discoverPlugins(
-    [resolve(cwd, config.extensions.pluginsDir), ...sourceRoots.map((root) => root.path)],
+    [resolve(cwd, config.extensions.pluginsDir), ...sourceRoots],
     config.extensions,
-    new Map(sourceRoots.map((root) => [root.path, root.name])),
+    sourceNames,
   )
   const { skins, problems: skinProblems } = await discoverSkins([
     resolve(cwd, config.extensions.skinsDir),
-    ...sourceRoots.map((root) => root.path),
+    ...sourceRoots,
   ])
 
   for (const problem of [...sourceProblems, ...problems, ...skinProblems]) {
