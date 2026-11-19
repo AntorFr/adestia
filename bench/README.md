@@ -69,6 +69,7 @@ or scenario caller. It uses the repository's TypeScript parser, without a browse
 | `saisie` | `base` plus the reference pages of the data form E-35 and the settings E-6 (`figures`, `list`, `table`, `timeline`, each with a line nobody can read), for `scenarios/saisie-formulaire.mjs` and `scenarios/reglages-blocs.mjs`. |
 | `chat-ajouts` | E-16 loading, failure and the context-lost line: the base instance plus a conversation with two `contextLost` agent messages, a plain one and 20 more rows. |
 | `chat-permission` | E-17/E-18: isolated desk/phone threads, pending/signed/denied/expired signatures, questions with and without a lasting rule; `permissions.mode: ask` also supports the real-Claude proof. |
+| `besoin-copie` | E-16 copy box (AD-copie-1): settled replies with `copy` fences (an email, a short line, an empty and an unclosed block, a `sh` block that gets no button) and one turn that streams a fence; `scenarios/copy-block.mjs` takes the pictures (docker); without docker open the threads by hand. |
 | `config-writable` | `base`, with the configuration file the screen reads and writes. |
 | `config-readonly` | `base`, with the file read-only and the credential refused upstream. A process running as root can write a `0444` file: the screen then shows it writable. |
 | `oidc` | `base` behind a sign-in; the provider is `bench/oidc-stub.mjs`. |
