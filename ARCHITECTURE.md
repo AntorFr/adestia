@@ -107,7 +107,7 @@ Outside `packages/`:
   `paths.ts` holds path naming/index rules, `request.ts` the injected request helpers;
   `Problems.tsx`, skin slot (`skin.ts`, `SkinSlot.tsx`), `i18n.ts`, `tokens.css`, `shell.css`.
 - `chat/` — `Chat.tsx` wires `ChatHeader.tsx`, `TabStrip.tsx`, `ConversationList.tsx` and
-  `Thread.tsx` (`Bubble.tsx`, `StatusDot.tsx`); `ModelPicker.tsx`, `ContextPill.tsx`,
+  `Thread.tsx` (`Bubble.tsx`, `CopyBox.tsx` the copy box of a `copy` fence, `StatusDot.tsx`); `ModelPicker.tsx`, `ContextPill.tsx`,
   `Composer.tsx` (uploads and fold; `paste-table.ts` turns pasted spreadsheet cells into a Markdown table), `AskPrompt.tsx`, `Signatures.tsx` (shared sheet).
   `useConversations.ts` holds the open-store, turn and tab-action hooks; `conversations.ts`
   is the HTTP store client, `messages.ts` the shared `toMessage`, `stream.ts` the SSE client
