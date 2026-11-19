@@ -137,8 +137,8 @@ export function Preferences({
   // "N active of M": a failed or 404 read leaves the tile without a figure, never a zero.
   const found = useRequest<{ plugins?: readonly { loaded?: boolean }[] }>(fetchImpl, '/api/plugins', { enabled: mosaic })
   const foundRows = found.status === 'ready' ? found.data?.plugins : undefined
-  const waiting =
-    mosaic && (status.status === 'loading' || found.status === 'loading' || !serversSettled || !writtenSettled || !delegatedSettled)
+  // The count is not waited for: the tile is drawn at once and its figure arrives when the read does.
+  const waiting = mosaic && (status.status === 'loading' || !serversSettled || !writtenSettled || !delegatedSettled)
 
   if (page === 'instructions') {
     return (
