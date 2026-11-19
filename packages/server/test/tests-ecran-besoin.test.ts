@@ -116,6 +116,7 @@ describe('tests d\'écran hors écran — inventaire (docs/tests-ecran)', () => 
       'packages/web/test/recette-formulaires-browser.test.ts',
       'packages/web/test/reglages-undo-browser.test.ts',
       'packages/web/test/verify-formulaires-browser.test.ts',
+      'packages/web/test/version-hors-image-ecran-browser.test.ts',
     ])
   })
 

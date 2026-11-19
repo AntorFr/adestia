@@ -249,7 +249,7 @@ be replayed, instead of blocking the delivery until the forge's own 360-minute l
 
 **Early, and running.** The screens are checked in a real browser (`bench/`) and
 the agent drivers against real CLIs, not only by tests; which version each deployment
-runs is not recorded here. Pushing and pulling the workspace's own instructions
+runs is not recorded here; the ⚙ menu shows it: an image says its own (`ADESTIA_VERSION`), an installation from the sources the last `## vX.Y.Z` heading of `CHANGELOG.md` (a branch shows its own, with no suffix), and nothing if neither exists. Pushing and pulling the workspace's own instructions
 to a remote is still unbuilt (catalogues above only read repositories).
 Concurrency measurements are recorded in `spikes/concurrency/REPORT.md`.
 See [.agent/status.md](.agent/status.md) for current defects and unfinished work,

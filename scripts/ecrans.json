@@ -76,6 +76,7 @@
     "packages/web/test/besoin-rouge-23-spinner-config.test.ts": ["E-14"],
     "packages/web/test/besoin-rouge-25-menu-rouage-browser.test.ts": ["E-15"],
     "packages/web/test/ensemble-acces-refuse-browser.test.ts": ["E-1"],
+    "packages/web/test/version-hors-image-ecran-browser.test.ts": ["E-15"],
     "packages/web/test/ensemble-hors-ligne-browser.test.ts": ["E-1", "E-9", "E-10", "E-14", "E-32"]
   }
 }
