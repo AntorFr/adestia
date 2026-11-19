@@ -8,17 +8,17 @@
 // process, with the environment a source install has (no ADESTIA_VERSION) or an image has. The
 // CHANGELOG of that tree is written here, so every expected number is a literal of this file.
 import { type ChildProcess, spawn } from 'node:child_process'
-import { cp, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
+import { cp, mkdir, symlink, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { cleanTmp, tmpDir } from './support/tmp.js'
+
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const server = join(repo, 'packages', 'server')
-const trees: string[] = []
 const children = new Set<ChildProcess>()
 
 beforeAll(() => {
@@ -26,7 +26,7 @@ beforeAll(() => {
 })
 afterAll(async () => {
   for (const c of children) c.kill('SIGKILL')
-  await Promise.all(trees.map((t) => rm(t, { recursive: true, force: true })))
+  await cleanTmp()
 })
 
 interface Reply {
@@ -39,8 +39,7 @@ interface Reply {
  * with `stamp` as ADESTIA_VERSION (undefined: not set), and reads what /api/instance says of the version.
  */
 async function versionOf(changelog: string | undefined, stamp?: string): Promise<Reply> {
-  const root = await mkdtemp(join(tmpdir(), 'adestia-version-'))
-  trees.push(root)
+  const root = await tmpDir('adestia-version-')
   await mkdir(join(root, 'packages', 'server'), { recursive: true })
   for (const part of ['dist', 'bin', 'package.json']) await cp(join(server, part), join(root, 'packages', 'server', part), { recursive: true })
   await symlink(join(repo, 'node_modules'), join(root, 'node_modules'))
