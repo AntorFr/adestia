@@ -107,7 +107,8 @@ Adestia's own interface.
   A page's other files — the plan as a PDF, the photo of the dish — sit next to
   it on disk, display in it, and are listed under it as attachments. What a
   page's status says is finished folds away rather than crowding the live ones.
-- **Extensions at runtime**: drop a plugin folder in, name it in the config,
+- **Extensions at runtime**: drop a plugin folder in, name it in the config
+  (or switch it on from Settings → Plugins, which writes the same file),
   restart. No image rebuild. Shared React comes from the page's import map;
   the shell owns the stylesheets; a broken plugin costs its own view and says
   why.

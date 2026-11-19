@@ -1466,7 +1466,7 @@ the description; the restart bar as E-14.
 | loading | the shared loading row under the heading; no groups |
 | read failed | the shared error line with **Retry**; no groups |
 | normal | the three groups (an empty group is not drawn); a count line "N active of M found" |
-| nothing found | "No plugin found." and where the instance looks (the plugins folder path from the payload) |
+| nothing found | the lede "Nothing is installed here yet.", then "No plugin found." and where the instance looks (the plugins folder path from the payload) |
 | config not exposed (instance started without a config file: `GET /api/plugins` answers 404) | no rows; the line E-14 shows for this case; the E-9 tile stays drawn, without a count |
 | file read-only / unreadable / invalid | rows read-only, switches inert, the file's reason, as E-14 |
 | flipping | the switch is busy until the write answers; others stay usable |
