@@ -265,6 +265,27 @@ const FR: Readonly<Record<string, string>> = {
   'Not connected for you yet — this server signs each person in.':
     'Pas encore connecté pour vous — ce serveur connecte chaque personne séparément.',
 
+  // The Plugins page (E-37): what the instance found, and which of it the file turns on.
+  Plugins: 'Plugins',
+  'See what this instance found and turn it on or off': 'Voir ce que l’instance a trouvé et l’activer ou la désactiver',
+  '%n active of %m': '%n actifs sur %m',
+  '%n active of %m found': '%n actifs sur %m trouvés',
+  Active: 'Actifs',
+  'Found, not active': 'Trouvés, non actifs',
+  Refused: 'Refusés',
+  'found in the plugins folder': 'trouvé dans le dossier des plugins',
+  'found in source %name': 'trouvé dans la source %name',
+  'always on': 'toujours actif',
+  'Active after restart': 'Actif après redémarrage',
+  'Off after restart': 'Inactif après redémarrage',
+  'The plugins could not be read.': 'Les plugins n’ont pas pu être lus.',
+  'No plugin found.': 'Aucun plugin trouvé.',
+  'Looked in': 'Dossier cherché :',
+  'Nothing is installed here yet.': 'Rien n’est installé ici pour l’instant.',
+  'The switches are inert; the plugins below are what it found.':
+    'Les interrupteurs sont inertes ; les plugins ci-dessous sont ceux qu’elle a trouvés.',
+  'The file changed since this page loaded.': 'Le fichier a changé depuis le chargement de cette page.',
+
   // The configuration screen: the instance's own settings, as a form.
   Configuration: 'Configuration',
   'Read and change this instance\u2019s own settings':

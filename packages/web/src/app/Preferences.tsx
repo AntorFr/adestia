@@ -30,6 +30,7 @@
 import { Delegations, delegChips, useDelegationRows } from './Delegations.js'
 import { Instructions } from './Instructions.js'
 import { Configuration } from './Configuration.js'
+import { Plugins } from './Plugins.js'
 import { McpServers } from './McpServers.js'
 import { Icon } from './Icon.js'
 import { Tile } from './Tile.js'
@@ -38,10 +39,10 @@ import { Loading } from './ui/index.js'
 import { useRequest } from './useRequest.js'
 
 /** Which settings page is open. `''` is the mosaic itself. */
-export type PrefsPage = '' | 'mcp' | 'instructions' | 'delegations' | 'config'
+export type PrefsPage = '' | 'mcp' | 'instructions' | 'delegations' | 'config' | 'plugins'
 
 /** The pages that have an address. A closed set: `#/settings/…` is public. */
-const PAGES = ['mcp', 'instructions', 'delegations', 'config'] as const
+const PAGES = ['mcp', 'instructions', 'delegations', 'config', 'plugins'] as const
 
 /**
  * Whether a URL segment names a page.
@@ -85,6 +86,7 @@ export function prefsTitle(page: PrefsPage, t: (key: string) => string): string 
   if (page === 'instructions') return t('Instructions')
   if (page === 'delegations') return t('Delegations')
   if (page === 'config') return t('Configuration')
+  if (page === 'plugins') return t('Plugins')
   return t('Settings')
 }
 
@@ -132,7 +134,11 @@ export function Preferences({
   const { list: writtenList, settled: writtenSettled } = useList<unknown>('/api/instructions', 'files', fetchImpl, mosaic)
   const written = writtenList?.length
   const { rows: delegated, settled: delegatedSettled } = useDelegationRows(fetchImpl, mosaic)
-  const waiting = mosaic && (status.status === 'loading' || !serversSettled || !writtenSettled || !delegatedSettled)
+  // "N active of M": a failed or 404 read leaves the tile without a figure, never a zero.
+  const found = useRequest<{ plugins?: readonly { loaded?: boolean }[] }>(fetchImpl, '/api/plugins', { enabled: mosaic })
+  const foundRows = found.status === 'ready' ? found.data?.plugins : undefined
+  const waiting =
+    mosaic && (status.status === 'loading' || found.status === 'loading' || !serversSettled || !writtenSettled || !delegatedSettled)
 
   if (page === 'instructions') {
     return (
@@ -166,6 +172,10 @@ export function Preferences({
 
   if (page === 'config') {
     return <Configuration fetchImpl={fetchImpl} t={t} />
+  }
+
+  if (page === 'plugins') {
+    return <Plugins fetchImpl={fetchImpl} t={t} />
   }
 
   if (page === 'delegations') {
@@ -233,6 +243,26 @@ export function Preferences({
           label={t('Configuration')}
           subtitle={t('Read and change this instance’s own settings')}
           onOpen={() => onPage('config')}
+          t={t}
+        />
+        {/* What the instance found and which of it is on: the file's lists, as a page. */}
+        <Tile
+          iconName="plug"
+          hue="ardoise"
+          label={t('Plugins')}
+          subtitle={t('See what this instance found and turn it on or off')}
+          {...(Array.isArray(foundRows)
+            ? {
+                chips: [
+                  {
+                    text: t('%n active of %m')
+                      .replace('%n', String(foundRows.filter((row) => row.loaded).length))
+                      .replace('%m', String(foundRows.length)),
+                  },
+                ],
+              }
+            : {})}
+          onOpen={() => onPage('plugins')}
           t={t}
         />
         {/* The inbound face of the MCP tile above: that one is the agents
