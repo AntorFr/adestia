@@ -49,7 +49,8 @@ step lint npm run lint
 exclusions=""
 # ADESTIA_JOUER_ECRANS (set by `scripts/niveaux.mjs ecrans`): screen-test files to play anyway,
 # space-separated; they need the builds, made when ADESTIA_ECRANS_AVEC_BUILD is set. Unset: unchanged.
-for f in $(grep -rlE 'playwright|chromium|launch\.mjs' packages/*/test 2>/dev/null | grep -E '\.test\.tsx?$' | sort); do
+# The rule is scripts/niveaux.mjs's (estTestDEcran), not a second expression here.
+for f in $(node scripts/niveaux.mjs --fichiers-ecran); do
   case " ${ADESTIA_JOUER_ECRANS:-} " in *" $f "*) continue ;; esac
   exclusions="$exclusions --exclude $f"
 done
