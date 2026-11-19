@@ -118,7 +118,8 @@ Adestia's own interface.
 - **Settings as an app**, not a dialog over whatever you were reading: its own
   tile, its own address, one page per subject — the agent's credential (armed
   from the interface, held server-side at 0600 and never sent to a browser),
-  the MCP servers and what each is doing, the theme, and the instructions you
+  the MCP servers and what each is doing, the plugins the instance found (switch
+  one on or off, then restart), the theme, and the instructions you
   gave the agent, edited on a screen rather than in a box.
 - **Instruction catalogues**: declare a git repository of skills, agents or
   instructions from Instructions › Catalogues, browse what it holds (found by
