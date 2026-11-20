@@ -13,7 +13,8 @@
  */
 
 import { createHash, randomUUID } from 'node:crypto'
-import { mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import { access, mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import { constants } from 'node:fs'
 import { basename, dirname, extname, join } from 'node:path'
 
 import {
@@ -30,10 +31,11 @@ import type { FastifyInstance } from 'fastify'
 import { parseFrontmatter, splitFrontmatter } from '../frontmatter.js'
 import type { DiscoveredPlugin } from '../extensions.js'
 import { gated } from '../io.js'
-import { writableFolders } from '../writable-folders.js'
+import { allFolders, isAbsorbed, writableFolders } from '../writable-folders.js'
 import { revisionOf, safePagePath, titleOf, type PageContent, type PageInfo } from '../pages.js'
 import {
   candidatesOf,
+  fileIn,
   listAll,
   targetFor,
   type Store,
@@ -92,6 +94,9 @@ function qualified(stores: readonly Store[], asked: unknown): Store | undefined 
 function hasBody(markdown: string): boolean {
   return splitFrontmatter(markdown).body.trim() !== ''
 }
+
+/** E-36's slug: runs of `[a-z0-9]` separated by single dashes. */
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 /** This API's whole contract, as a predicate: markdown, and nothing else. */
 const isMarkdown = (name: string): boolean => name.endsWith('.md')
@@ -260,9 +265,86 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
       .filter((plugin) => plugin.active)
       .flatMap((plugin) => plugin.manifest.absorbs ?? [])
     const folders = await writableFolders(stores, absorbed, order)
+    const every = await allFolders(stores, order)
     return multi
-      ? { entries: out, stores: table(), writableFolders: folders }
-      : { entries: out, writableFolders: folders }
+      ? { entries: out, stores: table(), writableFolders: folders, folders: every }
+      : { entries: out, writableFolders: folders, folders: every }
+  })
+
+  /**
+   * AD-38: make an empty folder. The client sends the path already reduced to
+   * slugs (E-36); the server never slugs, it refuses a last segment that is
+   * not one. The folder goes in the first store that holds the parent and
+   * lets the user write there; the `mkdir` is the atomic verdict.
+   */
+  app.post<{ Body: { path?: unknown } }>('/api/folders', async (request, reply) => {
+    const asked = request.body?.path
+    if (typeof asked !== 'string' || asked.includes('\0')) {
+      return reply.code(400).send({ error: 'path is required' })
+    }
+    const segments = asked.split('/')
+    const name = segments[segments.length - 1] ?? ''
+    if (!SLUG.test(name) || name.length > 80) {
+      return reply.code(400).send({ error: 'not a valid folder name' })
+    }
+    const parents = segments.slice(0, -1)
+    if (parents.some((part) => part === '' || part === '.' || part === '..')) {
+      return reply.code(400).send({ error: 'not a valid parent folder' })
+    }
+    const parent = parents.join('/')
+
+    // Taken: a directory or a page file of that name in ANY store, or a
+    // folder that is the mount point (or the logical parent) of one.
+    const taken = async (store: Store, logical: string): Promise<boolean> => {
+      const there = logical === store.at ? store.dir : fileIn(store, logical)
+      if (!there) return false
+      return stat(there).then(
+        () => true,
+        () => false,
+      )
+    }
+    for (const store of stores) {
+      if (store.at === asked || store.at.startsWith(`${asked}/`)) {
+        return reply.code(409).send({ error: 'name already taken' })
+      }
+      if ((await taken(store, asked)) || (await taken(store, `${asked}.md`))) {
+        return reply.code(409).send({ error: 'name already taken' })
+      }
+    }
+
+    const absorbed = (options.plugins ?? [])
+      .filter((plugin) => plugin.active)
+      .flatMap((plugin) => plugin.manifest.absorbs ?? [])
+    if (parent !== '' && isAbsorbed(absorbed, parent)) {
+      return reply.code(403).send({ error: 'write refused' })
+    }
+    // Default store first, then the others as declared.
+    const ordered = [...stores.filter((s) => s.isDefault), ...stores.filter((s) => !s.isDefault)]
+    for (const store of ordered) {
+      const parentDir = parent === store.at ? store.dir : parent === '' ? undefined : fileIn(store, parent)
+      if (!parentDir) continue
+      const held = await stat(parentDir).then(
+        (info) => info.isDirectory(),
+        () => false,
+      )
+      if (!held) continue
+      const writable = await access(parentDir, constants.W_OK).then(
+        () => true,
+        () => false,
+      )
+      if (!writable) continue
+      const target = join(parentDir, name)
+      try {
+        await mkdir(target)
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+          return reply.code(409).send({ error: 'name already taken' })
+        }
+        continue
+      }
+      return reply.code(201).send({ path: asked })
+    }
+    return reply.code(403).send({ error: 'write refused' })
   })
 
   app.get<{ Params: { '*': string }; Querystring: { store?: string } }>(

@@ -22,7 +22,12 @@ function absorbed(declared: string, folder: string): boolean {
   return false
 }
 
-async function collect(store: Store, from: string, into: Set<string>): Promise<void> {
+async function collect(
+  store: Store,
+  from: string,
+  into: Set<string>,
+  all?: Set<string>,
+): Promise<void> {
   const dir = from ? join(store.dir, from) : store.dir
   let entries
   try {
@@ -36,10 +41,11 @@ async function collect(store: Store, from: string, into: Set<string>): Promise<v
     () => false,
   )
   if (writable) into.add(logical)
+  if (all && logical !== '') all.add(logical)
   await Promise.all(
     entries
       .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
-      .map((entry) => collect(store, from ? `${from}/${entry.name}` : entry.name, into)),
+      .map((entry) => collect(store, from ? `${from}/${entry.name}` : entry.name, into, all)),
   )
 }
 
@@ -54,3 +60,22 @@ export async function writableFolders(
     .filter((folder) => !absorbs.some((declared) => absorbed(declared, folder)))
     .sort((a, b) => order.compare(a, b))
 }
+
+/**
+ * Every folder that exists as a directory in some store, empty ones included
+ * (`''`, the root, is left out). Not filtered by write access: a read-only
+ * folder is still a folder the home and E-3 must show.
+ */
+export async function allFolders(
+  stores: readonly Store[],
+  order: Intl.Collator,
+): Promise<string[]> {
+  const found = new Set<string>()
+  const all = new Set<string>()
+  await Promise.all(stores.map((store) => collect(store, '', found, all)))
+  return [...all].sort((a, b) => order.compare(a, b))
+}
+
+/** Whether an active app absorbs the folder (E-36: not writable, not offered). */
+export const isAbsorbed = (declared: readonly string[], folder: string): boolean =>
+  declared.some((one) => absorbed(one, folder))
