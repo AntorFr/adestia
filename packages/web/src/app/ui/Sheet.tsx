@@ -1,4 +1,4 @@
-import { useId, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 import { Button } from './Button.js'
@@ -27,6 +27,18 @@ export function Sheet({ open, title, heading, headerActions, onClose, children, 
   const panel = useRef<HTMLDivElement>(null)
   const titleId = useId()
   useFocusScope(panel, open, { trap: true, onEscape: onClose })
+  // The sheet is modal: what lies behind it is not part of the accessibility
+  // tree while it is open (the sheet is portalled to the body, outside #root).
+  useEffect(() => {
+    const behind = open ? document.getElementById('root') : null
+    if (!behind) return undefined
+    const before = behind.getAttribute('aria-hidden')
+    behind.setAttribute('aria-hidden', 'true')
+    return () => {
+      if (before === null) behind.removeAttribute('aria-hidden')
+      else behind.setAttribute('aria-hidden', before)
+    }
+  }, [open])
   if (!open) return null
   return createPortal(
     <div className="adestia-sheet" onClick={onClose}>
