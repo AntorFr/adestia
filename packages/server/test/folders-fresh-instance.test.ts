@@ -3,7 +3,7 @@
  * It counts as writable when its nearest existing ancestor is; the first
  * folder creates it. A read-only ancestor, or a non-default absent store, does not.
  */
-import { chmod, mkdir, stat } from 'node:fs/promises'
+import { chmod, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import Fastify from 'fastify'
