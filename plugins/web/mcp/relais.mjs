@@ -53,9 +53,18 @@ function findBrowser() {
     return undefined
   }
   for (const dir of dirs) {
-    for (const bin of ['headless_shell', 'chrome-headless-shell']) {
-      const path = join(base, dir, 'chrome-linux', bin)
-      if (existsSync(path)) return path
+    // The folder inside is named for the platform (`chrome-headless-shell-linux64`, `…-linux-arm64`).
+    let inner = []
+    try {
+      inner = readdirSync(join(base, dir)).filter((name) => name.startsWith('chrome-headless-shell-') || name === 'chrome-linux').sort()
+    } catch {
+      continue
+    }
+    for (const sub of inner) {
+      for (const bin of ['chrome-headless-shell', 'headless_shell']) {
+        const path = join(base, dir, sub, bin)
+        if (existsSync(path)) return path
+      }
     }
   }
   return undefined
