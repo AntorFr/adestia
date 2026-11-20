@@ -1108,3 +1108,12 @@ branch and that `test:plugins` is replayed after a red vitest run.
   When turns are running, the restart is refused with their count until you choose **Restart
   anyway**. Core plugins stay locked, and a read-only or missing configuration file leaves the
   switches inert with the reason shown.
+
+## Unreleased
+
+- **The image carries the headless Chrome of the web plugin** — the `Dockerfile` installs the
+  plugin's dependencies in a build stage and, in the runtime stage, `chromium-headless-shell` and its
+  libraries through the plugin's own `playwright-core`, into `/opt/browsers`, for amd64 and arm64. No
+  Chrome version is written in the `Dockerfile`. `--build-arg WEB_BROWSER=none` skips both, for an
+  image without the web tool. Image overhead (amd64, arm64), build duration and the sandbox
+  measurement: non mesuré — à mesurer sur l'image du tag de livraison.

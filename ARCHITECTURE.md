@@ -2169,6 +2169,12 @@ commit** with the measurement (command, error) and the reason it is acceptable: 
 isolation boundary (non-root user, no profile, no cookie, the agent already runs arbitrary shell commands in
 this pod, `--isolated`, the tools of AD-web-1 withheld). The flag is a relay constant, not a setting.
 
+**Measurement.** Not measured — to be measured on the image of the delivery tag. No Docker in the
+pods (decision of the owner, 2026-11-20), so the sandbox was never started as the `node` user and nothing
+is claimed either way. `SANS_SANDBOX` stays `false` in `plugins/web/mcp/relais.mjs`; if the measurement
+on the tag's image shows the sandbox cannot start, the flag is set and this section amended with the
+command, the error and the reason, in the same commit.
+
 ### AD-web-7 — Output goes to a dotted folder of the workspace, bounded
 
 **Decision.** `--output-dir` is `<workspace>/.adestia-web/` (workspace: `ADESTIA_WORKSPACE`, else the
