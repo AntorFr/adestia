@@ -32,7 +32,7 @@ import type { FastifyInstance } from 'fastify'
 import { parseFrontmatter, splitFrontmatter } from '../frontmatter.js'
 import type { DiscoveredPlugin } from '../extensions.js'
 import { gated } from '../io.js'
-import { allFolders, isAbsorbed, writableFolders } from '../writable-folders.js'
+import { allFolders, creatableRoot, isAbsorbed, writableFolders } from '../writable-folders.js'
 import { revisionOf, safePagePath, titleOf, type PageContent, type PageInfo } from '../pages.js'
 import {
   candidatesOf,
@@ -329,7 +329,11 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
         (info) => info.isDirectory(),
         () => false,
       )
-      if (!held) continue
+      if (!held) {
+        // A fresh instance has no pages directory yet: the first folder makes it.
+        if (parent !== store.at || !(await creatableRoot(store))) continue
+        await mkdir(parentDir, { recursive: true }).catch(() => undefined)
+      }
       const writable = await access(parentDir, constants.W_OK).then(
         () => true,
         () => false,

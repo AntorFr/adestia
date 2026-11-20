@@ -6,9 +6,9 @@
  * mount is held by no one and never appears. The answer is the shell's cue to
  * draw or withhold a button; the write itself stays the verdict.
  */
-import { access, readdir } from 'node:fs/promises'
+import { access, readdir, stat } from 'node:fs/promises'
 import { constants } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 import type { Store } from './stores.js'
 
@@ -22,6 +22,29 @@ function absorbed(declared: string, folder: string): boolean {
   return false
 }
 
+/**
+ * A default store whose directory does not exist yet (a fresh instance) is
+ * still one a person can write into: the first write creates it. True when its
+ * nearest existing ancestor is a directory this process may write in.
+ */
+export async function creatableRoot(store: Store): Promise<boolean> {
+  if (!store.isDefault) return false
+  let dir = store.dir
+  for (;;) {
+    const info = await stat(dir).catch(() => undefined)
+    if (info) {
+      if (!info.isDirectory()) return false
+      return access(dir, constants.W_OK).then(
+        () => true,
+        () => false,
+      )
+    }
+    const up = dirname(dir)
+    if (up === dir) return false
+    dir = up
+  }
+}
+
 async function collect(
   store: Store,
   from: string,
@@ -33,6 +56,7 @@ async function collect(
   try {
     entries = await readdir(dir, { withFileTypes: true })
   } catch {
+    if (from === '' && (await creatableRoot(store))) into.add(store.at)
     return
   }
   const logical = [store.at, from].filter((part) => part !== '').join('/')
