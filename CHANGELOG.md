@@ -1098,3 +1098,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   only the screen tests of the touched screens. The local level has its own script, and the install
   step (`npm ci`) and the files that decide the levels are declared in `.sdlc.yaml`, read from
   `main`. Tests and tooling only: nothing changes for users.
+
+## v0.98.10
+
+- **Settings lists the instance's plugins and switches them on or off** — a new Plugins tile in
+  Settings opens a page that groups the plugins found as active, found but not active, and refused
+  (with the reason). Each plugin can be switched on or off; the change is saved to the instance's
+  configuration file and shown as "active/off after restart" with a bar offering **Restart now**.
+  When turns are running, the restart is refused with their count until you choose **Restart
+  anyway**. Core plugins stay locked, and a read-only or missing configuration file leaves the
+  switches inert with the reason shown.
