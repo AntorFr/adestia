@@ -1,0 +1,38 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="maquette.css"><title>Folder settings</title>
+<body><div class="sheetpage"><h1>Folder view and folder settings (E-3, E-38) — adestia-dossiers, B-38 to B-40</h1>
+<p class="lead">Left: E-3 of a folder « Boiler » with the new <b>Attachments</b> brick after its pages (the summary page is an ordinary card). Right: the settings sheet opened from <b>Folder settings</b> in the header: name, icon, colour, attachments switch, replacement page; then the same folder when a replacement page is set (E-4 with a <b>Folder</b> link), and the sheet's states (saving, refused, no page).</p>
+<h2>E-3 — the folder, attachments brick</h2>
+<div class="show wide" data-sets="desk-light desk-dark phone-light phone-dark" data-tpl="a"></div>
+<template id="a"><div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:8px"><b style="font:600 20px var(--font)">Boiler</b><span style="flex:1"></span><button class="btn sec"><i data-i="set"></i>Folder settings</button><button class="btn sec"><i data-i="plus"></i></button></div>
+<div class="muted" style="font-size:12px">PAGES · 2</div>
+<div class="card"><b>Summary</b><div class="muted" style="font-size:12px">Boiler — what was installed, who to call</div></div>
+<div class="card"><b>Servicing log</b><div class="muted" style="font-size:12px">2024 – 2026</div></div>
+<div class="muted" style="font-size:12px">ATTACHMENTS · 3</div>
+<div class="card" style="padding:0">
+<div class="row" style="display:flex;gap:8px;padding:9px 12px;align-items:center"><i data-i="text"></i><span style="flex:1">invoice-2024.pdf</span><span class="muted">212 KB</span></div>
+<div class="row" style="display:flex;gap:8px;padding:9px 12px;align-items:center;border-top:1px solid var(--border)"><i data-i="img"></i><span style="flex:1">plate.jpg</span><span class="muted">1.4 MB</span></div>
+<div class="row" style="display:flex;gap:8px;padding:9px 12px;align-items:center;border-top:1px solid var(--border)"><i data-i="img"></i><span style="flex:1">pipes.jpg</span><span class="muted">980 KB</span></div></div>
+</div></template>
+<h2>E-38 — the sheet: normal, saving, refused, folder without a page</h2>
+<div class="show wide" data-sets="desk-light desk-dark phone-light phone-dark" data-tpl="b"></div>
+<template id="b"><div style="display:flex;flex-direction:column;gap:14px">
+<div class="sheet"><div class="sh2">Folder settings</div><div class="sb2">
+<div class="fld"><label>Name shown</label><div class="in">Boiler</div></div>
+<div class="fld"><label>Icon</label><div class="in"><i data-i="set"></i> flame</div></div>
+<div class="fld"><label>Colour</label><div style="display:flex;gap:6px"><span style="width:22px;height:22px;border-radius:50%;background:var(--accent)"></span><span style="width:22px;height:22px;border-radius:50%;background:var(--accent-quiet)"></span><span style="width:22px;height:22px;border-radius:50%;background:var(--border-strong)"></span></div></div>
+<div class="fld"><label>Show attachments</label><div class="in">On</div></div>
+<div class="fld"><label>Replacement page</label><div class="in">Summary</div><small>Opening the folder shows this page. The classic view stays one link away.</small></div>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn sec">Cancel</button><button class="btn pri">Save</button></div></div></div>
+<div class="sheet"><div class="sh2">Folder settings</div><div class="sb2"><div class="fld"><label>Show attachments</label><div class="in">Off</div></div>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn sec">Cancel</button><button class="btn pri" disabled>Saving…</button></div></div></div>
+<div class="sheet"><div class="sh2">Folder settings</div><div class="sb2"><div class="adestia-field__error" style="color:var(--danger)">The settings could not be written. Try again.</div>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn sec">Cancel</button><button class="btn pri">Save</button></div></div></div>
+<div class="sheet"><div class="sh2">Folder settings</div><div class="sb2"><div class="fld"><label>Replacement page</label><div class="in" style="opacity:.5">None — the classic view</div><small>This folder holds no page yet.</small></div>
+<div class="muted" style="font-size:12px">Opens as the Journal screen.</div></div></div>
+</div></template>
+<h2>E-4 on a replacement page — the Folder link</h2>
+<div class="show wide" data-sets="desk-light desk-dark phone-light phone-dark" data-tpl="c"></div>
+<template id="c"><div><div style="display:flex;align-items:center;gap:8px"><a href="#">‹ Boiler</a><span style="flex:1"></span><button class="btn sec"><i data-i="list"></i>Folder</button></div>
+<h3>Summary</h3><p>Installed in 2019, serviced every September. Call the maintenance contractor first.</p><div class="muted" style="font-size:12px">ATTACHMENTS · 3 (the page's own strip, unchanged)</div></div></template>
+</div><script src="maquette.js"></script>
