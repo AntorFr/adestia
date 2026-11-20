@@ -64,6 +64,8 @@ declare module 'fastify' {
 }
 
 export interface AppDependencies {
+  /** Test seam: the changelog `/api/instance` reads its version from. */
+  readonly changelogPath?: string | undefined
   readonly config: AdestiaConfig
   readonly driver: Driver
   readonly plugins: readonly DiscoveredPlugin[]
@@ -289,6 +291,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     problems: () => [...pluginProblems, ...apiProblems],
     background: () => backgroundReach.trouble(),
     running: () => limiter.running,
+    changelogPath: deps.changelogPath,
   })
   const instructionCatalogues =
     deps.instructionCatalogues ?? new InstructionCataloguesStore(config.dataDir)

@@ -2571,12 +2571,13 @@ leaving the screen exactly where it started.
 *The version.* "Did the deployment I just pushed land?" had no answer on any
 screen: the canvas header names the ENGINE, and a phone drops that line first.
 The number comes from the IMAGE TAG, baked by the publish workflow into the
-artefact it is about to push (`ADESTIA_VERSION`), because nothing in the tree
-carries one — a release is `git tag vX.Y.Z` and every manifest reads `0.0.0` —
-and because the string an operator needs to match is the one the registry
-holds. A checkout therefore has no version and says so by saying nothing: the
-product's name alone reads as a name, where "Adestia unknown" reads as a
-broken field. Same treatment the driver line already gives an engine that has
+artefact it is about to push (`ADESTIA_VERSION`), because every manifest reads
+`0.0.0` and the string an operator needs to match is the one the registry
+holds. An installation from the sources has no image, so it reads the last
+`## vX.Y.Z` heading of `CHANGELOG.md` instead: the same number, since a release
+is the tag and its changelog entry. Only when neither exists is there no
+version, said by saying nothing: the product's name alone reads as a name,
+where "Adestia unknown" reads as a broken field. Same treatment the driver line already gives an engine that has
 not announced itself.
 
 **2026-09-06 (delegation is a channel; a callback is not an ask):** the
