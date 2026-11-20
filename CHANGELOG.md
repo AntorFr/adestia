@@ -1111,13 +1111,6 @@ branch and that `test:plugins` is replayed after a red vitest run.
 
 ## Unreleased
 
-- **The attested suite plays the web relay against the real `@playwright/mcp` and browser** — a
-  named `install-web` step installs `plugins/web` and its headless shell, then `npm run
-  test:web-navigateur` (`plugins/web/test-navigateur/`, outside `npm test` and the local level) reads
-  a text built by JavaScript on a local page, checks the pinned tool list against the withheld names,
-  counts Chrome processes before, after a call and after the parent's death, finds no `.node` file,
-  and keeps `.adestia-web/` under its bound. It also fixed the relay's browser lookup, which looked
-  for `chrome-linux/headless_shell` while Playwright installs `chrome-headless-shell-linux64/chrome-headless-shell`.
 - **The image carries the headless Chrome of the web plugin** — the `Dockerfile` installs the
   plugin's dependencies in a build stage and, in the runtime stage, `chromium-headless-shell` and its
   libraries through the plugin's own `playwright-core`, into `/opt/browsers`, for amd64 and arm64. No
