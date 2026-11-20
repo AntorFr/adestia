@@ -311,7 +311,7 @@ describe('E-9 the Plugins tile', () => {
     ) as unknown as typeof fetch
     const onPage = vi.fn()
     render(<Preferences page="" onPage={onPage} onItem={vi.fn()} fetchImpl={routed} t={T} {...({} as object)} />)
-    await waitFor(() => expect(screen.getByText('3 active of 4')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('3 active of 4 found')).toBeTruthy())
     fireEvent.click(screen.getByText('Plugins'))
     expect(onPage).toHaveBeenCalledWith('plugins')
   })
