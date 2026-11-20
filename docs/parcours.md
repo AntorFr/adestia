@@ -361,7 +361,7 @@ Needs: B-1, B-6, B-7, B-8, B-10, B-13, B-15, B-16
 The owner wants to know what the instance found and to change what is on, without a text editor.
 
 1. From E-9 (Settings) the owner opens the **Plugins** tile: `#/settings/plugins` (E-37). The page lists every plugin the instance found, grouped **Active**, **Found, not active** and **Refused**; each row says name, kind, description, where it was found and, when it has one, a problem that does not stop it (a declared secret the instance lacks).
-2. The owner flips the switch of a plugin. The page writes the matching list of `adestia.config.yaml` (`apps`, `features` or `tools`) through the same round trip as E-14, then the row says "will be "Active after restart"" (or "will be off…"), and a restart bar shows at the foot of the page.
+2. The owner flips the switch of a plugin. The page writes the matching list of `adestia.config.yaml` (`apps`, `features` or `tools`) through the same round trip as E-14, then the row says "Active after restart" (or "Off after restart"), and a restart bar shows at the foot of the page.
 3. The owner flips a second plugin the other way. Each flip is its own write; flipping one back removes its mark, and the bar disappears when the file and the running instance agree again.
 4. The owner presses **Restart now**: as E-14 (P-10 steps 5 and 6), refused with the number of running turns, **Restart anyway** to force, "Coming back…" until the instance answers.
 5. The instance is back: the app turned on has its tile on E-2 and its route; the one turned off has neither; on E-37 their rows moved groups, no mark left.

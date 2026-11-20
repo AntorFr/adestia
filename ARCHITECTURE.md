@@ -2018,10 +2018,10 @@ the discovered plugins (`404` otherwise; `409` for `core`, always on), takes the
 manifest kind (`apps`, `features`, `tools`) and calls a new `setActivation(file, list, id, active,
 revision)` in `settings-file.ts`: the same `readDocument` / revision / safe-write / `writability`
 round trip as `applyChanges` (comments, layout and file mode kept; `409 stale` on a changed revision;
-`503` read-only), adding or removing that one entry of that one sequence (creating `extensions.<list>` when absent, and
+`503` read-only; `400` when `active` is not a boolean, `revision` not a string, or `extensions.<list>` is not a list), adding or removing that one entry of that one sequence (creating `extensions.<list>` when absent, and
 leaving the key as an empty list rather than deleting it when the last entry goes). Alternatives
 rejected: a catalogue `list` kind (opens generic list writes); a second state file for overrides
-(a second source of truth: `adestia.config.yaml` stays the only one, as AD of E-14).
+(a second source of truth: `adestia.config.yaml` stays the only one, as for E-14's settings, see the E-14 section above).
 
 **Why this is not widening the frontier.** Turning on a plugin runs code the owner already put on the
 instance (image, plugins folder, or a source already in the file); installing stays out. An instance

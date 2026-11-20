@@ -1444,7 +1444,7 @@ muted "found in the plugins folder" / "found in source `<name>`", and on the rig
 (the shared toggle of E-14's boolean fields) labelled with the plugin's name. A degraded plugin
 (`severity: degraded`) keeps its place in Active with a `triangle-alert` line under it carrying the
 problem. A **refused** row has no switch, a `circle-alert` and its reason (the translated one when it
-has a code, the English line otherwise, as E-19); a refused row has no kind chip when no manifest
+has a code, the English line otherwise, as E-19); a refused row never carries a kind chip: it shows only its id and the reason
 could be read. Core plugins: chip `core`, a disabled switch that is on, "always on" as its accessible
 description.
 
@@ -1477,4 +1477,4 @@ the description; the restart bar as E-14.
 | after the restart | rows in their new groups, no pending chip, no bar |
 
 Dark and light, desk and phone: the rows use the E-14 tokens and the chip and toggle components that
-already exist, except the kind chip above. Design-system verdict (`gardien-design-system`, conception): 11 existing (`Tile`, `BackButton`, `.adestia-config__group`/`__lede`/`__field`/`__locked`/`__restart` with a `rotate-ccw` icon variant, `.adestia-toggle` incl. a busy variant, `.adestia-save--warn`/`--error`, `RestartBar`, `Loading`, `Failure`, `EmptyState`), 1 new (the kind chip). To enter the charte with the code: the icon variant of `__restart`, the busy toggle, `.adestia-state--kind`, the plugin row, `RestartBar`, `.adestia-save--error`. The 44 px phone target is held by the row's hit area or an `@media` rule for the row.
+already exist, except the kind chip above. Design-system verdict (`gardien-design-system`, conception): 11 existing (`Tile`, `BackButton`, `.adestia-config__group`/`__lede`/`__field`/`__locked`/`__restart` with a `rotate-ccw` icon variant, `.adestia-toggle` incl. a busy variant, `.adestia-save--warn`/`--error`, `RestartBar`, `Loading`, `Failure`, `EmptyState`), 1 new (the kind chip). Not yet in `docs/charte.md` (the repository declares no design system; to be entered with the code): the icon variant of `__restart`, the busy toggle, `.adestia-state--kind`, the plugin row, `RestartBar`, `.adestia-save--error`. The 44 px phone target is held by the row's hit area or an `@media` rule for the row.
