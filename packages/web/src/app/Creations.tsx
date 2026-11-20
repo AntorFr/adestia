@@ -1,4 +1,4 @@
-/** The create list (E-37): rows of action in a sheet, and the same rows as buttons for the empty states. */
+/** The create list (E-38): rows of action in a sheet, and the same rows as buttons for the empty states. */
 
 import { Icon } from './Icon.js'
 import { needsCaption, type Creation } from './creations.js'

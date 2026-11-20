@@ -1,5 +1,5 @@
 /**
- * What the + can create (AD-37, E-37): the core's own entries and the ones plugins
+ * What the + can create (AD-37, E-38): the core's own entries and the ones plugins
  * declare, merged and filtered by place and by where the caller may write.
  * Pure: the list and the buttons draw what this returns.
  */
