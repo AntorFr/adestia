@@ -69,7 +69,6 @@ sans les déclarer corrigés. Restent aussi à constater sur appareil : installa
 PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone/PWA.
 
 ## Ce que l'epic `adestia-ajouts` laisse à savoir
-
 - Réglage des tours (`maxConcurrentTurns`, 1 à 16, repli 3) : il ne s'applique qu'au redémarrage, le limiteur est construit
   une fois dans `buildDesk` (AD-30). `--engine fake` n'a pas `POST /api/restart` : lire `maxConcurrentTurns` demande le vrai binaire.
 - Page ouverte : le bandeau compare la révision de `useAutosave`, pas `page.revision` ; après une panne du serveur rien
@@ -89,7 +88,6 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   ne le prouve pas. Le banc de chaque tranche : `node bench/scenarios/<chargements|page-suivie|hors-ligne|chat-ajouts>.mjs`.
 
 ## À moitié construit
-
 - La question de permission ne permet pas de corriger la règle proposée par le
   moteur ; `AskPrompt` ne renvoie que `once`, `always` ou `deny`. Copilot ne porte
   toujours pas le retour interactif (`drivers.ts`).
@@ -113,7 +111,6 @@ PWA, tuiles de carte `parcours` hors ligne, passkey Tessera en iframe sur iPhone
   et `api.trail` à compléter selon les signalements de l'ancien état.
 
 ## Pièges encore vrais
-
 - **Popover : les frontières se relisent, ne se figent pas.** `Popover.tsx` interroge `.adestia-canvas__header`, `.adestia-console-host`, `.adestia-problems` et `.adestia-editor__readonly` à chaque placement ; un nouveau bandeau du canvas doit rester dans cette liste de sélecteurs pour être évité (le `MutationObserver` ne fait que déclencher le placement).
 - **Balayage E-26 (voyages) sous charge** : l'écran charge tous les plugins puis demande `/voyages` au serveur ; la preuve `.voyages-page .vhub-card` attendait 15 s fixes, que la suite entière (navigateurs en parallèle) peut dépasser sans que le plugin soit en défaut. Seul, l'écran se prend en 5 s ; sur un cœur chargé, 3 fois plus lent, toujours vert. Aucune course du produit retrouvée (l'échec n'a pas été reproduit ici). La capture d'un écran vit désormais dans `bench/lib/capture.mjs` : toutes les attentes d'apparition (shell, écran du téléphone, preuve) durent `APPEAR_MS` = 60 s, et un écran dont l'attente expire est repris une fois dans un contexte neuf ; au second échec, l'erreur nomme la preuve manquante, dit ce que la page montre et qu'il s'agit du second essai (`rouge-adestia-pages-16` ; `packages/server/test/sweep-reprise.test.ts` le prouve sur une page factice). Le plafond de `bench-ensemble.test.ts` passe à 1 800 s (deux attentes de 60 s possibles par écran lent) ; écrans, sélecteurs et captures inchangés. Si le test rougit encore, ce n'est plus la charge mais un écran qui ne rend pas.
 - **Attentes de test : une seule patience.** `ADESTIA_PATIENCE` (entier, 1 par défaut ; 4 sur l'étape vitest de `scripts/suite-attestee.sh`) met à l'échelle les délais des tests Playwright et ceux des tests jsdom qui l'importent, comme `mcp-loading.test.tsx` (`packages/web/test/patience.ts`) et des gestes du balayage (`bench/sweep.mjs` ; l'attente de la preuve d'un écran, elle, est `APPEAR_MS` de `bench/lib/capture.mjs`, qui reprend une fois un écran dont le sélecteur manque). Un nouveau test navigateur passe ses délais par `patience()` ; un `waitForTimeout` porte `// pause fixe : <raison>`. Le helper `charte-browser.ts` attend la coque par `awaitShell()` avec un plafond fixe de 60 s (`SHELL_TIMEOUT_MS`), voulu : il n'est pas mis à l'échelle par `ADESTIA_PATIENCE`. Cette règle vaut pour les sept fichiers `besoin-*` corrigés par `rouge-adestia-10` ; les autres tests navigateur (par ex. `besoin-chargements-browser.test.ts`, `besoin-hors-ligne-flux.test.ts`, scénarios de `bench/` ; liste non exhaustive) ne l'appliquent pas encore. Livré par `rouge-adestia-10` (tests et `bench/` seuls, code du produit inchangé ; `page-follows-feed.test.tsx` attend l'import à froid de l'éditeur dans un `beforeAll`). Les tests Playwright ne se jouent pas dans un pod sans Playwright : la preuve est l'attestation de la chaîne.
