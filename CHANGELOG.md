@@ -1098,3 +1098,12 @@ branch and that `test:plugins` is replayed after a red vitest run.
   only the screen tests of the touched screens. The local level has its own script, and the install
   step (`npm ci`) and the files that decide the levels are declared in `.sdlc.yaml`, read from
   `main`. Tests and tooling only: nothing changes for users.
+
+## Unreleased
+
+- **The + creates a folder** — a **+** beside Ask on the home (kept under a livery that replaces the
+  hero) and in the header of a folder opens the list of what can be created here; **New folder** asks
+  for a name, sends its slug to `POST /api/folders`, and opens the new, empty folder, which has its own
+  +. A folder the stores hold appears as a tile on the home even before it holds a page; a name already
+  taken is refused under the field. An empty home or folder offers the same entries as buttons, and a
+  read-only folder offers none.

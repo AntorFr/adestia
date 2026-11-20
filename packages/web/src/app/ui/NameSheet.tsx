@@ -13,6 +13,8 @@ export interface NameSheetProps {
   /** The verb on the confirming button: Create, Rename. */
   readonly submitLabel: string
   readonly initial?: string
+  /** Whether the typed name can be sent; absent means any non-empty one. */
+  readonly accepts?: (name: string) => boolean
   /** Does the work (the sheet makes no network call itself); a refusal keeps the sheet open under the field. */
   readonly onSubmit: (name: string) => NameRefusal | undefined | Promise<NameRefusal | undefined>
   readonly onCancel: () => void
@@ -24,13 +26,14 @@ export interface NameSheetProps {
  * for a non-empty name, Enter confirms, Escape and Cancel close. A refusal shows under
  * the field with the alert icon; the typed name stays.
  */
-export function NameSheet({ title, question, submitLabel, initial = '', onSubmit, onCancel, t }: NameSheetProps) {
+export function NameSheet({ title, question, submitLabel, initial = '', accepts, onSubmit, onCancel, t }: NameSheetProps) {
   const [name, setName] = useState(initial)
   const [refusal, setRefusal] = useState<NameRefusal | undefined>()
   const [busy, setBusy] = useState(false)
+  const sendable = name.trim() !== '' && (accepts ? accepts(name) : true)
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    if (name.trim() === '' || busy) return
+    if (!sendable || busy) return
     setBusy(true)
     try {
       setRefusal(await onSubmit(name))
@@ -51,7 +54,7 @@ export function NameSheet({ title, question, submitLabel, initial = '', onSubmit
       footer={
         <>
           <Button onClick={onCancel}>{t('Cancel')}</Button>
-          <Button variant="accent" icon="plus" type="submit" form="adestia-nameprompt" disabled={name.trim() === '' || busy}>
+          <Button variant="accent" icon="plus" type="submit" form="adestia-nameprompt" disabled={!sendable || busy}>
             {submitLabel}
           </Button>
         </>
