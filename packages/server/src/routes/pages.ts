@@ -26,6 +26,7 @@ import {
   serialize,
   validateDocument,
 } from '@antorfr/adestia-content'
+import type { CreateFolderRequest, CreateFolderResponse, PageIndexFolders } from '@antorfr/adestia-schemas'
 import type { FastifyInstance } from 'fastify'
 
 import { parseFrontmatter, splitFrontmatter } from '../frontmatter.js'
@@ -266,9 +267,10 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
       .flatMap((plugin) => plugin.manifest.absorbs ?? [])
     const folders = await writableFolders(stores, absorbed, order)
     const every = await allFolders(stores, order)
+    const fields: PageIndexFolders = { writableFolders: folders, folders: every }
     return multi
-      ? { entries: out, stores: table(), writableFolders: folders, folders: every }
-      : { entries: out, writableFolders: folders, folders: every }
+      ? { entries: out, stores: table(), ...fields }
+      : { entries: out, ...fields }
   })
 
   /**
@@ -277,7 +279,7 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
    * not one. The folder goes in the first store that holds the parent and
    * lets the user write there; the `mkdir` is the atomic verdict.
    */
-  app.post<{ Body: { path?: unknown } }>('/api/folders', async (request, reply) => {
+  app.post<{ Body: Partial<Record<keyof CreateFolderRequest, unknown>> }>('/api/folders', async (request, reply) => {
     const asked = request.body?.path
     if (typeof asked !== 'string' || asked.includes('\0')) {
       return reply.code(400).send({ error: 'path is required' })
@@ -342,7 +344,8 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
         }
         continue
       }
-      return reply.code(201).send({ path: asked })
+      const made: CreateFolderResponse = { path: asked }
+      return reply.code(201).send(made)
     }
     return reply.code(403).send({ error: 'write refused' })
   })
