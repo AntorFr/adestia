@@ -48,7 +48,8 @@ step lint npm run lint
 # found by grep, so a new browser test leaves this level without anyone listing it.
 exclusions=""
 # The exclusion is unconditional: the screen tests are the `ecrans` level (scripts/suite-ecrans.sh).
-for f in $(grep -rlE 'playwright|chromium|launch\.mjs' packages/*/test 2>/dev/null | grep -E '\.test\.tsx?$' | sort); do
+# The rule is scripts/niveaux.mjs's (estTestDEcran), not a second expression here.
+for f in $(node scripts/niveaux.mjs --fichiers-ecran); do
   exclusions="$exclusions --exclude $f"
 done
 
