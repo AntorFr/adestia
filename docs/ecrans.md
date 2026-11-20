@@ -67,6 +67,7 @@ each message as "where the reader is" (`screenView`).
 | `#/settings/instructions[/<path>]` | E-11 Instructions (E-12 opens over it) |
 | `#/settings/delegations[/<conversation>]` | E-13 Delegations |
 | `#/settings/config` | E-14 Configuration |
+| `#/settings/plugins` | E-37 Plugins |
 | `#/settings/<anything else>` | replaced by `#/settings` |
 | `#/instructions` (old) | replaced by `#/settings/instructions` |
 | `#/todo…` | E-22 Todo (no declared route: answers on `/<id>`) |
@@ -101,7 +102,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-6 | Block settings popover | `settings` on a block bar in the editor | `editor/BlockSettings.tsx`, `blockview.tsx` | Edit a `:::block`'s attributes, title, icon, frame, width; remove stray attributes | P-6 |
 | E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, an `Ask for a new page` button, `Everything here is finished.` | P-5 |
 | E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above (to Home for a page at the root, which has none) | P-5 |
-| E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts | P-8, P-9, P-10, P-13 |
+| E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts; a fifth, Plugins, with "N active of M found" (`adestia-plugins-reglages`) | P-8, P-9, P-10, P-13, P-plugins-1 |
 | E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove (opens E-33), add; loading and fetch-failed with Retry (`adestia-ajouts-mcp`) | P-8 |
 | E-11 | Instructions | `#/settings/instructions[/<path>]` | `app/Instructions.tsx`, `styles/tiles.css` | Grouped file cards (instructions, skills, agents), search, `+` create buttons, open one in a monospace textarea, Save; delivered files read-only | P-9 |
 | E-12 | Catalogue pop-in | `Catalogues` button in E-11 | `app/CataloguePopin.tsx` (`.adestia-sheet`) | Add a git repository of instructions, list its items, import, Refresh | P-9 |
@@ -127,6 +128,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-34 | Block gallery | **Add block** in the editor bar, or "Browse" at the foot of the `/` menu | `editor/BlockGallery.tsx` | Browse the blocks, see each, insert one at a chosen place | P-17, P-19, P-20 |
 | E-35 | Block data form | **Edit data** in E-6, or after an insertion from E-34 | `editor/BlockForm.tsx` | Fill the figures, phases, items, rows of a block in fields | P-18, P-20 |
 | E-36 | New from template | **New from template** button in the header of E-3, shown only where the folder can be written (today a page is created by asking the agent) | `app/NewFromTemplate.tsx` (the sheet, with E-3's button), `app/templates.ts` (seed sources, file name, store order), `styles/components.css` (image card), in the shared sheet | Choose a shipped template, name the page, create it in the folder and open it in editing | P-20 |
+| E-37 | Plugins | `#/settings/plugins`; tile on E-9 | `app/Plugins.tsx` (page), `app/plugins/` (rows, `usePlugins`), the E-14 restart bar reused, `styles/settings-pages.css` | Every plugin found, by state; switch on/off; restart bar | P-plugins-1 |
 | E-32 | Offline banner | above the open screen, whichever it is, while the server does not answer (it pushes the screen down, it does not cover it) | `app/Offline.tsx`, `app/App.tsx` | Say "The server is not responding"; goes away by itself when it answers (`adestia-ajouts`, B-19) | P-16 |
 | E-33 | Remove-server confirmation | **Remove** on E-10 | `app/mcp/ConfirmRemove.tsx`, `app/mcp/ServerDetail.tsx`, `app/ui/Sheet.tsx` | Name the server and ask; **Cancel** / **Remove** (`adestia-ajouts`, B-20) | P-16 |
 
@@ -182,7 +184,7 @@ columns are the same except where the instance's configuration decides what exis
 | E-6 | shared popover/fields, normal, required attributes missing (a star and the text alternative), stray attributes (a named `trash-2` control each), bounded below the canvas header and the bands (anchor scrolled under the header: the panel stays at the header's edge; anchor out at the bottom or soft keyboard on a phone: the panel stays inside the viewport and scrolls internally; on a desktop an anchor out at the bottom keeps the panel inside the viewport the same way; it follows its anchor on scroll and resize) | no loading, error or offline state: it opens on a block already in the editor, so none applies; read-only mode has no settings control, so the popover cannot open. Redrawn (tranche 2): see "States of E-6, E-34 and E-35" below |
 | E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
 | E-8 | shared empty state: 404 (`file-question`, "There is no page at this address." / « Il n’y a aucune page à cette adresse. »), 401/403 (`lock`, "This page is out of reach — the session may have expired." / « Cette page est hors de portée — la session a peut-être expiré. »), other (`circle-alert`, "The server could not serve this page." / « Le serveur n’a pas pu servir cette page. »); the "server could not" case (0 included, the shell unable to reach the server) is the shared failure block with **Retry**, which fetches the page again; folder link "Open the folder above" / « Ouvrir le dossier au-dessus », or "Home" / « Accueil » for a page at the root; a very long address wraps; no loading state of its own (the screen is drawn once the server has answered; E-4 keeps the previous screen while fetching); offline after startup is unchanged (Limits kept), E-21 covers startup failure | — |
-| E-9 | normal, tiles with Lucide icons; counts absent when unreadable; loading (the shared row above the tiles until its four reads have answered or failed, tiles drawn throughout, no Retry) | — |
+| E-9 | normal, tiles with Lucide icons; counts absent when unreadable; loading (the shared row above the tiles until its four reads have answered or failed, tiles drawn throughout, no Retry; the Plugins tile's count read is not waited for: the tile is drawn at once and its figure arrives later) | — |
 | E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed; loading (the shared row under the heading, no tiles, no "None wired yet", no "Add a server"); fetch-failed with **Retry** (first fetch only; a refetch after Save or Remove never shows loading and fails silently; health, `/api/mcp/status`, has neither); **Remove** opens E-33 | — |
 | E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent; loading and fetch-failed with **Retry** for the list and for the open file (404 on the list stays "this engine has no such folder"; 404 and 401/403 on a file have the message, no Retry) | — |
 | E-12 | no catalogue, reading the repository, nothing importable, error, items; in the shared sheet (Escape, focus kept and returned, bottom sheet on a phone) | — |
@@ -1429,3 +1431,50 @@ specified above and not drawn.
 
 **Not built here.** Copying a whole reply, the box in a page (E-5 keeps drawing a `copy` fence as
 code), a download, a "send" button. A skin can restyle `.adestia-copybox` through tokens.
+
+## E-37 Plugins (`adestia-plugins-reglages`)
+
+**What it is.** A settings page like E-14 and E-10, not a new kind of screen: heading and back to E-9,
+then three groups of rows, then the restart bar of E-14 (reused as is: `RestartBar`, `useRestart`).
+
+**Rows.** One per plugin, grouped by the page (`Plugins.tsx` filters `loaded`: Active, then Found-not-active, then Refused);
+inside a group, in the order `GET /api/plugins` returns, which is discovery order (the server sorts nothing itself; folders are read sorted by path in `extensions.ts`). A row: the plugin's id as its name, a **kind chip**
+(`app`, `feature`, `tool`, `core` — new variant `.adestia-state--kind` of `.adestia-state`: pill, mono `--text-xs`, `--border`, `--text-muted`; `core` in `--accent-text` on `--accent-quiet`; not interactive, the word carries the meaning), the manifest's one-line description, a
+muted "found in the plugins folder" / "found in source `<name>`", and on the right a **switch**
+(the shared toggle of E-14's boolean fields) labelled with the plugin's name. A degraded plugin
+(`severity: degraded`) keeps its place in Active with a `triangle-alert` line under it carrying the
+problem. A **refused** row has no switch, a `circle-alert` and its reason (the translated one when it
+has a code, the English line otherwise, as E-19); a refused row never carries a kind chip: it shows only its id and the reason
+could be read. Core plugins: chip `core`, a disabled switch that is on, "always on" as its accessible
+description.
+
+**Pending.** A row whose wanted state (the file) differs from its loaded state (the running instance)
+shows a chip "Active after restart" or "Off after restart" with the `rotate-ccw` icon of E-14, and
+sits in the group of its *loaded* state until the restart. The restart bar shows while any row is pending.
+
+**Where the toggle's state comes from.** The switch shows the *wanted* state; the group shows the
+*loaded* one; both from one `GET /api/plugins`.
+
+**Roles.** As E-14: no role check, every signed-in identity; the agent sees no page.
+**Phone.** One column; the switch stays at the right edge, 44 px target; kind chip and origin wrap under
+the description; the restart bar as E-14.
+
+### States of E-37
+
+| State | What shows |
+|---|---|
+| loading | the shared loading row under the heading; no groups |
+| read failed | the shared error line with **Retry**; no groups |
+| normal | the three groups (an empty group is not drawn); a count line "N active of M found" |
+| nothing found | the lede "Nothing is installed here yet.", then "No plugin found." and where the instance looks (the plugins folder path from the payload) |
+| config not exposed (instance started without a config file: `GET /api/plugins` answers 404) | no rows; the line E-14 shows for this case; the E-9 tile stays drawn, without a count |
+| file read-only / unreadable / invalid | rows read-only, switches inert, the file's reason, as E-14 |
+| flipping | the switch is busy until the write answers; others stay usable |
+| flipped | the row's pending chip, the restart bar |
+| write refused | the shared error line under the heading with the server's reason; the switch returns to its state |
+| stale (the file changed since the page read it) | "The file changed since this page loaded" with **Reload**, as E-14's stale file |
+| restart pending / asking / waiting / blocked / failed | exactly E-14's states and sentences; "Coming back…" lasts until the instance answers, the E-32 banner shows above it meanwhile |
+| after the restart | rows in their new groups, no pending chip, no bar |
+
+Dark and light, desk and phone: the rows use the E-14 tokens and the chip and toggle components that
+already exist, except the kind chip above. Design-system verdict (`gardien-design-system`, conception): 11 existing (`Tile`, `BackButton`, `.adestia-config__group`/`__lede`/`__field`/`__locked`/`__restart` with a `rotate-ccw` icon variant, `.adestia-toggle` incl. a busy variant, `.adestia-save--warn`/`--error`, `RestartBar`, `Loading`, `Failure`, `EmptyState`), 1 new (the kind chip). Not yet in `docs/charte.md` (the repository declares no design system; to be entered with the code): the icon variant of `__restart`, the busy toggle, `.adestia-state--kind`, the plugin row, `RestartBar`, `.adestia-save--error`. The 44 px phone target is held by the row's hit area or an `@media` rule for the row.

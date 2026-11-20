@@ -13,6 +13,12 @@ export type {
   PluginMcpServer,
   PluginManifest,
 } from './plugin.js'
+export type {
+  PluginOrigin,
+  PluginProblem,
+  PluginRow,
+  PluginsPayload,
+} from './plugins-payload.js'
 export * from './protocol.js'
 export * from './settings.js'
 export type { SkinManifest } from './skin.js'
