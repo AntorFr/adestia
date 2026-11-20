@@ -2029,6 +2029,13 @@ with `auth.mode: none` already lets any visitor rewrite settings and restart (E-
 this route has the same reach and the same absence of role (P-1 "Who it is for"), and is mounted only
 when the server has a `configPath`, like `registerSettings`.
 
+**Accepted risk (decided by the owner).** `PUT /api/plugins/:id` is open to whoever reaches the port
+(`auth.mode: none`) or to any OIDC account: no administrator role gates it, and the route is kept as
+is. Two reasons. Without authentication, anyone who reaches the machine can already get code run,
+directly or through the agent, so enabling a found plugin opens nothing more. With OIDC, Adestia has no
+notion of administrator at this stage, which amounts to assuming all its users are trusted. Reopen this if
+an administrator role arrives, or if an instance becomes reachable beyond people the owner trusts.
+
 ### AD-plugins-2 — The payload says what is found, what is loaded and what the file wants
 
 **Decision.** `GET /api/plugins` returns `{ plugins: [...], refused: [...], file, writable,
