@@ -1,6 +1,8 @@
 #!/bin/sh
 # Replays the named tests, each with its whole file, and keeps only the named cases in the report (`tests.rejouer` in .sdlc.yaml, `{tests}` = the arguments).
 #
+# It ASSUMES the install is done (`tests.installation: npm ci`, played once by the chain before it): it needs node_modules.
+#
 # CHOICE ON `{tests}`: the arguments are test names as the JUnit report carries them, separated
 # by spaces, each bare or quoted (a name with spaces is quoted), with or without the
 # `classname` prefix: `<classname> > <name>` is ONE argument, e.g.

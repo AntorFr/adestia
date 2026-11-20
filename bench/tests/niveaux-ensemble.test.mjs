@@ -192,8 +192,12 @@ test('.sdlc.yaml déclare tests.ecrans et tests.fiche avec {base}, et rejouer au
   const t = parse(readFileSync(join(root, '.sdlc.yaml'), 'utf8')).tests
   assert.match(t.ecrans, /\{base\}/)
   assert.match(t.fiche, /\{base\}/)
-  assert.match(t.rejouer, /npm ci/)
+  assert.ok(!/npm ci/.test(t.rejouer) && !/npm ci/.test(t.ecrans), 'l\'installation est déclarée, pas rejouée dans la commande')
   assert.match(t.rejouer, /\{tests\}/)
+  assert.equal(t.installation, 'npm ci')
+  assert.ok(Array.isArray(t.outillage) && t.outillage.length > 0)
+  for (const p of t.outillage) assert.ok(existsSync(join(root, p)), `outillage: ${p} absent`)
+  for (const p of ['scripts/niveaux.mjs', 'scripts/ecrans.json', 'scripts/suite-ecrans.sh', 'scripts/suite-locale.sh', 'scripts/suite-attestee.sh', 'scripts/suite-rapport.mjs', 'scripts/rejouer.sh', 'scripts/rejouer-plan.mjs']) assert.ok(t.outillage.includes(p), p)
   assert.equal(t.commande, 'scripts/suite-attestee.sh')
   assert.equal(t.local, 'scripts/suite-locale.sh')
 })

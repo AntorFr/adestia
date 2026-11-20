@@ -1089,3 +1089,12 @@ branch and that `test:plugins` is replayed after a red vitest run.
   it ran without the built shell and failed with "shell not built". One rule now decides, in
   `scripts/niveaux.mjs`, and the file is listed in the screen map. Tests and tooling only: nothing
   changes for users.
+
+## v0.98.9
+
+- **The screen check plays only screens** — the `ecrans:` level of the test chain no longer runs the
+  local level before the screen tests: when a branch touches no screen it installs nothing, builds
+  nothing and plays nothing (an empty report, exit 0), and otherwise it builds the shell and plays
+  only the screen tests of the touched screens. The local level has its own script, and the install
+  step (`npm ci`) and the files that decide the levels are declared in `.sdlc.yaml`, read from
+  `main`. Tests and tooling only: nothing changes for users.
