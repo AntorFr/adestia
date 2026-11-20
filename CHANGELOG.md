@@ -1108,3 +1108,11 @@ branch and that `test:plugins` is replayed after a red vitest run.
   When turns are running, the restart is refused with their count until you choose **Restart
   anyway**. Core plugins stay locked, and a read-only or missing configuration file leaves the
   switches inert with the reason shown.
+
+- **A `web` plugin lets the agent read a page plain fetching is refused** — a `tool` plugin
+  (`extensions.tools: [web]`) that launches a headless Chrome on demand through a pinned
+  `@playwright/mcp`. A relay in front of it withholds `browser_run_code_unsafe`,
+  `browser_evaluate` and `browser_file_upload`, derives the browser's `User-Agent` from the
+  binary's own `--version`, and takes its browser down with the turn. Pages are saved in a
+  dotted `.adestia-web/` folder of the workspace. This step carries the plugin and relay only:
+  the image, the real browser and enabling it come after.
