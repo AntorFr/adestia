@@ -47,7 +47,7 @@ function saidStray(t: (key: string) => string, reason: string): string {
   return t(reason)
 }
 
-function say(
+export function say(
   t: (key: string) => string,
   problem: { reason: string; code?: string; params?: Record<string, string> },
 ): string {

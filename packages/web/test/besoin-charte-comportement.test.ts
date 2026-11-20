@@ -40,11 +40,11 @@ describe.skipIf(!playwright)('charter — behaviour of the shared components on 
   })
 
   describe('E-9 settings mosaic', { timeout: patience(60_000) }, () => {
-    it('keeps four tiles in the order MCP servers, Instructions, Configuration, Delegations, each with its Lucide icon, the Configuration tile included (Q-21)', async () => {
+    it('keeps five tiles in the order MCP servers, Instructions, Configuration, Plugins, Delegations, each with its Lucide icon, the Configuration tile included (Q-21)', async () => {
       await visit(browser, 'base', { route: '/settings' }, async (page) => {
         const labels = await page.evaluate(() => [...document.querySelectorAll('.adestia-prefs .adestia-tile__label')].map((n) => n.textContent))
-        expect(labels).toEqual(['MCP servers', 'Instructions', 'Configuration', 'Delegations'])
-        expect(await iconsOf(page, '.adestia-prefs .adestia-tile__icon')).toEqual(['#adestia-i-plug', '#adestia-i-book-open', '#adestia-i-sliders-horizontal', '#adestia-i-handshake'])
+        expect(labels).toEqual(['MCP servers', 'Instructions', 'Configuration', 'Plugins', 'Delegations'])
+        expect(await iconsOf(page, '.adestia-prefs .adestia-tile__icon')).toEqual(['#adestia-i-plug', '#adestia-i-book-open', '#adestia-i-sliders-horizontal', '#adestia-i-plug', '#adestia-i-handshake'])
       })
     })
   })

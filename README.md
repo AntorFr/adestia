@@ -51,7 +51,8 @@ To look at the app without an agent or Docker (a scripted engine, seeded data):
 ```sh
 npm ci && npm run build               # npm run build also builds the web shell
 node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/health answers ok
-node bench/sweep.mjs                   # every screen, light and dark, desk and phone
+node bench/sweep.mjs                   # the screens it lists (not E-35, E-36 or E-37), light and dark, desk and phone
+node bench/scenarios/plugins-reglages.mjs   # E-37, Settings → Plugins: list, switch, restart, the plugin appears (needs the build; starts two launchers, the second after a real restart; needs Playwright on the host; images in $BENCH_OUT)
 node bench/scenarios/chargements.mjs   # takes several minutes (16 capture combinations); loading and Retry on E-3, E-4, E-8, E-9, E-11, E-13 (needs the build; images in $BENCH_OUT); the plugins' E-25 and E-28 are covered by plugins/*/test/chargement.test.js and, in a browser, by bench/tests/plugins-chargements-besoin.test.mjs, not by this scenario; to see them by hand, start the launcher from the clone's root (the atelier and parcours plugins come from `./plugins`) and open #/atelier or a parcours page
 node bench/scenarios/page-suivie.mjs   # the open page follows the agent, B-17 (needs the build; BENCH_SKINS, BENCH_LOCALES narrow it)
 node bench/scenarios/hors-ligne.mjs     # stops and restarts a real bench instance: the offline banner E-32 on E-2, E-4 and E-14 (needs the build; images in $BENCH_OUT)
@@ -107,7 +108,8 @@ Adestia's own interface.
   A page's other files — the plan as a PDF, the photo of the dish — sit next to
   it on disk, display in it, and are listed under it as attachments. What a
   page's status says is finished folds away rather than crowding the live ones.
-- **Extensions at runtime**: drop a plugin folder in, name it in the config,
+- **Extensions at runtime**: drop a plugin folder in, name it in the config
+  (or switch it on from Settings → Plugins, which writes the same file),
   restart. No image rebuild. Shared React comes from the page's import map;
   the shell owns the stylesheets; a broken plugin costs its own view and says
   why.
@@ -117,7 +119,8 @@ Adestia's own interface.
 - **Settings as an app**, not a dialog over whatever you were reading: its own
   tile, its own address, one page per subject — the agent's credential (armed
   from the interface, held server-side at 0600 and never sent to a browser),
-  the MCP servers and what each is doing, the theme, and the instructions you
+  the MCP servers and what each is doing, the plugins the instance found (switch
+  one on or off, then restart), the theme, and the instructions you
   gave the agent, edited on a screen rather than in a box.
 - **Instruction catalogues**: declare a git repository of skills, agents or
   instructions from Instructions › Catalogues, browse what it holds (found by

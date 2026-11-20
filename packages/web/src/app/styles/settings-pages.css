@@ -254,3 +254,61 @@
 
 /* The empty and failing renderings wear the tile's colour like the header. */
 .adestia-prefs__page .adestia-empty__icon { color: var(--tile-color, var(--text-muted)); }
+
+/* ── The plugins page (E-37) ─────────────────────────────────────────────
+   A row of the configuration list: name and chips on the first line, the
+   switch at the right edge, then the words, where it was found, a problem. */
+.adestia-plugin {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.adestia-plugin > .adestia-toggle { grid-column: 2; grid-row: 1; align-self: start; }
+.adestia-plugin > p { grid-column: 1 / -1; }
+
+.adestia-plugin__head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.adestia-plugin__name { font-weight: 600; overflow-wrap: anywhere; }
+
+.adestia-plugin__text,
+.adestia-plugin__origin,
+.adestia-plugin__problem {
+  margin: 0;
+  font-size: var(--text-sm);
+  max-width: 70ch;
+}
+
+.adestia-plugin__text { color: var(--text); }
+.adestia-plugin__origin { color: var(--text-muted); }
+
+.adestia-plugin__problem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--text-muted);
+}
+
+.adestia-plugin__problem > .adestia-icon { flex: none; margin-top: 2px; }
+
+.adestia-plugin__pending { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--accent-text); border-color: var(--accent); }
+
+/* The kind chip: a pill in mono, not interactive — the word carries the meaning. */
+.adestia-state--kind { font-size: var(--text-xs); border-color: var(--border); background: transparent; color: var(--text-muted); }
+.adestia-state--core { color: var(--accent-text); background: var(--accent-quiet); border-color: transparent; }
+
+@media (max-width: 640px) {
+  /* The switch keeps its edge; a 44 px hit area comes from the row's own padding. */
+  .adestia-plugin > .adestia-toggle { margin: var(--space-2) 0; }
+}

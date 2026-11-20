@@ -4,7 +4,7 @@
  *
  *   node bench/launch.mjs [--engine fake|claude] [--skin <id>] [--locale en|fr]
  *                         [--seed <name>] [--port <n>] [--data <dir>]
- *                         [--no-end-session]
+ *                         [--no-end-session] [--restart]
  *
  * Needs a built server (`npm run build`). Prints `listening on <url>` once
  * `/api/health` answers `ok`, runs until SIGTERM/SIGINT, then removes its
@@ -16,6 +16,11 @@
  * `--engine claude` the plain binary (packages/server/bin/adestia.js) with
  *                   `CLAUDE_CODE_OAUTH_TOKEN` from the environment; refused
  *                   without it, before anything is created.
+ *
+ * `--restart`      the plain binary's boot loop (packages/server/bin/adestia.js),
+ *                   so `/api/restart` is mounted and a restart really happens —
+ *                   with the scripted engine's seed, no token and no real turn
+ *                   (the claude driver is only reached by a turn).
  *
  * A seed (bench/seed/<name>.mjs) is `default(ctx) => yamlText`, with
  * optional exports: `scripts` (the engine's answers), `engine`
@@ -48,7 +53,7 @@ const fail = (message, code = 1) => {
 const OPTIONS = ['engine', 'skin', 'locale', 'seed', 'port', 'data']
 // Flags without a value. `--no-end-session`: the OIDC stub announces no
 // `end_session_endpoint`, so sign-out takes the `/auth/login?switch=1` fallback.
-const SWITCHES = ['no-end-session']
+const SWITCHES = ['no-end-session', 'restart']
 const parseArgs = (args) => {
   const options = { engine: 'fake', seed: 'base', port: '0' }
   for (let i = 0; i < args.length; i++) {
@@ -63,6 +68,7 @@ const parseArgs = (args) => {
     if (value === undefined || value.startsWith('--')) fail(`--${name} needs a value`, 2)
     options[name] = value
   }
+  if (options.restart && options.engine !== 'fake') fail('--restart is the boot loop without a token: it goes with --engine fake', 2)
   if (!['fake', 'claude'].includes(options.engine)) fail(`--engine must be fake or claude (got ${options.engine})`, 2)
   if (options.locale && !['en', 'fr'].includes(options.locale)) fail(`--locale must be en or fr (got ${options.locale})`, 2)
   if (!/^[a-z0-9-]+$/.test(options.seed)) fail(`--seed must be a seed name (got ${options.seed})`, 2)
@@ -166,7 +172,7 @@ try {
   if (configFile === 'readonly') await chmod(configPath, 0o444)
 
   let url
-  if (options.engine === 'fake') {
+  if (options.engine === 'fake' && !options.restart) {
     const { start } = await import(pathToFileURL(serverEntry).href)
     const { createFakeEngine } = await import(pathToFileURL(join(here, 'fake-engine.mjs')).href)
     const engine = createFakeEngine({ scripts: seedModule.scripts ?? [], ...(seedModule.engine ?? {}) })
