@@ -4,7 +4,7 @@
  * for New folder the name sheet, which calls the route.
  */
 
-import { useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 
 import { Creations, CreationButtons } from './Creations.js'
 import { creationsFor, type Creation, type CreationPlace } from './creations.js'
@@ -23,10 +23,31 @@ export interface CreateEntryProps {
   readonly t: (key: string) => string
 }
 
+// The + list is modal: while it is open, the entry buttons of the empty state
+// behind it are not drawn, so each entry is on screen once. Two instances of
+// CreateEntry (the + and the buttons) share this flag.
+let listOpen = false
+const watchers = new Set<() => void>()
+const setListOpen = (open: boolean) => {
+  listOpen = open
+  watchers.forEach((notify) => notify())
+}
+const watchList = (notify: () => void) => {
+  watchers.add(notify)
+  return () => { watchers.delete(notify) }
+}
+
 type Step = { readonly at: 'list' } | { readonly at: 'folder-name' } | undefined
 
 export function CreateEntry({ place, writableFolders, variant, fetchImpl = (...args) => fetch(...args), onCreated, t }: CreateEntryProps) {
   const [step, setStep] = useState<Step>()
+  const listShown = useSyncExternalStore(watchList, () => listOpen)
+  const listing = step?.at === 'list'
+  useEffect(() => {
+    if (!listing) return undefined
+    setListOpen(true)
+    return () => setListOpen(false)
+  }, [listing])
   const creations = creationsFor(place, writableFolders)
   if (creations.length === 0) return null
 
@@ -48,7 +69,7 @@ export function CreateEntry({ place, writableFolders, variant, fetchImpl = (...a
     <>
       {variant === 'plus' ? (
         <Button variant="ghost" icon="plus" aria-label={t('New…')} onClick={() => setStep({ at: 'list' })} />
-      ) : (
+      ) : listShown ? null : (
         <CreationButtons creations={creations} onChoose={choose} t={t} />
       )}
       {step?.at === 'list' ? (
