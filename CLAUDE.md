@@ -34,7 +34,7 @@ Four levels, same test names, one `resultats.xml` format:
 
 `<base>` is a commit, the feature's fork point from `main` (`git merge-base origin/main HEAD`); the chain passes it as `{base}`. `ecrans` is what a pod plays while working, `fiche` is the proof of a feature, the suite is the epic's end; the changed files are `git diff <base> HEAD`,
 read against the map `scripts/ecrans.json`. `node scripts/niveaux.mjs --lister ecrans|fiche <base>` prints what
-a level would play and plays nothing (no `npm ci` needed: the script reads imports with its own scanner); `node scripts/niveaux.mjs --liste ecrans <base>` prints only the screen-test files `ecrans` would play, one per line; `--verifier` checks the map. `scripts/rejouer.sh "<name>"…` replays only
+a level would play and plays nothing (no `npm ci` needed: the script reads imports with its own scanner); `node scripts/niveaux.mjs --liste ecrans <base>` prints only the screen-test files `ecrans` would play, one per line; `--fichiers-ecran` prints every screen-test file (the rule `suite-locale.sh` uses: a file citing `playwright`, `chromium` or `launch.mjs`, or using `launch`/`open`/`newBrowser` from `./charte-browser`); `--verifier` checks the map. `scripts/rejouer.sh "<name>"…` replays only
 named tests (JUnit names, quoted if spaced), each with its whole file, and fails on a name that matches no test.
 The tag's check accepts only a `tests-complets` status whose description begins with « niveau » (`success niveau suite · …`); a bare `success` is refused.
 
