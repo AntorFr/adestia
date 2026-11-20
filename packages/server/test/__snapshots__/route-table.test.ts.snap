@@ -62,6 +62,8 @@ exports[`the route table > lists every route of a fully-equipped instance, the c
   "GET /api/events",
   "GET /api/settings",
   "PUT /api/settings",
+  "GET /api/plugins",
+  "PUT /api/plugins/:id",
   "POST /api/restart",
   "GET /api/files",
   "GET /api/files/*",

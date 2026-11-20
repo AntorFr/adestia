@@ -33,7 +33,7 @@ import { access, chmod, readFile, rename, stat, unlink, writeFile } from 'node:f
 import { randomUUID } from 'node:crypto'
 import { dirname, join } from 'node:path'
 
-import { parseDocument, type Document } from 'yaml'
+import { isScalar, isSeq, parseDocument, type Document } from 'yaml'
 
 import { settingAt, settingKey, type SettingSpec } from '@antorfr/adestia-schemas'
 
@@ -307,4 +307,62 @@ export async function applyChanges(
  */
 function setValue(doc: Document, path: readonly string[], value: unknown): void {
   doc.setIn([...path], value)
+}
+
+/**
+ * Names one plugin in, or removes it from, ONE of the three activation lists.
+ *
+ * The only list write this file offers, and deliberately not a general one:
+ * the list is a closed set of three names, the value a single string, and the
+ * same round trip as `applyChanges` (comments, layout and mode kept; stale
+ * revision and read-only refused) carries it. A missing `extensions.<list>`
+ * is created; the last entry going leaves an empty list, not a missing key.
+ */
+export async function setActivation(
+  file: string,
+  list: 'apps' | 'features' | 'tools',
+  id: string,
+  active: boolean,
+  expectedRevision: string | undefined,
+): Promise<{ revision: string } | { refusal: WriteRefusal }> {
+  const can = await writability(file)
+  if (!can.writable) {
+    return { refusal: { kind: 'read-only', reason: can.reason ?? 'the configuration file is read-only' } }
+  }
+  const read = await readDocument(file)
+  if ('refusal' in read) return read
+  if (expectedRevision !== undefined && expectedRevision !== read.revision) {
+    return {
+      refusal: { kind: 'stale', reason: 'the configuration file changed since this screen read it' },
+    }
+  }
+
+  const path = ['extensions', list]
+  const held = read.doc.getIn(path, true)
+  if (held !== undefined && held !== null && !isSeq(held)) {
+    return {
+      refusal: { kind: 'invalid', reason: `extensions.${list} is not a list in ${file}; left alone` },
+    }
+  }
+  const names = isSeq(held) ? held.items.map((item) => (isScalar(item) ? item.value : item)) : []
+  const present = names.includes(id)
+  if (present === active) return { revision: read.revision }
+
+  if (active) {
+    if (isSeq(held)) held.add(id)
+    else read.doc.setIn(path, [id])
+  } else if (isSeq(held)) {
+    held.items = held.items.filter((item) => (isScalar(item) ? item.value : item) !== id)
+  }
+
+  const written = await replaceContents(file, String(read.doc))
+  if ('error' in written) return { refusal: { kind: 'read-only', reason: written.error } }
+  return { revision: (await revisionOfFile(file)) ?? '' }
+}
+
+/** The ids the file names in one activation list; empty when it names none. */
+export function activationIn(doc: Document, list: 'apps' | 'features' | 'tools'): readonly string[] {
+  const node = doc.getIn(['extensions', list], true)
+  const held: unknown = isSeq(node) ? node.toJSON() : undefined
+  return Array.isArray(held) ? held.filter((one): one is string => typeof one === 'string') : []
 }

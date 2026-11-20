@@ -67,6 +67,7 @@ each message as "where the reader is" (`screenView`).
 | `#/settings/instructions[/<path>]` | E-11 Instructions (E-12 opens over it) |
 | `#/settings/delegations[/<conversation>]` | E-13 Delegations |
 | `#/settings/config` | E-14 Configuration |
+| `#/settings/plugins` | E-37 Plugins |
 | `#/settings/<anything else>` | replaced by `#/settings` |
 | `#/instructions` (old) | replaced by `#/settings/instructions` |
 | `#/todo…` | E-22 Todo (no declared route: answers on `/<id>`) |
@@ -101,7 +102,7 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-6 | Block settings popover | `settings` on a block bar in the editor | `editor/BlockSettings.tsx`, `blockview.tsx` | Edit a `:::block`'s attributes, title, icon, frame, width; remove stray attributes | P-6 |
 | E-7 | Collection page | a page with `type: collection` | `app/Collection.tsx` (`CollectionLayout`, `CollectionShell`), `collections.ts`, `styles/collection.css` | A page listing its members as cards with facets, an `Ask for a new page` button, `Everything here is finished.` | P-5 |
 | E-8 | Missing page | `#/page/<path>` refused (404, 401/403, other) | `app/MissingPage.tsx`, `styles/missing-page.css` | Name the address, say which refusal, link to the folder above (to Home for a page at the root, which has none) | P-5 |
-| E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts | P-8, P-9, P-10, P-13 |
+| E-9 | Settings mosaic | `#/settings` | `app/Preferences.tsx`, `Tile.tsx` | Four tiles: MCP servers, Instructions, Configuration, Delegations, with counts; a fifth, Plugins, with "N active of M found" (`adestia-plugins-reglages`) | P-8, P-9, P-10, P-13, P-plugins-1 |
 | E-10 | MCP servers | `#/settings/mcp[/<name>]` | `app/McpServers.tsx`, `Settings.tsx` (`useMcpServers`), `styles/settings.css` | List servers with health; open one: state, per-person OAuth connect, JSON declaration editor, Save, Remove (opens E-33), add; loading and fetch-failed with Retry (`adestia-ajouts-mcp`) | P-8 |
 | E-11 | Instructions | `#/settings/instructions[/<path>]` | `app/Instructions.tsx`, `styles/tiles.css` | Grouped file cards (instructions, skills, agents), search, `+` create buttons, open one in a monospace textarea, Save; delivered files read-only | P-9 |
 | E-12 | Catalogue pop-in | `Catalogues` button in E-11 | `app/CataloguePopin.tsx` (`.adestia-sheet`) | Add a git repository of instructions, list its items, import, Refresh | P-9 |
@@ -126,8 +127,9 @@ is labelled with the destination. Plugins with sub-screens add their own back (E
 | E-31 | Project-management blocks | `:::timeline` and `:::subproject` blocks in a page | `plugins/project-management/web/blocks.js`, `model.js`, `pm.css` | Timeline of dated sub-pages, project status pills | P-11 |
 | E-34 | Block gallery | **Add block** in the editor bar, or "Browse" at the foot of the `/` menu | `editor/BlockGallery.tsx` | Browse the blocks, see each, insert one at a chosen place | P-17, P-19, P-20 |
 | E-35 | Block data form | **Edit data** in E-6, or after an insertion from E-34 | `editor/BlockForm.tsx` | Fill the figures, phases, items, rows of a block in fields | P-18, P-20 |
-| E-37 | Create (buttons and sheet) | the **+** button, drawn beside the Ask button of the home (with tiles or without) and in the header of E-3 whenever its list is not empty, i.e. not on a read-only root or folder (Places); the entries of that list as buttons in the empty states of E-2 and E-3 (a complement); the list (a sheet titled « Create ») opens from the **+** | `app/CreateEntry.tsx` (the + or the buttons, the name sheet, the call to `POST /api/folders`; the typed name goes through `slugOf` and a name it reduces to nothing leaves Create disabled), `app/Creations.tsx` (the declared list, the buttons, the sheet for a folder name), `app/creations.ts` (core table, merge with enabled plugins, scoping), reuses `app/ui/EmptyState.tsx`, the shared sheet and E-36 | Show what can be created here and create it: a new folder (name sheet), a template (opens E-36) | P-21 |
-| E-36 | New from template | **New from template** button in the header of E-3, shown only where the folder can be written; also opened from the **+** of E-37, on the home or in a folder (today a page is created by asking the agent) | `app/NewFromTemplate.tsx` (the sheet, with E-3's button), `app/templates.ts` (seed sources, file name, store order), `styles/components.css` (image card), in the shared sheet | Choose a shipped template, name the page, create it in the folder and open it in editing | P-20, P-21 |
+| E-38 | Create (buttons and sheet) | the **+** button, drawn beside the Ask button of the home (with tiles or without) and in the header of E-3 whenever its list is not empty, i.e. not on a read-only root or folder (Places); the entries of that list as buttons in the empty states of E-2 and E-3 (a complement); the list (a sheet titled « Create ») opens from the **+** | `app/CreateEntry.tsx` (the + or the buttons, the name sheet, the call to `POST /api/folders`; the typed name goes through `slugOf` and a name it reduces to nothing leaves Create disabled), `app/Creations.tsx` (the declared list, the buttons, the sheet for a folder name), `app/creations.ts` (core table, merge with enabled plugins, scoping), reuses `app/ui/EmptyState.tsx`, the shared sheet and E-36 | Show what can be created here and create it: a new folder (name sheet), a template (opens E-36) | P-21 |
+| E-36 | New from template | **New from template** button in the header of E-3, shown only where the folder can be written; also opened from the **+** of E-38, on the home or in a folder (today a page is created by asking the agent) | `app/NewFromTemplate.tsx` (the sheet, with E-3's button), `app/templates.ts` (seed sources, file name, store order), `styles/components.css` (image card), in the shared sheet | Choose a shipped template, name the page, create it in the folder and open it in editing | P-20, P-21 |
+| E-37 | Plugins | `#/settings/plugins`; tile on E-9 | `app/Plugins.tsx` (page), `app/plugins/` (rows, `usePlugins`), the E-14 restart bar reused, `styles/settings-pages.css` | Every plugin found, by state; switch on/off; restart bar | P-plugins-1 |
 | E-32 | Offline banner | above the open screen, whichever it is, while the server does not answer (it pushes the screen down, it does not cover it) | `app/Offline.tsx`, `app/App.tsx` | Say "The server is not responding"; goes away by itself when it answers (`adestia-ajouts`, B-19) | P-16 |
 | E-33 | Remove-server confirmation | **Remove** on E-10 | `app/mcp/ConfirmRemove.tsx`, `app/mcp/ServerDetail.tsx`, `app/ui/Sheet.tsx` | Name the server and ask; **Cancel** / **Remove** (`adestia-ajouts`, B-20) | P-16 |
 
@@ -141,13 +143,13 @@ columns are the same except where the instance's configuration decides what exis
 | Screen | Owner | User | Agent (what it touches that shows here) | Calling agent |
 |---|---|---|---|---|
 | E-1 | sees gates | sees gates | — | — |
-| E-2 | open tiles, arrange, ask; **+** (E-37) drawn whenever its list is not empty | same | writes the brief, the pages behind tiles | — |
-| E-3 | browse, search, facet; **New from template** where the folder can be written (hidden otherwise, E-36); **+** drawn unless its list is empty, i.e. unless the folder cannot be written (E-37, Places) | same | creates/moves pages (cards appear live) | — |
-| E-37 (Rename) | *Not built yet (tranche 3).* **Rename** in the E-3 header only where the folder AND its parent can be written (the name lives in the parent) and no active app owns it | same | — | — |
-| E-37 | **+** drawn on the home and in a folder only when its list is not empty, i.e. when at least one entry can be offered where the root or folder can be written (see Places); each entry writes, so each is hidden where the write right is missing | same | — | — |
+| E-2 | open tiles, arrange, ask; **+** (E-38) drawn whenever its list is not empty | same | writes the brief, the pages behind tiles | — |
+| E-3 | browse, search, facet; **New from template** where the folder can be written (hidden otherwise, E-36); **+** drawn unless its list is empty, i.e. unless the folder cannot be written (E-38, Places) | same | creates/moves pages (cards appear live) | — |
+| E-38 (Rename) | *Not built yet (tranche 3).* **Rename** in the E-3 header only where the folder AND its parent can be written (the name lives in the parent) and no active app owns it | same | — | — |
+| E-38 | **+** drawn on the home and in a folder only when its list is not empty, i.e. when at least one entry can be offered where the root or folder can be written (see Places); each entry writes, so each is hidden where the write right is missing | same | — | — |
 | E-4, E-5, E-6 | read, edit, save (E-6: hidden in read-only mode, as the edit button) | same | edits the same files; a concurrent edit gives the conflict state; an agent write refreshes the reading page and raises the banner in editing (`adestia-ajouts`, B-17) | — |
 | E-34, E-35 | use, wherever the page can be written (hidden otherwise, as the edit button) | same | an agent write raises the same banner (B-17) | — |
-| E-36 | use where the folder can be written; the button is not shown otherwise; from the **+** of E-37 on the home, with its **Folder** field over `writableFolders` | same | creates the file the agent would otherwise create | — |
+| E-36 | use where the folder can be written; the button is not shown otherwise; from the **+** of E-38 on the home, with its **Folder** field over `writableFolders` | same | creates the file the agent would otherwise create | — |
 | E-7 | add a member, open | same | writes members | — |
 | E-8 | follow the folder link (Home for a root page; this link is never hidden) | same; a 401/403 shows the screen with the lock, the page itself is refused | a mistyped address it gave lands here; so does a page the agent deleted or moved while open (`adestia-ajouts`) | — |
 | E-9 | open tiles | same | — | its delegations are counted |
@@ -178,14 +180,14 @@ columns are the same except where the instance's configuration decides what exis
 | E-n | Has today | Lacks |
 |---|---|---|
 | E-1 | loading (`LoadingGate`: spinner and "Loading…"), sign-in, refused (names the account; without a name from `/auth/refused` it keeps the older sentence « You are signed in, but your account is not in a group this instance admits » — named form: « Connecté en tant que <name> — ce compte n'a pas accès à cette instance », button **Sign out** / « Se déconnecter »), fatal; four cards with an icon each, every string through `t()`; no new component (`Gate`, `Button`), no new token, both themes, desk and phone | — |
-| E-2 | loading (`.adestia-loading`, spinner and translated Loading…), normal, shared empty state (after ready; with the entry buttons (New folder…) and the line of E-37 (c), or unchanged on a read-only root), with/without brief, **+** beside Ask (E-37), with/without hero, Arrange mode | — |
-| E-3 | normal, shared empty/no-match states ("This section holds nothing yet." with the entry buttons of the folder (New folder…), E-37 (d), or alone in a read-only folder / "Nothing matches."), a folder just created (empty, with its **+** and buttons), **+** in the header (E-37), facet chips, finished archive, multi-store marks, loading (the shared row while the shell's index has not answered, no Retry) | — |
+| E-2 | loading (`.adestia-loading`, spinner and translated Loading…), normal, shared empty state (after ready; with the entry buttons (New folder…) and the line of E-38 (c), or unchanged on a read-only root), with/without brief, **+** beside Ask (E-38), with/without hero, Arrange mode | — |
+| E-3 | normal, shared empty/no-match states ("This section holds nothing yet." with the entry buttons of the folder (New folder…), E-38 (d), or alone in a read-only folder / "Nothing matches."), a folder just created (empty, with its **+** and buttons), **+** in the header (E-38), facet chips, finished archive, multi-store marks, loading (the shared row while the shell's index has not answered, no Retry) | — |
 | E-4 | reading, editing, saving/saved/"tidied", conflict (`.adestia-save--warn`), rejected, failed, read-only (`.adestia-editor__readonly` + raw source), diagnostics, drop zone, lost/ambiguous wikilink, unknown block, missing `from=`, loading while the page is fetched (`Loading` only when no page is held, page to page keeps the first on screen), fetch-failed shows E-8 with Retry, reading refreshed in place when the agent rewrites the file, E-8 when it deletes or moves it, editing: the banner "The page changed." with **Reload** (the typed text is never replaced; the user's own save raises none; a watch that is off moves nothing) | an empty-page state |
 | E-5 | shared popover/fields, normal, broken frontmatter (nothing editable), unknown fields, kept-as-written | — |
 | E-6 | shared popover/fields, normal, required attributes missing (a star and the text alternative), stray attributes (a named `trash-2` control each), bounded below the canvas header and the bands (anchor scrolled under the header: the panel stays at the header's edge; anchor out at the bottom or soft keyboard on a phone: the panel stays inside the viewport and scrolls internally; on a desktop an anchor out at the bottom keeps the panel inside the viewport the same way; it follows its anchor on scroll and resize) | no loading, error or offline state: it opens on a block already in the editor, so none applies; read-only mode has no settings control, so the popover cannot open. Redrawn (tranche 2): see "States of E-6, E-34 and E-35" below |
 | E-7 | normal, shared all-finished state inside a facet, count chips | empty collection state distinct from "all finished" |
 | E-8 | shared empty state: 404 (`file-question`, "There is no page at this address." / « Il n’y a aucune page à cette adresse. »), 401/403 (`lock`, "This page is out of reach — the session may have expired." / « Cette page est hors de portée — la session a peut-être expiré. »), other (`circle-alert`, "The server could not serve this page." / « Le serveur n’a pas pu servir cette page. »); the "server could not" case (0 included, the shell unable to reach the server) is the shared failure block with **Retry**, which fetches the page again; folder link "Open the folder above" / « Ouvrir le dossier au-dessus », or "Home" / « Accueil » for a page at the root; a very long address wraps; no loading state of its own (the screen is drawn once the server has answered; E-4 keeps the previous screen while fetching); offline after startup is unchanged (Limits kept), E-21 covers startup failure | — |
-| E-9 | normal, tiles with Lucide icons; counts absent when unreadable; loading (the shared row above the tiles until its four reads have answered or failed, tiles drawn throughout, no Retry) | — |
+| E-9 | normal, tiles with Lucide icons; counts absent when unreadable; loading (the shared row above the tiles until its four reads have answered or failed, tiles drawn throughout, no Retry; the Plugins tile's count read is not waited for: the tile is drawn at once and its figure arrives later) | — |
 | E-10 | list, empty ("None wired yet…", shared empty state), health tones each with an icon, needs-auth, connected/not, shadowed, read-only declaration, saving/saved/failed; loading (the shared row under the heading, no tiles, no "None wired yet", no "Add a server"); fetch-failed with **Retry** (first fetch only; a refetch after Save or Remove never shows loading and fails silently; health, `/api/mcp/status`, has neither); **Remove** opens E-33 | — |
 | E-11 | list, empty, no match, file open, delivered (read-only, lock icon), saving/saved/failed, the name sheet for a new skill or agent; loading and fetch-failed with **Retry** for the list and for the open file (404 on the list stays "this engine has no such folder"; 404 and 401/403 on a file have the message, no Retry) | — |
 | E-12 | no catalogue, reading the repository, nothing importable, error, items; in the shared sheet (Escape, focus kept and returned, bottom sheet on a phone) | — |
@@ -1433,7 +1435,7 @@ specified above and not drawn.
 **Not built here.** Copying a whole reply, the box in a page (E-5 keeps drawing a `copy` fence as
 code), a download, a "send" button. A skin can restyle `.adestia-copybox` through tokens.
 
-## E-37 Create — states and places (`adestia-decouverte`)
+## E-38 Create — states and places (`adestia-decouverte`)
 
 **Places.** The main one is the **+** button (Monsieur, 2026-11-19): (a) E-2, whether it has tiles or not, one **+** beside the « Ask » button opens the list; (b) E-3 header: **+**, beside **New from template** which stays and is the template shortcut. The complement: (c) E-2 with no tile but Settings (Monsieur, 2026-11-19 20:44): « Nothing to show yet. » stays; the current hint (« Turn a plugin on in adestia.config.yaml, or write a page — a folder holding one becomes a section ») is replaced by the entry buttons (at least **New folder**) and one line, « or turn a plugin on in Settings » (fr « ou activez un plugin dans les Réglages »; « Nothing to show yet. » fr « Rien à afficher pour l'instant. »); until `adestia-plugins-reglages` is delivered that line still points to `adestia.config.yaml`; (d) E-3 empty (« This section holds nothing yet »): the entries of the folder as buttons. The **+** is drawn whenever the list for the place is not empty; the list is empty only on a read-only root or folder, and then nothing is drawn (every entry creates a page or a folder, so each needs the write right). **List.** A sheet (bottom sheet on a phone) of the buttons below, one per line; choosing one closes it and does what the button does. The buttons are the same list everywhere, filtered by where they are valid (`home`, `folder`; default both) and, in a folder, by `writableFolders` (E-36): a read-only folder offers none and its empty state is the one of today, unchanged (« This section holds nothing yet. », no button). On a read-only root, E-2 with no tile keeps « Nothing to show yet. » and the current hint to edit the configuration (nothing to create, so nothing replaces it). In this document « folder » is the word of the user for what E-2 draws as a tile and E-3 calls a section in its existing empty-state text; that text is not changed here. On the home the same rule reads on the root: **New folder** is drawn only when `''` is in `writableFolders`, and a `template` button only when at least one folder is; otherwise nothing is drawn. The **+** of (a) belongs to the home itself, beside Ask, not to the hero, so a skin that replaces the hero does not remove it.
 
@@ -1450,3 +1452,50 @@ code), a download, a "send" button. A skin can restyle `.adestia-copybox` throug
 **Rename (B-35) — not built yet (tranche 3 of `adestia-decouverte`; no control, no route today).** In the E-3 header of a folder, a **Rename** control beside **+**, drawn only where New folder would be and the parent of the folder can be written too (both in `writableFolders`, the root being `''`; the server asks for both, so the button is never shown to meet a 403); never on a folder an active app owns. It opens the folder-name sheet above preset to the current name, button **Rename**, same states as creation: empty, unchanged (Rename disabled), name taken (under the field), not renamable (the server's reason under the field), write refused. Done: the sheet closes and E-3 reopens at the new address; if `unrewritten` is above zero a line says « n pages still point to the old name » (names them, one **Close**). Light and dark, desk and phone, as the creation sheet.
 
 **What a button does** (`action`): `folder` (core only); `template` (opens E-36 on that template, in the open folder or, from the home, E-36 opened with one added field, **Folder**, a choice among `writableFolders` (the root first), preset to the first; E-36 opened from E-3 does not show it); nothing else: a line never fills the composer or asks the agent (Monsieur, 2026-11-19).
+
+## E-37 Plugins (`adestia-plugins-reglages`)
+
+**What it is.** A settings page like E-14 and E-10, not a new kind of screen: heading and back to E-9,
+then three groups of rows, then the restart bar of E-14 (reused as is: `RestartBar`, `useRestart`).
+
+**Rows.** One per plugin, grouped by the page (`Plugins.tsx` filters `loaded`: Active, then Found-not-active, then Refused);
+inside a group, in the order `GET /api/plugins` returns, which is discovery order (the server sorts nothing itself; folders are read sorted by path in `extensions.ts`). A row: the plugin's id as its name, a **kind chip**
+(`app`, `feature`, `tool`, `core` — new variant `.adestia-state--kind` of `.adestia-state`: pill, mono `--text-xs`, `--border`, `--text-muted`; `core` in `--accent-text` on `--accent-quiet`; not interactive, the word carries the meaning), the manifest's one-line description, a
+muted "found in the plugins folder" / "found in source `<name>`", and on the right a **switch**
+(the shared toggle of E-14's boolean fields) labelled with the plugin's name. A degraded plugin
+(`severity: degraded`) keeps its place in Active with a `triangle-alert` line under it carrying the
+problem. A **refused** row has no switch, a `circle-alert` and its reason (the translated one when it
+has a code, the English line otherwise, as E-19); a refused row never carries a kind chip: it shows only its id and the reason
+could be read. Core plugins: chip `core`, a disabled switch that is on, "always on" as its accessible
+description.
+
+**Pending.** A row whose wanted state (the file) differs from its loaded state (the running instance)
+shows a chip "Active after restart" or "Off after restart" with the `rotate-ccw` icon of E-14, and
+sits in the group of its *loaded* state until the restart. The restart bar shows while any row is pending.
+
+**Where the toggle's state comes from.** The switch shows the *wanted* state; the group shows the
+*loaded* one; both from one `GET /api/plugins`.
+
+**Roles.** As E-14: no role check, every signed-in identity; the agent sees no page.
+**Phone.** One column; the switch stays at the right edge, 44 px target; kind chip and origin wrap under
+the description; the restart bar as E-14.
+
+### States of E-37
+
+| State | What shows |
+|---|---|
+| loading | the shared loading row under the heading; no groups |
+| read failed | the shared error line with **Retry**; no groups |
+| normal | the three groups (an empty group is not drawn); a count line "N active of M found" |
+| nothing found | the lede "Nothing is installed here yet.", then "No plugin found." and where the instance looks (the plugins folder path from the payload) |
+| config not exposed (instance started without a config file: `GET /api/plugins` answers 404) | no rows; the line E-14 shows for this case; the E-9 tile stays drawn, without a count |
+| file read-only / unreadable / invalid | rows read-only, switches inert, the file's reason, as E-14 |
+| flipping | the switch is busy until the write answers; others stay usable |
+| flipped | the row's pending chip, the restart bar |
+| write refused | the shared error line under the heading with the server's reason; the switch returns to its state |
+| stale (the file changed since the page read it) | "The file changed since this page loaded" with **Reload**, as E-14's stale file |
+| restart pending / asking / waiting / blocked / failed | exactly E-14's states and sentences; "Coming back…" lasts until the instance answers, the E-32 banner shows above it meanwhile |
+| after the restart | rows in their new groups, no pending chip, no bar |
+
+Dark and light, desk and phone: the rows use the E-14 tokens and the chip and toggle components that
+already exist, except the kind chip above. Design-system verdict (`gardien-design-system`, conception): 11 existing (`Tile`, `BackButton`, `.adestia-config__group`/`__lede`/`__field`/`__locked`/`__restart` with a `rotate-ccw` icon variant, `.adestia-toggle` incl. a busy variant, `.adestia-save--warn`/`--error`, `RestartBar`, `Loading`, `Failure`, `EmptyState`), 1 new (the kind chip). Not yet in `docs/charte.md` (the repository declares no design system; to be entered with the code): the icon variant of `__restart`, the busy toggle, `.adestia-state--kind`, the plugin row, `RestartBar`, `.adestia-save--error`. The 44 px phone target is held by the row's hit area or an `@media` rule for the row.

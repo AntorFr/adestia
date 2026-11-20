@@ -1107,3 +1107,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   +. A folder the stores hold appears as a tile on the home even before it holds a page; a name already
   taken is refused under the field. An empty home or folder offers the same entries as buttons, and a
   read-only folder offers none.
+
+## v0.98.10
+
+- **Settings lists the instance's plugins and switches them on or off** — a new Plugins tile in
+  Settings opens a page that groups the plugins found as active, found but not active, and refused
+  (with the reason). Each plugin can be switched on or off; the change is saved to the instance's
+  configuration file and shown as "active/off after restart" with a bar offering **Restart now**.
+  When turns are running, the restart is refused with their count until you choose **Restart
+  anyway**. Core plugins stay locked, and a read-only or missing configuration file leaves the
+  switches inert with the reason shown.
