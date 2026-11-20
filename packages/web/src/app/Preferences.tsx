@@ -255,7 +255,7 @@ export function Preferences({
             ? {
                 chips: [
                   {
-                    text: t('%n active of %m')
+                    text: t('%n active of %m found')
                       .replace('%n', String(foundRows.filter((row) => row.loaded).length))
                       .replace('%m', String(foundRows.length)),
                   },

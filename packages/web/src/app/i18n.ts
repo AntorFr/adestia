@@ -268,7 +268,6 @@ const FR: Readonly<Record<string, string>> = {
   // The Plugins page (E-37): what the instance found, and which of it the file turns on.
   Plugins: 'Plugins',
   'See what this instance found and turn it on or off': 'Voir ce que l’instance a trouvé et l’activer ou la désactiver',
-  '%n active of %m': '%n actifs sur %m',
   '%n active of %m found': '%n actifs sur %m trouvés',
   Active: 'Actifs',
   'Found, not active': 'Trouvés, non actifs',
