@@ -1,9 +1,11 @@
 // The test levels a piece of work owes (AD-niveaux-1 to 3), computed from what it changed.
 //
-//   node scripts/niveaux.mjs ecrans <base>            play the local level + the screen tests of touched screens
+//   node scripts/niveaux.mjs ecrans <base>            play ONLY the screen tests of touched screens (scripts/suite-ecrans.sh: builds, then one vitest;
+//                                                     nothing touched: nothing installed, built or played, `1..0`)
 //   node scripts/niveaux.mjs fiche <base>             play the whole suite minus the screen tests of untouched screens
 //   node scripts/niveaux.mjs --lister ecrans|fiche <base>   print what that would play, play nothing
 //   node scripts/niveaux.mjs --liste ecrans <base>    print only the screen-test files `ecrans` would play, sorted, one per line
+//   node scripts/niveaux.mjs --fichiers-ecran         print every screen-test file, one per line (the rule suite-locale.sh uses)
 //   node scripts/niveaux.mjs --verifier               guard: scripts/ecrans.json against the repository
 //
 // <base> is a commit; the changed files are those of `git diff <base> HEAD`. The map of
@@ -29,6 +31,18 @@ function walk(dir, out = []) {
   return out
 }
 
+// The one rule that says a test file is a screen test (scripts/suite-locale.sh asks this script, it
+// keeps no expression of its own): it cites playwright, chromium or launch.mjs, OR it imports the
+// shared helper ./charte-browser AND uses it to start an instance or open a page (launch, open,
+// newBrowser), by name or through a namespace (`h.launch`). A file that imports only `awaitShell`
+// reaches no browser and stays a plain test.
+export function estTestDEcran(source) {
+  if (/playwright|chromium|launch\.mjs/.test(source)) return true
+  if (!/from\s+['"]\.\/charte-browser(\.js)?['"]/.test(source)) return false
+  return /\b(launch|open|newBrowser)\b/.test(source.replace(/^\s*import[^;]*?from\s+['"]\.\/charte-browser(\.js)?['"]/gm, '')) ||
+    /import\s*\{[^}]*\b(launch|open|newBrowser)\b[^}]*\}\s*from\s+['"]\.\/charte-browser/.test(source)
+}
+
 export function fichiersDEcran() {
   const found = []
   for (const pkg of readdirSync(join(root, 'packages'))) {
@@ -36,7 +50,7 @@ export function fichiersDEcran() {
     if (!existsSync(dir)) continue
     for (const f of walk(dir)) {
       if (!/\.test\.tsx?$/.test(f)) continue
-      if (/playwright|chromium|launch\.mjs/.test(readFileSync(f, 'utf8'))) found.push(relative(root, f).split('\\').join('/'))
+      if (estTestDEcran(readFileSync(f, 'utf8'))) found.push(relative(root, f).split('\\').join('/'))
     }
   }
   return found.sort()
@@ -309,6 +323,10 @@ function lister(mode, base) {
 
 function main(argv) {
   const [a, b, c] = argv
+  if (a === '--fichiers-ecran') { // every screen-test file, one per line: what suite-locale.sh excludes
+    for (const f of fichiersDEcran()) console.log(f)
+    return 0
+  }
   if (a === '--verifier') {
     const p = verifier()
     if (p.length) { console.error(p.join('\n')); return 1 }
@@ -344,9 +362,8 @@ function main(argv) {
     script = 'scripts/suite-attestee.sh'
     env.ADESTIA_EXCLURE_ECRANS = laisses.join(' ')
   } else {
-    script = 'scripts/suite-locale.sh'
+    script = 'scripts/suite-ecrans.sh'
     env.ADESTIA_JOUER_ECRANS = joues.join(' ')
-    env.ADESTIA_ECRANS_AVEC_BUILD = joues.length ? '1' : ''
   }
   return spawnSync('sh', [join(root, script)], { cwd: root, env, stdio: 'inherit' }).status ?? 1
 }

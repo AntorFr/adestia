@@ -132,6 +132,7 @@ Tests d'écran nés dans `epic/adestia-pages`, après l'inventaire par grappe : 
 
 - `packages/web/test/besoin-pages-structure-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/besoin-coller-tableau-browser.test.ts` — écran de la feature `adestia-coller-tableau` (B-paste-1), classement à faire
+- `packages/web/test/besoin-etat-projet-browser.test.ts` — écran de l'epic `adestia-pages` (E-3, E-4, E-31, E-36), classement à faire
 - `packages/web/test/besoin-popover-bandeau-tardif-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/besoin-rouge-23-spinner-config.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/besoin-rouge-25-menu-rouage-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
@@ -148,3 +149,4 @@ Tests d'écran nés dans `epic/adestia-pages`, après l'inventaire par grappe : 
 - `packages/web/test/recette-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/reglages-undo-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/verify-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/version-hors-image-ecran-browser.test.ts` — écran E-15 de la feature `adestia-version-hors-image` (ligne de version du menu ⚙), classement à faire

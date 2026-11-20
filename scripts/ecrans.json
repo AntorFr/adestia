@@ -33,7 +33,8 @@
     "E-30": { "dossiers": ["plugins/scan/web/"] },
     "E-31": { "dossiers": ["plugins/project-management/web/"] },
     "E-32": { "entrees": ["packages/web/src/app/App.tsx", "packages/web/src/app/Offline.tsx"] },
-    "E-33": { "entrees": ["packages/web/src/app/mcp/ConfirmRemove.tsx", "packages/web/src/app/mcp/ServerDetail.tsx"] }
+    "E-33": { "entrees": ["packages/web/src/app/mcp/ConfirmRemove.tsx", "packages/web/src/app/mcp/ServerDetail.tsx"] },
+    "E-36": { "entrees": ["packages/web/src/app/NewFromTemplate.tsx"] }
   },
   "tests": {
     "packages/server/test/bench-besoin.test.ts": "toujours",
@@ -58,6 +59,7 @@
     "packages/web/test/besoin-pages-ensemble-browser.test.ts": ["E-3", "E-4", "E-5", "E-6", "E-23"],
     "packages/web/test/besoin-tours.test.ts": ["E-14"],
     "packages/web/test/besoin-pages-structure-browser.test.ts": ["E-4", "E-5", "E-6"],
+    "packages/web/test/besoin-etat-projet-browser.test.ts": ["E-3", "E-4", "E-31", "E-36"],
     "packages/web/test/blocs-projet-browser.test.ts": ["E-4", "E-6", "E-31"],
     "packages/web/test/etat-projet-gabarit-browser.test.ts": ["E-3", "E-4", "E-31"],
     "packages/web/test/nouveau-modele-browser.test.ts": ["E-3"],
@@ -76,6 +78,7 @@
     "packages/web/test/besoin-rouge-23-spinner-config.test.ts": ["E-14"],
     "packages/web/test/besoin-rouge-25-menu-rouage-browser.test.ts": ["E-15"],
     "packages/web/test/ensemble-acces-refuse-browser.test.ts": ["E-1"],
+    "packages/web/test/version-hors-image-ecran-browser.test.ts": ["E-15"],
     "packages/web/test/ensemble-hors-ligne-browser.test.ts": ["E-1", "E-9", "E-10", "E-14", "E-32"]
   }
 }
