@@ -44,7 +44,7 @@ describe('the browser output folder', () => {
     const store = resolveStores([{ id: 'perso', path: root }], root).stores[0]!
 
     expect((await collectFiles([store], '', true, false)).map((f) => f.path)).toEqual(['visible.pdf'])
-    expect((await pagesService([store]).list({ deep: true })).map((p) => p.path).sort()).toEqual(['visible.md', 'visible.pdf'])
+    expect((await pagesService([store]).list()).map((p) => p.path).sort()).toEqual(['visible.md', 'visible.pdf'])
     expect(safeFilePath(store, '.adestia-web/shot.png')).toBeUndefined()
   })
 })
