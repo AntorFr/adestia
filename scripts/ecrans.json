@@ -61,6 +61,7 @@
     "packages/web/test/besoin-tours.test.ts": ["E-14"],
     "packages/web/test/besoin-pages-structure-browser.test.ts": ["E-4", "E-5", "E-6"],
     "packages/web/test/besoin-etat-projet-browser.test.ts": ["E-3", "E-4", "E-31", "E-36"],
+    "packages/web/test/besoin-plugins-reglages-browser.test.ts": ["E-9", "E-37"],
     "packages/web/test/blocs-projet-browser.test.ts": ["E-4", "E-6", "E-31"],
     "packages/web/test/etat-projet-gabarit-browser.test.ts": ["E-3", "E-4", "E-31"],
     "packages/web/test/nouveau-modele-browser.test.ts": ["E-3"],
