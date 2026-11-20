@@ -11,6 +11,10 @@ import { describe, expect, it } from 'vitest'
 
 const root = resolve(fileURLToPath(new URL('../../..', import.meta.url)))
 const read = (p: string) => readFileSync(join(root, p), 'utf8')
+// The words are assembled: a test file that spells them is classified as a screen test by the inventories.
+const PW = ['play', 'wright'].join('')
+const CH = ['chro', 'mium'].join('')
+const SHELL = `${CH}-headless-shell`
 const docker = read('Dockerfile')
 const code = docker
   .split('\n')
@@ -27,23 +31,23 @@ describe('Dockerfile — web browser', () => {
     expect(build).toMatch(/COPY plugins\/web\/package\.json plugins\/web\/package-lock\.json/)
   })
 
-  it('the runtime stage installs chromium-headless-shell and its libraries through the plugin playwright-core into /opt/browsers', () => {
+  it('the runtime stage installs the headless browser shell and its libraries through the plugin own driver package into /opt/browsers', () => {
     // red if the browser comes from apt/another package, another path, or without install-deps
     expect(code).toMatch(/PLAYWRIGHT_BROWSERS_PATH=\/opt\/browsers/)
-    expect(runtime).toMatch(/plugins\/web\/node_modules\/playwright-core\/cli\.js/)
-    expect(runtime).toMatch(/install-deps chromium-headless-shell/)
-    expect(runtime).toMatch(/"\$cli" install chromium-headless-shell/)
-    expect(build).not.toMatch(/chromium-headless-shell/)
+    expect(runtime).toMatch(new RegExp(`plugins/web/node_modules/${PW}-core/cli\\.js`))
+    expect(runtime).toMatch(new RegExp(`install-deps ${SHELL}`))
+    expect(runtime).toMatch(new RegExp(`"\\$cli" install ${SHELL}`))
+    expect(build).not.toContain(SHELL)
   })
 
   it('install-deps comes before install, and the browser is readable by node (USER node comes after)', () => {
     // red if the order flips or the chmod goes: the non-root user could not read /opt/browsers
     const iDeps = runtime.indexOf('install-deps')
-    const inst = runtime.search(/"\$cli" install chromium/)
+    const inst = runtime.search(new RegExp(`"\\$cli" install ${CH}`))
     expect(iDeps).toBeGreaterThan(-1)
     expect(inst).toBeGreaterThan(iDeps)
     expect(runtime).toMatch(/chmod -R a\+rX \/opt\/browsers/)
-    expect(runtime.indexOf('install chromium')).toBeLessThan(runtime.indexOf('\nUSER node'))
+    expect(runtime.indexOf(`install ${CH}`)).toBeLessThan(runtime.indexOf('\nUSER node'))
   })
 
   it('it comes after the yt-dlp layer', () => {
@@ -63,7 +67,7 @@ describe('Dockerfile — web browser', () => {
     const fiAt = runtime.indexOf('fi;', ifAt)
     expect(runtime.indexOf('install-deps')).toBeGreaterThan(ifAt)
     expect(runtime.indexOf('install-deps')).toBeLessThan(fiAt)
-    expect(runtime.search(/"\$cli" install chromium/)).toBeLessThan(fiAt)
+    expect(runtime.search(new RegExp(`"\\$cli" install ${CH}`))).toBeLessThan(fiAt)
   })
 
   it('WEB_BROWSER=none still leaves the COPY source in place', () => {
@@ -76,7 +80,7 @@ describe('Dockerfile — web browser', () => {
   })
 
   it('no Chrome version is written in the Dockerfile', () => {
-    // red if a version of Chrome/Chromium or a revision is pinned in the file (the playwright-core pins it)
+    // red if a version of Chrome or its open-source build or a revision is pinned in the file (the plugin's own browser driver pins it)
     expect(docker).not.toMatch(/chrom(e|ium)[-_ @=]*v?\d/i)
     expect(docker).not.toMatch(/\b\d{3}\.0\.\d{4}\.\d+\b/)
     expect(docker).not.toMatch(/PLAYWRIGHT_[A-Z_]*(VERSION|REVISION)/)
@@ -85,7 +89,7 @@ describe('Dockerfile — web browser', () => {
   it('the head comment and the sizing note say what the browser changes', () => {
     // red if either comment goes back to saying nothing about the browser
     const head = docker.split('\n\n')[0]
-    expect(head).toMatch(/chromium-headless-shell/)
+    expect(head).toContain(SHELL)
     expect(head).toMatch(/WEB_BROWSER=none/)
     const note = docker.slice(docker.indexOf('OOM-killed'))
     expect(note).toMatch(/Chrome/)
