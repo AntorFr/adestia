@@ -1420,6 +1420,8 @@ levels but not yet seen by the guard (it is listed under « Hors inventaire » o
 
 ### AD-niveaux-1 — One script computes the levels; `.sdlc.yaml` declares three more keys
 
+*Amended by AD-ecrans-sans-local-1 and -2: `ecrans` no longer plays the local level (it plays the screen tests alone, `scripts/suite-ecrans.sh`), and `ecrans:` and `rejouer:` no longer start with `npm ci &&` (`tests.installation` plays it once). The text below is the original decision.*
+
 `.sdlc.yaml` `tests:` gains `ecrans: npm ci && node scripts/niveaux.mjs ecrans {base}`,
 `fiche: npm ci && node scripts/niveaux.mjs fiche {base}` and
 `rejouer: npm ci && scripts/rejouer.sh {tests}` (replacing `scripts/rejouer.sh {tests}`). `commande:`
@@ -1482,6 +1484,8 @@ a file drives screens through a shared harness (`charte-browser.ts`), the harnes
 it follows the graph like any file, imported by the tests, which are declared.
 
 ### AD-niveaux-4 — `rejouer:` is self-contained, and replays a whole file
+
+*Amended by AD-ecrans-sans-local-2: the install moved to `tests.installation`; `rejouer:` is now `scripts/rejouer.sh {tests}` and assumes it is done.*
 
 `rejouer: npm ci && scripts/rejouer.sh {tests}` installs in a fresh extraction. Two changes to
 `scripts/rejouer.sh` and `scripts/rejouer-plan.mjs`: (1) a named test is replayed **with its whole
@@ -1582,6 +1586,71 @@ of the provider too: the same mechanism, not a second one. `OidcClient` gains
 provider's client lists the post-logout redirect URI; this tranche changes no provider
 configuration. *Rejected:* clearing the session only and relying on `prompt=login` always (a
 provider that ignores `prompt` reconnects the same account silently).
+
+## Decisions of adestia-ecrans-sans-local
+
+Since rule R30 of the chain, the runner checks, at the end of dev, review and assembly, that the
+screens a branch touches were played by `jouer-ecrans` (which runs `tests.ecrans`) and that each
+red is told apart by `rejouer:` (three replays on the head, then on the target). Before this feature `ecrans:`
+also played the local level, so an « empty » screen run (no screen touched) skipped that local level,
+and a registry failure inside `npm ci` was a counted send-back. The local level stays the agent's
+(`tests.local`); `ecrans:` must play screens and nothing else. Nothing in the product changes.
+
+### AD-ecrans-sans-local-1 — `ecrans` plays the touched screen tests alone, from a script of its own
+
+`scripts/niveaux.mjs ecrans <base>` no longer runs `scripts/suite-locale.sh`. It runs a new
+`scripts/suite-ecrans.sh`, which takes the files in `ADESTIA_JOUER_ECRANS` and plays, in this order:
+the server and web builds (the browser suites drive them), then one vitest run on exactly those
+files, with the flags `suite-locale.sh` gives vitest (`ADESTIA_PATIENCE=4`, `--testTimeout=30000`,
+`--hookTimeout=60000`, the same excludes). No install, typecheck, lint or plugins step. It writes
+`resultats.xml` through `scripts/suite-rapport.mjs` under the suite's test names (the build is the
+step `etape > build`; the steps it does not play are not reported red, as `suite-locale.sh` already
+does for build and boot). **An empty selection** (`ADESTIA_JOUER_ECRANS` empty: nothing touched, or a
+doc-only or server-only change) installs, builds and plays nothing: it writes a report with zero
+test cases and exits 0, the « vide » run of the chain (`1..0` in TAP; an undeclared screen test is always selected, so the run is empty only while `--verifier` is green). `suite-locale.sh` loses
+`ADESTIA_JOUER_ECRANS` and `ADESTIA_ECRANS_AVEC_BUILD`: it is the local level only, as `tests.local`
+declares it, and its screen-file exclusion becomes unconditional. `fiche` is unchanged
+(`ADESTIA_EXCLURE_ECRANS`). The selection stays computed by the same functions (`--liste`,
+`ecrans_liste:` unchanged): `ecrans_liste` and `ecrans` still cannot drift.
+*Rejected:* a flag on `suite-locale.sh` (it would keep the local level one variable away from every
+screen run, and the « empty skips the local » defect with it); making `niveaux.mjs` run vitest itself
+(the shell script keeps the report and the steps in the form `suite-attestee.sh` and `suite-locale.sh`
+already share).
+
+### AD-ecrans-sans-local-2 — The install is declared, once per extraction
+
+`.sdlc.yaml` `tests:` gains `installation: npm ci`; `ecrans:` becomes
+`node scripts/niveaux.mjs ecrans {base}` and `rejouer:` becomes `scripts/rejouer.sh {tests}`, without
+`npm ci &&` in front: the chain plays `installation:` once, before them, and a registry failure there
+is a transient failure it retries, not a send-back. `fiche:`, `commande:` and `local:` keep what they
+have (`fiche:` and the suite install themselves; `ecrans_liste:` still needs no install). `rejouer.sh`
+still needs `node_modules` and says so in its header: it is self-contained *after* `installation:`.
+`CLAUDE.md` (the levels table and the paragraph under it) and the README say the same.
+*Rejected:* `fichiers:` (not asked: `jouer-ecrans` already replays the whole jeu when it cannot tell
+the file of a red; a later feature may add it).
+
+### AD-ecrans-sans-local-3 — The selection tooling is declared, read from `origin/main`
+
+`.sdlc.yaml` `tests:` gains `outillage: [scripts/niveaux.mjs, scripts/ecrans.json,
+scripts/suite-ecrans.sh, scripts/suite-locale.sh, scripts/suite-attestee.sh, scripts/suite-rapport.mjs,
+scripts/rejouer.sh, scripts/rejouer-plan.mjs]`: what decides which screens a branch touches and plays
+them. The chain takes those paths from `origin/main` before it selects and plays, so a branch cannot
+lighten its own level (note: the feature that changes them is itself judged by the previous `main`'s
+tooling; it is proved by `attester` on the whole `fiche` level and by the bench tests below).
+
+### Proof
+
+- `bench/tests/niveaux-besoin.test.mjs`, `niveau-local-besoin.test.mjs` and `niveaux-ensemble.test.mjs`
+  (hand-run `node --test` files; the last one's « rejouer autonome » case now demands that `rejouer:`
+  and `ecrans:` carry no `npm ci`) move with the contract: `ecrans` calls `suite-ecrans.sh` with exactly the joués files and
+  never `suite-locale.sh`; with nothing touched `suite-ecrans.sh` plays no step, writes a zero-case
+  report, exits 0, and touches no `node_modules` (run in a clone without it); `suite-locale.sh`
+  excludes every screen-test file whatever the environment; `.sdlc.yaml` declares `installation`,
+  `outillage` (every path exists) and `ecrans:` / `rejouer:` without `npm ci`.
+- The README gives the new durations of `ecrans` beside those of `fiche`, measured on the three
+  `{base}` of its table (a screen file, a shared file, a server-only change: that last one is now
+  seconds, not 2m52s), and `ecrans_liste` unchanged.
+- Looking at it: nothing is drawn; the report says so.
 
 ## Decisions of adestia-bloc-a-copier
 

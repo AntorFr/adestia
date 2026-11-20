@@ -40,6 +40,15 @@ test('.sdlc.yaml déclare tests.rejouer avec le gabarit {tests}', () => {
   assert.ok(rejouer.includes('{tests}'), `tests.rejouer sans {tests} : ${rejouer}`)
 })
 
+test('.sdlc.yaml déclare tests.installation et tests.outillage, et rejouer: ne réinstalle pas', () => {
+  // Casserait si l'installation restait collée devant rejouer: ou si un chemin d'outillage n'existait pas.
+  const { installation, outillage, rejouer } = declared()
+  assert.equal(installation, 'npm ci')
+  assert.ok(!/npm ci/.test(rejouer), rejouer)
+  assert.ok(Array.isArray(outillage) && outillage.length > 0)
+  for (const p of outillage) assert.doesNotThrow(() => accessSync(resolve(root, p), constants.R_OK), `${p} illisible`)
+})
+
 test('les commandes locale et de rejeu déclarées désignent des fichiers exécutables du dépôt', () => {
   // Casserait si la déclaration pointait un script absent ou non exécutable.
   const { local, rejouer } = declared()

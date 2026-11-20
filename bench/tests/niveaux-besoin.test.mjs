@@ -68,7 +68,7 @@ test('McpServers.tsx seul : exactement E-9 E-10 E-20 E-32 (pages qui l\'importen
   const laisses = lignes(r.stdout, 'fichiers d\'écran laissés de côté')
   assert.ok(laisses.includes('packages/web/test/besoin-chat-browser.test.ts'))
   assert.ok(!laisses.includes('packages/web/test/besoin-mcp-browser.test.ts'))
-  assert.equal(laisses.length + E9_E10.length, 23)
+  assert.equal(laisses.length + E9_E10.length, 41)
 })
 
 test('Settings.tsx seul ne touche pas E-10 (McpServers importe Settings, pas l\'inverse)', () => {
@@ -92,7 +92,7 @@ test('un fichier partagé (useRoute.ts) touche les 33 écrans et joue tous les f
   assert.equal(e.length, 33)
   assert.equal(e[0], 'E-1')
   assert.equal(e[32], 'E-33')
-  assert.equal(lignes(r.stdout, 'fichiers d\'écran joués').length, 23)
+  assert.equal(lignes(r.stdout, 'fichiers d\'écran joués').length, 41)
   assert.deepEqual(lignes(r.stdout, 'fichiers d\'écran laissés de côté'), [])
 })
 
@@ -104,7 +104,7 @@ test('packages/server/src seul : aucun écran, aucun fichier d\'écran joué en 
   const r = niveaux('--lister', 'ecrans', base)
   assert.equal(touches(r.stdout), 'aucun')
   assert.deepEqual(lignes(r.stdout, 'fichiers d\'écran joués'), [])
-  assert.equal(lignes(r.stdout, 'fichiers d\'écran laissés de côté').length, 23)
+  assert.equal(lignes(r.stdout, 'fichiers d\'écran laissés de côté').length, 41)
 })
 
 test('fiche, serveur seul : laisse de côté les écrans non touchés mais jamais un fichier « toujours »', () => {
@@ -116,16 +116,18 @@ test('fiche, serveur seul : laisse de côté les écrans non touchés mais jamai
   const laisses = lignes(r.stdout, 'fichiers d\'écran laissés de côté')
   const joues = lignes(r.stdout, 'fichiers d\'écran joués')
   assert.deepEqual(joues.sort(), TOUJOURS)
-  assert.equal(laisses.length, 19)
+  assert.equal(laisses.length, 37)
   for (const t of TOUJOURS) assert.ok(!laisses.includes(t), t)
 })
 
 test('fiche : la suite attestée reçoit exactement les fichiers laissés de côté, ecrans : exactement les joués', () => {
   // Casserait si la liste annoncée par --lister différait de celle passée au script de suite.
   reset()
-  for (const s of ['suite-attestee.sh', 'suite-locale.sh']) {
-    writeFileSync(join(repo, 'scripts', s), '#!/bin/sh\necho "EXCLURE=[$ADESTIA_EXCLURE_ECRANS] JOUER=[$ADESTIA_JOUER_ECRANS] BUILD=[$ADESTIA_ECRANS_AVEC_BUILD]"\n')
+  for (const s of ['suite-attestee.sh', 'suite-ecrans.sh']) {
+    writeFileSync(join(repo, 'scripts', s), `#!/bin/sh\necho "${s} EXCLURE=[$ADESTIA_EXCLURE_ECRANS] JOUER=[$ADESTIA_JOUER_ECRANS]"\n`)
   }
+  // ecrans must never run the local level: its stub fails loudly if it is reached.
+  writeFileSync(join(repo, 'scripts', 'suite-locale.sh'), '#!/bin/sh\necho "LOCAL joué" >&2\nexit 9\n')
   commit('stubs')
   const base = git('rev-parse', 'HEAD').trim() // the stubs are the start: changing a script would touch every screen
   appendFileSync(join(repo, 'packages/web/src/app/McpServers.tsx'), '\n// touched\n')
@@ -134,12 +136,15 @@ test('fiche : la suite attestée reçoit exactement les fichiers laissés de cô
   const lf = lignes(niveaux('--lister', 'fiche', base).stdout, 'fichiers d\'écran laissés de côté')
   const ex = /EXCLURE=\[([^\]]*)\]/.exec(f.stdout)[1].split(' ').filter(Boolean)
   assert.deepEqual(ex.sort(), [...lf].sort())
-  assert.equal(ex.length, 10)
+  assert.equal(ex.length, 28)
   assert.ok(!ex.includes('packages/web/test/besoin-mcp-browser.test.ts'))
   const e = niveaux('ecrans', base)
   const jo = /JOUER=\[([^\]]*)\]/.exec(e.stdout)[1].split(' ').filter(Boolean)
   assert.deepEqual(jo.sort(), E9_E10)
-  assert.match(e.stdout, /BUILD=\[1\]/)
+  assert.match(e.stdout, /suite-ecrans\.sh /)
+  assert.equal(e.status, 0, e.stderr)
+  assert.ok(!/LOCAL joué/.test(e.stdout + e.stderr))
+  assert.ok(!/suite-attestee\.sh /.test(e.stdout))
 })
 
 test('un fichier de test d\'écran modifié touche les écrans qu\'il déclare', () => {
@@ -260,11 +265,46 @@ test('garde : une entrée d\'écran qui n\'existe pas la fait échouer', () => {
   assert.match(r.stderr, /Fantome\.tsx/)
 })
 
-test('la carte déclare E-1 à E-33 et 23 fichiers d\'écran, chacun connu', () => {
+test('la carte déclare E-1 à E-33 et 41 fichiers d\'écran, chacun connu', () => {
   reset()
   const map = JSON.parse(readFileSync(join(repo, 'scripts/ecrans.json'), 'utf8'))
   assert.deepEqual(Object.keys(map.ecrans), Array.from({ length: 33 }, (_, i) => `E-${i + 1}`))
-  assert.equal(Object.keys(map.tests).length, 23)
+  assert.equal(Object.keys(map.tests).length, 41)
+})
+
+test('suite-locale.sh exclut tout fichier d\'écran quel que soit l\'environnement, et ne lit plus les variables d\'ecrans', () => {
+  // Casserait si le niveau local pouvait de nouveau rejouer un écran par une variable d'environnement.
+  const s = readFileSync(join(source, 'scripts/suite-locale.sh'), 'utf8')
+  assert.ok(!/ADESTIA_JOUER_ECRANS|ADESTIA_ECRANS_AVEC_BUILD/.test(s.replace(/^\s*#.*$/gm, '')))
+  assert.match(s, /exclusions="\$exclusions --exclude \$f"/)
+  assert.ok(!/step build /.test(s))
+})
+
+test('suite-ecrans.sh : sélection vide, rien d\'installé, de construit ni de joué, rapport à zéro cas, 1..0, sortie 0, sans node_modules', () => {
+  // Casserait si une sélection vide installait, construisait ou jouait quoi que ce soit, ou rendait un rapport non vide.
+  const nu = mkdtempSync(join(tmpdir(), 'ecrans-vide-'))
+  try {
+    mkdirSync(join(nu, 'scripts'))
+    for (const f of ['suite-ecrans.sh', 'suite-rapport.mjs']) writeFileSync(join(nu, 'scripts', f), readFileSync(join(source, 'scripts', f)), { mode: 0o755 })
+    for (const env of [{}, { ADESTIA_JOUER_ECRANS: '' }, { ADESTIA_JOUER_ECRANS: '  ' }]) {
+      const r = spawnSync('sh', ['scripts/suite-ecrans.sh'], { cwd: nu, encoding: 'utf8', env: { PATH: process.env.PATH, ...env } })
+      assert.equal(r.status, 0, r.stdout + r.stderr)
+      assert.equal(r.stdout.trim(), '1..0')
+      const xml = readFileSync(join(nu, 'resultats.xml'), 'utf8')
+      assert.match(xml, /tests="0"/)
+      assert.ok(!/<testcase/.test(xml))
+      assert.ok(!existsSync(join(nu, 'node_modules')) && !existsSync(join(nu, '.suite-attestee')))
+    }
+  } finally { rmSync(nu, { recursive: true, force: true }) }
+})
+
+test('suite-ecrans.sh : joue les builds puis un seul vitest sur les fichiers donnés, sans install, typecheck, lint ni plugins', () => {
+  // Casserait si le script rejouait une étape du niveau local ou un fichier hors sélection.
+  const s = readFileSync(join(source, 'scripts/suite-ecrans.sh'), 'utf8').replace(/^\s*#.*$/gm, '')
+  assert.match(s, /step build /)
+  assert.equal((s.match(/npx vitest run/g) ?? []).length, 1)
+  assert.match(s, /\$files$/m)
+  assert.ok(!/npm ci|npm run typecheck|npm run lint|test:plugins/.test(s))
 })
 
 test('suite-attestee.sh sans ADESTIA_EXCLURE_ECRANS garde la commande vitest d\'origine', () => {
@@ -283,7 +323,7 @@ void mkdirSync
 const STUBS = '#!/bin/sh\necho "JOUER=[$ADESTIA_JOUER_ECRANS]"\n'
 const souches = () => {
   reset()
-  for (const s of ['suite-attestee.sh', 'suite-locale.sh']) writeFileSync(join(repo, 'scripts', s), STUBS)
+  for (const s of ['suite-attestee.sh', 'suite-ecrans.sh', 'suite-locale.sh']) writeFileSync(join(repo, 'scripts', s), STUBS)
   // verify-etat-projet-browser.test.ts is absent from the map on this tree (a defect `--verifier` already names, out of
   // this task): an undeclared screen test is always played, so a doc-only diff would never list nothing. The clone's map
   // declares it, which isolates what --liste does from that defect.
