@@ -127,6 +127,20 @@ export function Home({
       />
     ) : null
 
+  // Not a search box: it puts the cursor in the composer. The chat IS the way in, and a
+  // second input that only looked like one would split the user's attention. Without a +
+  // it keeps its own markup: the row around it exists only to hold both.
+  const ask_ = (
+    <button type="button" className="adestia-home__ask" onClick={focusComposer}>
+      <Icon name="search" />
+      {/* The block caret: invisible on most liveries, a beating amber slab on the one
+          whose whole identity is a terminal. CSS decides. */}
+      <span className="adestia-home__ask-caret" aria-hidden="true" />
+      <span className="adestia-home__ask-text">{skin.placeholder ?? t('Ask…')}</span>
+      <kbd className="adestia-home__ask-kbd">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'}</kbd>
+    </button>
+  )
+
   return (
     <div className="adestia-home">
       {hero ?? (
@@ -145,18 +159,7 @@ export function Home({
               the way in, and a second input that only looked like one would
               split the user's attention between two places that do different
               things. */}
-          <div className="adestia-home__way">
-          <button type="button" className="adestia-home__ask" onClick={focusComposer}>
-            <Icon name="search" />
-            {/* The block caret: invisible on most liveries, a beating amber
-                slab on the one whose whole identity is a terminal. CSS
-                decides. */}
-            <span className="adestia-home__ask-caret" aria-hidden="true" />
-            <span className="adestia-home__ask-text">{skin.placeholder ?? t('Ask…')}</span>
-            <kbd className="adestia-home__ask-kbd">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'}</kbd>
-          </button>
-          {entry('plus')}
-          </div>
+          {canCreate ? <div className="adestia-home__way">{ask_}{entry('plus')}</div> : ask_}
         </>
       )}
       {/* The + is the home's, not the hero's: a livery that replaces the head keeps it. */}
