@@ -458,11 +458,14 @@ A user asks the agent for a folder of a subject (a dossier on the boiler: a summ
 Needs: B-36, B-37, B-38, B-41
 
 ### P-23 — Set up a folder from the interface
-The user wants the dossier's icon changed, the attachments out of the way, and one page shown as the folder's face.
+The user (owner or any signed-in identity: there is no role) wants the Boiler dossier's icon changed, the attachments out of the way, and its summary page shown as the folder's face. Strong moment: reopening the folder and finding the page, with the way back one link away.
 
-1. In E-3 the user presses **Folder settings** (E-38).
+1. In E-3 the user presses **Folder settings** (E-38); the button is absent where the folder cannot be written.
 2. They pick an icon and a colour, switch the Attachments brick off (B-39), and choose the summary page as replacement page (B-40). **Save** writes `.folder.md`; the sheet closes.
-3. Opening the folder now shows that page (E-4) with a **Folder** link to the classic view; clearing the choice in the settings (reached from that link) restores the classic view.
+3. Opening the folder now shows that page (E-4) with a **Folder** link to the classic view; in that view **Folder settings** opens E-38, where choosing **None — the classic view** and saving clears the choice and restores the classic view.
+4. A folder owned by a plugin: its screen carries the same **Folder** link, which leads to the classic view of the folder, whence **Folder settings** opens E-38.
+
+Failure paths: the write is refused (error line, the sheet stays with its entries, the user retries or cancels); the settings changed meanwhile (conflict line, **Reload**, the user starts again from what is saved); the folder holds no page (the replacement choice is disabled and says so; the other settings save); the saved replacement page was deleted (the folder opens its classic view with no error; E-38 shows the page as missing until another choice is saved); the user is offline (the sheet says so, **Save** is disabled until the connection returns); the right to write was withdrawn meanwhile (the sheet says so and **Save** is disabled); the replacement page cannot be read (E-8 shows its error and the **Folder** link still leads to the classic view).
 
 Needs: B-36, B-38, B-39, B-40
 
