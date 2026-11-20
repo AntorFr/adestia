@@ -19,7 +19,9 @@ import type { Skin } from './skin.js'
 import type { IndexEntry, StoreInfo } from './sections.js'
 import { Icon } from './Icon.js'
 import { Brief } from './Brief.js'
+import { CreateEntry } from './CreateEntry.js'
 import { Domains, plural } from './Domains.js'
+import { creationsFor } from './creations.js'
 import { INDEX_FILE } from './paths.js'
 import { Loading } from './ui/index.js'
 
@@ -40,6 +42,11 @@ export interface HomeProps {
   readonly entries: readonly IndexEntry[]
   /** The stores this instance composes. Empty or absent when there is only one. */
   readonly stores?: readonly StoreInfo[]
+  /** Every folder the stores hold, empty ones included. */
+  readonly folders?: readonly string[]
+  /** Where a folder may be made; absent means creation is not offered. */
+  readonly writableFolders?: readonly string[]
+  readonly onFolderCreated?: (path: string) => void | Promise<void>
   readonly openPlugin: (plugin: LoadedPlugin) => void
   readonly openSection: (path: string) => void
   readonly openPage: (path: string) => void
@@ -66,6 +73,9 @@ export function Home({
   plugins,
   entries,
   stores = [],
+  folders = [],
+  writableFolders,
+  onFolderCreated,
   openPlugin,
   openSection,
   openPage,
@@ -103,6 +113,34 @@ export function Home({
     month: 'long',
   })} — ${plural(pages, t('page'), t('pages'))}.`
 
+  const offered = writableFolders !== undefined && onFolderCreated !== undefined
+  const canCreate = offered && creationsFor({ at: 'home' }, writableFolders).length > 0
+  const entry = (variant: 'plus' | 'buttons') =>
+    offered ? (
+      <CreateEntry
+        place={{ at: 'home' }}
+        writableFolders={writableFolders}
+        variant={variant}
+        {...(fetchImpl ? { fetchImpl } : {})}
+        onCreated={onFolderCreated}
+        t={t}
+      />
+    ) : null
+
+  // Not a search box: it puts the cursor in the composer. The chat IS the way in, and a
+  // second input that only looked like one would split the user's attention. Without a +
+  // it keeps its own markup: the row around it exists only to hold both.
+  const ask_ = (
+    <button type="button" className="adestia-home__ask" onClick={focusComposer}>
+      <Icon name="search" />
+      {/* The block caret: invisible on most liveries, a beating amber slab on the one
+          whose whole identity is a terminal. CSS decides. */}
+      <span className="adestia-home__ask-caret" aria-hidden="true" />
+      <span className="adestia-home__ask-text">{skin.placeholder ?? t('Ask…')}</span>
+      <kbd className="adestia-home__ask-kbd">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'}</kbd>
+    </button>
+  )
+
   return (
     <div className="adestia-home">
       {hero ?? (
@@ -121,17 +159,11 @@ export function Home({
               the way in, and a second input that only looked like one would
               split the user's attention between two places that do different
               things. */}
-          <button type="button" className="adestia-home__ask" onClick={focusComposer}>
-            <Icon name="search" />
-            {/* The block caret: invisible on most liveries, a beating amber
-                slab on the one whose whole identity is a terminal. CSS
-                decides. */}
-            <span className="adestia-home__ask-caret" aria-hidden="true" />
-            <span className="adestia-home__ask-text">{skin.placeholder ?? t('Ask…')}</span>
-            <kbd className="adestia-home__ask-kbd">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'}</kbd>
-          </button>
+          {canCreate ? <div className="adestia-home__way">{ask_}{entry('plus')}</div> : ask_}
         </>
       )}
+      {/* The + is the home's, not the hero's: a livery that replaces the head keeps it. */}
+      {hero && canCreate ? <div className="adestia-home__way adestia-home__way--alone">{entry('plus')}</div> : null}
 
       {!ready ? (
         <Loading t={t} />
@@ -153,6 +185,8 @@ export function Home({
             plugins={plugins}
             entries={entries}
             stores={stores}
+            folders={folders}
+            emptyAction={entry('buttons')}
             openPlugin={openPlugin}
             openSection={openSection}
             t={t}
