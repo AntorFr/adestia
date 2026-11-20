@@ -2155,7 +2155,7 @@ is 60 s: a browser left open between two reads of a long turn is closed and the 
 (cheap, and nothing is held while the agent thinks). Chrome is therefore absent at rest and after a turn;
 task 3's test counts the processes before and after a call, and after killing the relay's parent. A relay
 that cannot start (no executable, no readable version, no `node_modules`) exits non-zero with one line
-saying which, which the existing MCP health shows on the plugin (E-19); the agent then has no `web` tool and
+saying which, which the existing MCP health shows on the plugin (E-10); the agent then has no `web` tool and
 does not guess. Concurrency: each turn has its own relay and its own in-memory browser; the cap on
 concurrent turns (`maxConcurrentTurns`) already bounds how many Chromes exist, and the sizing note in the
 `Dockerfile` gains one figure (measured, task 2).
@@ -2188,6 +2188,6 @@ click), not otherwise; read the file of the page rather than ask again; say plai
 anyway, and stop; never try to bypass a challenge. It names no tool the relay withholds.
 
 **Dimensions.** *Security*: AD-web-1, -4 and -6; the agent can reach any URL its pod can, as it can with
-`curl` today; no secret is passed to the plugin. *Failure*: AD-web-5. *Observability*: MCP health on E-19,
+`curl` today; no secret is passed to the plugin. *Failure*: AD-web-5. *Observability*: MCP health on E-10,
 the relay's one-line start error, the withheld-tool error naming the tool. *Data*: the output folder only
 (AD-web-7); no migration. *i18n*: none, no screen. *Cost*: the image, measured per architecture.
