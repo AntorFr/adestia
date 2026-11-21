@@ -175,8 +175,13 @@ describe.skipIf(!hasBrowser)('Plugins settings page (B-plugins-1 to B-plugins-4,
       await page.getByRole('button', { name: 'Restart anyway' }).waitFor({ timeout: WAIT })
       expect(await page.locator('body').innerText()).toMatch(/[1-9]\d* turn\(s\) running/)
       await shot(page, 'e37-refused-turns')
-      await page.getByRole('button', { name: 'Restart anyway' }).click()
-      await page.waitForSelector('text=Coming back', { timeout: WAIT })
+      // the signal is the server's answer to the forced restart, not the bar's "Coming back" label: that state lasts
+      // one health poll (250 ms) and a loaded machine can miss it entirely
+      const [restartAnswer] = await Promise.all([
+        page.waitForResponse((r: any) => r.url().endsWith('/api/restart') && r.request().method() === 'POST', { timeout: WAIT }),
+        page.getByRole('button', { name: 'Restart anyway' }).click(),
+      ])
+      expect(restartAnswer.status()).toBe(202)
 
       // the instance answers again, with the file's wish now the loaded state
       const deadline = Date.now() + WAIT
