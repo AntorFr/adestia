@@ -573,18 +573,10 @@ the same 4.5:1 floor as other text.
 
 ### Reference notice (B-35)
 
-Measured by hand on the composed fill (`--warning` at 12 % mixed into `--surface`, the pair the
-contrast test does not declare), both themes, the same arithmetic as the test:
-
-| Foreground | Background | Theme | Ratio | Floor | Verdict |
-|---|---|---|---|---|---|
-| `--warning-text` #8f5e15 | notice fill | light | 4.31 | 4.5 | below: not used for text |
-| `--accent-text` #0b7386 | notice fill | light | 4.28 | 4.5 | below: not used for links |
-| `--text` #151a22 | notice fill | light | 13.56 | 4.5 | ok (sentence, links) |
-| `--warning-text` #e0a64f | notice fill | dark | 7.56 | 3 | ok (icon, non-text) |
-| `--text` #e9ecf3 | notice fill | dark | 13.78 | 4.5 | ok (sentence, links) |
-
-The icon wears `--warning-text` in light too (4.31, over the 3:1 of a non-text mark).
+The notice's fill is composed (`--warning` at 12 % mixed into `--surface`), so its pairs are not in the
+tables above; they were measured by hand, with the test's arithmetic. Light: `--warning-text` on the fill 4.31
+and `--accent-text` 4.28, both under 4.5, so the sentence and the links are `--text` (13.56) and `--warning-text`
+is kept for the icon (a non-text mark, 3:1). Dark: `--text` 13.78, `--warning-text` 7.56.
 
 ### Composed backgrounds on E-10 and E-19
 
