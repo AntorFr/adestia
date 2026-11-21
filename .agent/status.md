@@ -4,7 +4,7 @@
 ## Version courante
 Version courante : **`v0.99.0-adestia-decouverte.1`**, préversion de l'epic `adestia-decouverte` (branche `epic/adestia-decouverte`) ; dernier tag stable de `main` : `v0.98.12`. L'histoire des versions et ses raisons sont dans [CHANGELOG.md](../CHANGELOG.md), pas ici.
 
-Branche de travail en cours : `feature/adestia-decouverte-creer-dossier` (E-38 : le + et New folder ; `POST /api/folders`, champ `folders` de l'index).
+- Branche de travail : `feature/rouge-adestia-decouverte-1` (correctif de doc ; dernière feature de l'epic livrée : `feature/adestia-decouverte-creer-dossier`, E-38 : le + et New folder ; `POST /api/folders`, champ `folders` de l'index).
 
 Déploiement des instances Alfred, Skippy et Nestor : **non attesté ici** (dernière mention commune v0.81.0 le 30/09 ; v0.87.2 dite déployée le 15/10 sans détail par instance).
 
