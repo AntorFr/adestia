@@ -1250,7 +1250,7 @@ What the user can create is a list of declarations (`docs/donnees.md`): the core
 *Reversed if* a plugin has a creation that neither a folder nor a template can make: then a new action is added by its own tranche, not here.
 
 ### AD-39 — A folder is renamed by one route that moves the directory and rewrites the path links
-*Not built yet*: the route and the **Rename** control belong to a later tranche of `adestia-decouverte`.
+*Built*: the route (`routes/pages.ts`, rewriting in `folder-links.ts`); the **Rename** control belongs to a later task. A folder an app owns is refused through `absorbs` only: `folderRoute` lives in the shell, the server cannot ask a plugin's `routeFor`.
 `POST /api/folders/rename` renames the last segment of a folder held by one writable store, then rewrites, page by page, the path links that led into it (`docs/donnees.md`, Renaming a folder). *Rejected*: leaving a redirect file or a stored alias under the old name (state the user did not ask for, which hides a stale link instead of mending it); resolving a dead path by searching for a folder of the same content (a guess, and wrong on two similar folders); renaming only in the client (lost on reload). A partial rewrite is told (`unrewritten`), never hidden; the directory rename is not undone, since a link left behind is a text the user can mend and a half-restored tree is not. Rights as AD-38, no role: whoever may write in the folder and in its parent (the name lives in the parent), both read from `writableFolders`.
 
 ### AD-38 — A folder is created by a route and listed with the page index

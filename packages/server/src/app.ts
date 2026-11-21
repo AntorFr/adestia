@@ -335,7 +335,12 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     agentRoots,
   })
 
-  registerPages(app, { stores, locale: config.locale, plugins })
+  registerPages(app, {
+    stores,
+    locale: config.locale,
+    plugins,
+    configured: [config.workspace.memory, config.workspace.planif],
+  })
   // The agent writes these files with its own tools, past every route above;
   // the feed is how a shell already on screen learns they changed.
   registerEvents(app, { stores, watch: config.workspace.watch })

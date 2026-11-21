@@ -118,3 +118,18 @@ export interface CreateFolderRequest {
 export interface CreateFolderResponse {
   readonly path: string
 }
+
+/**
+ * `POST /api/folders/rename` `{path, name}` → 200 (AD-39). `name` is the new
+ * last segment; the folder keeps its parent.
+ */
+export interface RenameFolderRequest {
+  readonly path: string
+  readonly name: string
+}
+export interface RenameFolderResponse {
+  /** The folder's new logical path. */
+  readonly path: string
+  /** Pages still holding a link to the old path (read-only store, failed write); the rename stands. */
+  readonly unrewritten: number
+}
