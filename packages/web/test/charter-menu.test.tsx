@@ -108,17 +108,18 @@ describe('the token states', () => {
 
 describe('the mosaic', () => {
   // Fails if an emoji comes back on a tile or the header.
-  it('draws the four tiles and its header with icons, never an emoji', () => {
+  it('draws the five tiles and its header with icons, never an emoji', () => {
     const { container } = render(
       <Preferences page="" onPage={vi.fn()} onItem={vi.fn()} fetchImpl={quiet} t={(k) => k} />,
     )
     const tiles = Array.from(container.querySelectorAll('.adestia-tiles > li'))
-    expect(tiles.length).toBe(4)
+    expect(tiles.length).toBe(5)
     expect(tiles.map((t) => t.textContent)).toEqual(
       expect.arrayContaining([
         expect.stringContaining('MCP servers'),
         expect.stringContaining('Instructions'),
         expect.stringContaining('Configuration'),
+        expect.stringContaining('Plugins'),
         expect.stringContaining('Delegations'),
       ]),
     )

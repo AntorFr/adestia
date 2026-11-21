@@ -497,3 +497,12 @@
 }
 .adestia-search .adestia-input { box-shadow: none; padding: 0; height: auto; }
 .adestia-archive[open] > summary > .adestia-icon { transform: rotate(90deg); }
+
+/* B-32: the + sits beside Ask and never takes its width; the hero's absence or presence does not move it. */
+.adestia-home__way { display: flex; align-items: center; gap: var(--space-2); margin: 24px 0 8px; }
+.adestia-home__way .adestia-home__ask { flex: 1; min-width: 0; width: auto; margin: 0; }
+.adestia-home__way .adestia-btn { flex: none; }
+.adestia-home__way--alone { justify-content: flex-end; margin-top: var(--space-3); }
+
+/* E-3: the header's controls stay together and never push the title off a phone. */
+.adestia-chead__actions { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; flex: none; }

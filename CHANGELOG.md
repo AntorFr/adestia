@@ -1072,3 +1072,48 @@ branch and that `test:plugins` is replayed after a red vitest run.
   without the fence or a trailing line break, and the button shows « Copied » for two seconds
   (or « Copy failed »). The button is a 44 px target on a phone. Other code blocks get no
   button, and nothing is drawn while the reply is still streaming.
+
+## v0.98.7
+
+- **The ⚙ menu shows the version on any install** — the last line of the menu used to show the
+  version only inside the Docker image. It now also shows it for an install from the sources,
+  read from the latest release heading of `CHANGELOG.md`. When no version can be found, nothing
+  is shown rather than an invented number. A development branch shows the latest version of its
+  own changelog, without suffix or hash.
+
+## v0.98.8
+
+- **Browser tests that reach the shell through the helper are recognised as screen tests** — the
+  local test level and the replay script treated `besoin-etat-projet-browser.test.ts` as a test
+  without a browser, because it reaches Chromium through `charte-browser` instead of naming it, so
+  it ran without the built shell and failed with "shell not built". One rule now decides, in
+  `scripts/niveaux.mjs`, and the file is listed in the screen map. Tests and tooling only: nothing
+  changes for users.
+
+## v0.98.9
+
+- **The screen check plays only screens** — the `ecrans:` level of the test chain no longer runs the
+  local level before the screen tests: when a branch touches no screen it installs nothing, builds
+  nothing and plays nothing (an empty report, exit 0), and otherwise it builds the shell and plays
+  only the screen tests of the touched screens. The local level has its own script, and the install
+  step (`npm ci`) and the files that decide the levels are declared in `.sdlc.yaml`, read from
+  `main`. Tests and tooling only: nothing changes for users.
+
+## Unreleased
+
+- **The + creates a folder** — a **+** beside Ask on the home (kept under a livery that replaces the
+  hero) and in the header of a folder opens the list of what can be created here; **New folder** asks
+  for a name, sends its slug to `POST /api/folders`, and opens the new, empty folder, which has its own
+  +. A folder the stores hold appears as a tile on the home even before it holds a page; a name already
+  taken is refused under the field. An empty home or folder offers the same entries as buttons, and a
+  read-only folder offers none.
+
+## v0.98.10
+
+- **Settings lists the instance's plugins and switches them on or off** — a new Plugins tile in
+  Settings opens a page that groups the plugins found as active, found but not active, and refused
+  (with the reason). Each plugin can be switched on or off; the change is saved to the instance's
+  configuration file and shown as "active/off after restart" with a bar offering **Restart now**.
+  When turns are running, the restart is refused with their count until you choose **Restart
+  anyway**. Core plugins stay locked, and a read-only or missing configuration file leaves the
+  switches inert with the reason shown.

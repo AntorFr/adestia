@@ -51,7 +51,8 @@ To look at the app without an agent or Docker (a scripted engine, seeded data):
 ```sh
 npm ci && npm run build               # npm run build also builds the web shell
 node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/health answers ok
-node bench/sweep.mjs                   # every screen, light and dark, desk and phone
+node bench/sweep.mjs                   # the screens it lists (not E-35, E-36 or E-37), light and dark, desk and phone
+node bench/scenarios/plugins-reglages.mjs   # E-37, Settings → Plugins: list, switch, restart, the plugin appears (needs the build; starts two launchers, the second after a real restart; needs Playwright on the host; images in $BENCH_OUT)
 node bench/scenarios/chargements.mjs   # takes several minutes (16 capture combinations); loading and Retry on E-3, E-4, E-8, E-9, E-11, E-13 (needs the build; images in $BENCH_OUT); the plugins' E-25 and E-28 are covered by plugins/*/test/chargement.test.js and, in a browser, by bench/tests/plugins-chargements-besoin.test.mjs, not by this scenario; to see them by hand, start the launcher from the clone's root (the atelier and parcours plugins come from `./plugins`) and open #/atelier or a parcours page
 node bench/scenarios/page-suivie.mjs   # the open page follows the agent, B-17 (needs the build; BENCH_SKINS, BENCH_LOCALES narrow it)
 node bench/scenarios/hors-ligne.mjs     # stops and restarts a real bench instance: the offline banner E-32 on E-2, E-4 and E-14 (needs the build; images in $BENCH_OUT)
@@ -93,6 +94,10 @@ Adestia's own interface.
   rendered as the markdown it is, through the same renderer a page is read
   with, so a workspace path it names opens that page; what you typed stays
   exactly as you typed it.
+- **A + to create**: beside Ask on the home and in the header of a folder, it lists what can be
+  created here. Today that is **New folder**: a name (reduced to a slug), then the empty folder,
+  which shows as a tile. Nothing is offered where the folder is read-only. To see it:
+  `npm run build`, then `node bench/launch.mjs --engine fake`.
 - **Pages both hands write**: markdown files with a closed vocabulary of typed
   blocks, edited in a Notion-like editor or by the agent with its own file
   tools. One grammar renders, edits and validates them, so a save cannot change
@@ -107,7 +112,8 @@ Adestia's own interface.
   A page's other files — the plan as a PDF, the photo of the dish — sit next to
   it on disk, display in it, and are listed under it as attachments. What a
   page's status says is finished folds away rather than crowding the live ones.
-- **Extensions at runtime**: drop a plugin folder in, name it in the config,
+- **Extensions at runtime**: drop a plugin folder in, name it in the config
+  (or switch it on from Settings → Plugins, which writes the same file),
   restart. No image rebuild. Shared React comes from the page's import map;
   the shell owns the stylesheets; a broken plugin costs its own view and says
   why.
@@ -117,7 +123,8 @@ Adestia's own interface.
 - **Settings as an app**, not a dialog over whatever you were reading: its own
   tile, its own address, one page per subject — the agent's credential (armed
   from the interface, held server-side at 0600 and never sent to a browser),
-  the MCP servers and what each is doing, the theme, and the instructions you
+  the MCP servers and what each is doing, the plugins the instance found (switch
+  one on or off, then restart), the theme, and the instructions you
   gave the agent, edited on a screen rather than in a box.
 - **Instruction catalogues**: declare a git repository of skills, agents or
   instructions from Instructions › Catalogues, browse what it holds (found by
@@ -249,7 +256,7 @@ be replayed, instead of blocking the delivery until the forge's own 360-minute l
 
 **Early, and running.** The screens are checked in a real browser (`bench/`) and
 the agent drivers against real CLIs, not only by tests; which version each deployment
-runs is not recorded here. Pushing and pulling the workspace's own instructions
+runs is not recorded here; the ⚙ menu shows it: an image says its own (`ADESTIA_VERSION`), an installation from the sources the last `## vX.Y.Z` heading of `CHANGELOG.md` (a branch shows its own, with no suffix), and nothing if neither exists. Pushing and pulling the workspace's own instructions
 to a remote is still unbuilt (catalogues above only read repositories).
 Concurrency measurements are recorded in `spikes/concurrency/REPORT.md`.
 See [.agent/status.md](.agent/status.md) for current defects and unfinished work,
@@ -277,18 +284,19 @@ typecheck, lint, vitest without the browser test files, plugins; no build, guard
 Both write `resultats.xml` with the suite's test names. `scripts/suite-attestee.sh` (about 35 minutes) stays the proof (AD-preuve-1; the local level, AD-preuve-5). `local:`, `rejouer:`, `ecrans:` and `fiche:` are read by the chain on `main` only (they take effect after the merge); the scripts themselves run anywhere.
 
 Between the local level and the suite sit two levels that play only the screen tests of the screens the work
-touches (AD-niveaux-1 to 3): `node scripts/niveaux.mjs ecrans <base>` plays the local level plus those screen tests,
+touches (AD-niveaux-1 to 3): `node scripts/niveaux.mjs ecrans <base>` plays those screen tests alone (`scripts/suite-ecrans.sh`: the server and web builds, then one vitest run on exactly the files listed, space-separated, in the environment variable `ADESTIA_JOUER_ECRANS` (`niveaux.mjs ecrans` sets it from `--liste`; unset or empty, the script plays nothing); no typecheck, lint or plugins, and no install of its own: run `npm ci` first when you play it by hand, the chain does it through `installation:`),
 `fiche` plays the whole suite minus the screen tests of untouched screens, and
-`node scripts/niveaux.mjs --lister ecrans|fiche <base>` prints what each would play and plays nothing (no `npm ci` needed: the script reads imports with its own scanner, as `--verifier` and `--liste` do); `node scripts/niveaux.mjs --liste ecrans <base>` (the chain's `ecrans_liste`) prints only the sorted screen-test files `ecrans` would play, one per line, nothing when only docs changed. With an empty change (`<base>` = `HEAD`) no screen is touched: `ecrans` plays only the local level, `fiche` still plays the files that drive the whole shell.
+`node scripts/niveaux.mjs --lister ecrans|fiche <base>` prints what each would play and plays nothing (no `npm ci` needed: the script reads imports with its own scanner, as `--verifier` and `--liste` do); `node scripts/niveaux.mjs --liste ecrans <base>` (the chain's `ecrans_liste`) prints only the sorted screen-test files `ecrans` would play, one per line, nothing when only docs changed. With an empty change (`<base>` = `HEAD`), or a server-only or doc-only one, no screen is touched: `ecrans` installs, builds and plays nothing, writes a `resultats.xml` with zero test cases, prints `1..0` and exits 0 (a `vide` run for the chain); `fiche` still plays the files that drive the whole shell. A screen-test file that `scripts/ecrans.json` does not declare is always played (AD-niveaux-2), so on a tree where `--verifier` is red for such a file, even an empty change plays it. That is the case of `main` today (`--verifier` exits 1: `besoin-coller-tableau-browser`, `besoin-copie-bords-browser` and `besoin-copie-browser` are undeclared), so `--lister ecrans HEAD` lists those three and an empty change builds and plays them rather than printing `1..0`; `.agent/status.md` says the same. The local level is `scripts/suite-locale.sh` alone and always leaves the screen files out.
+`.sdlc.yaml` declares the install once (`tests.installation: npm ci`, played by the chain before `ecrans:` and `rejouer:`, which no longer start with `npm ci &&`; `scripts/rejouer.sh` assumes it is done) and the selection and play tooling (`tests.outillage`: `niveaux.mjs`, `ecrans.json`, the `suite-*` scripts, `rejouer.sh`, `rejouer-plan.mjs`), taken from `origin/main` so that a branch cannot lighten its own level.
 `<base>` is a commit, the fork point from `main` (`git merge-base origin/main HEAD`); the changed files are `git diff <base> HEAD`, read against `scripts/ecrans.json`. Measured
-on a throwaway clone with its install done, one commit on top of `<base>` (Intel i5-13500, 18 threads, an idle machine, faster than the chain's pod, so these figures sit below the `~10 min` of the local level measured there;
+on a throwaway clone with its install done (`ecrans` figures: the pod that built this level, 2026-11-18, `npm ci` not counted, as the chain now plays `installation:` apart; `fiche` figures: the earlier machine below), one commit on top of `<base>` (Intel i5-13500, 18 threads, an idle machine, faster than the chain's pod, so these figures sit below the `~10 min` of the local level measured there;
 `npm ci` adds 14 s; the chain's pod is slower, the suite takes about 35 minutes there):
 
 | `<base>` → the change | screens touched | `ecrans` | `fiche` |
 |---|---|---|---|
-| a screen file (`packages/web/src/app/McpServers.tsx`) | the screens whose page imports it | 11m32s | 14m59s |
-| a shared file (`packages/web/src/app/useRoute.ts`) | all 33 | 19m12s | 21m22s\* |
-| server only (`packages/server/src/app.ts`) | none | 2m52s | 9m30s |
+| a screen file (`packages/web/src/app/McpServers.tsx`) | the screens whose page imports it | 12m40s | 14m59s |
+| a shared file (`packages/web/src/app/useRoute.ts`) | all 33 | 20m34s | 21m22s\* |
+| server only (`packages/server/src/app.ts`) | none | 0m01s (under a second: nothing installed, built or played) | 9m30s |
 
 `ecrans_liste` (`node scripts/niveaux.mjs --liste ecrans <base>`, no install, no `node_modules`) answers in about 0.5 s on that machine whatever the change (one `git diff`, one walk of the import graph).
 
