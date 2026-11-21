@@ -122,7 +122,18 @@ describe.skipIf(!playwright)('blocs projet: progress, milestones, risks', () => 
               amber: [...document.querySelectorAll('.adestia-state, .adestia-figure, .adestia-meter__fill')].some((n) => /amber|warning/.test(n.className)),
             }
           })
-        await page.locator('.adestia-state').first().waitFor({ timeout: 15_000 })
+        // the blocks draw one after another: wait for the expected state (all seven words,
+        // both bars) in the DOM, not for the first pill, before reading
+        const wanted = ['Done', 'Late', 'Next', 'Planned', 'High', 'Medium', 'Low']
+        await expect
+          .poll(
+            async () => {
+              const now = await read()
+              return wanted.every((w) => now.pills.some((p: { text: string }) => p.text === w)) && now.bars.length >= 2
+            },
+            { timeout: 30_000 },
+          )
+          .toBe(true)
         const seen = await read()
         const words = seen.pills.map((p: { text: string }) => p.text)
         for (const w of ['Done', 'Late', 'Next', 'Planned', 'High', 'Medium', 'Low']) expect(words, w).toContain(w)
