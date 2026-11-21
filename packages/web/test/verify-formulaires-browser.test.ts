@@ -110,16 +110,23 @@ describe.skipIf(!playwright)('blocs finis, réglages lisibles, données en formu
     const target = page.getByText(hoverText).first()
     const gear = page.getByRole('button', { name: w.settings }).first()
     if ((page.viewportSize() as { width: number }).width < 500) {
-      // a phone has no hover: a tap on the block raises its bar; tap again until the gear is what is under its centre
-      for (let attempt = 0; attempt < 8; attempt++) {
-        await target.tap()
-        const raised = await gear.evaluate((el: HTMLElement) => {
-          const r = el.getBoundingClientRect()
-          const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)
-          return !!top && el.contains(top)
-        })
-        if (raised) break
-      }
+      // a phone has no hover: a tap on the block raises its bar. Tap again and probe until the gear is what is under
+      // its centre (the signal), within a bounded time; a bar that never rises fails by saying so, not as a click timeout.
+      await expect
+        .poll(
+          async () => {
+            await target.tap()
+            return gear.evaluateAll((els: HTMLElement[]) => {
+              const el = els[0]
+              if (!el) return false
+              const r = el.getBoundingClientRect()
+              const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)
+              return !!top && el.contains(top)
+            })
+          },
+          { timeout: 20_000, intervals: [250, 500, 1000], message: 'the block bar never rose: the settings gear never received the centre of its rectangle after tapping the block' },
+        )
+        .toBe(true)
     } else await target.hover()
     await page.getByRole('button', { name: w.settings }).first().click()
   }
