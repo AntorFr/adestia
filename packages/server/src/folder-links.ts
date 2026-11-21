@@ -21,7 +21,7 @@ interface Edit {
 }
 
 /** What the rename is, as the rewriting needs it. */
-export interface Renaming {
+interface Renaming {
   /** The old logical path of the folder, e.g. `a/old`. */
   readonly from: string
   /** The new last segment. */
@@ -46,7 +46,7 @@ const segmentsOf = (path: string): string[] => path.split('/').filter((part) => 
  * the folder); a wikilink needs something under it, as `type#id` carries a bare
  * word that must stay a reference.
  */
-export function moveDestination(dest: string, renaming: Renaming, exact: boolean, wiki = false): string | undefined {
+function moveDestination(dest: string, renaming: Renaming, exact: boolean, wiki = false): string | undefined {
   const [path, suffix] = split(dest)
   if (path === '' || SCHEME.test(path)) return undefined
   const old = segmentsOf(renaming.from)
