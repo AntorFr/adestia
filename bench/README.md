@@ -22,7 +22,7 @@ node bench/launch.mjs --engine fake                               # the scripted
 CLAUDE_CODE_OAUTH_TOKEN=… node bench/launch.mjs --engine claude   # a real Claude turn
 ```
 
-Options: `--restart` (with `--engine fake`: the real boot loop, so `/api/restart` is mounted), `--skin <id>`, `--locale en|fr`, `--seed <name>` (default `base`),
+Options: `--restart` (with `--engine fake`: the binary's boot loop replayed with the scripted engine, so `/api/restart` is mounted), `--skin <id>`, `--locale en|fr`, `--seed <name>` (default `base`),
 `--no-end-session` (the `oidc` seed's provider announces no `end_session_endpoint`, so sign-out takes the `/auth/login?switch=1` fallback), `--port <n>` (default: a free one), `--data <dir>` (default: a throwaway
 directory under `os.tmpdir()`; a directory you name is kept). It prints
 `listening on <url>` once `/api/health` answers `ok`, and runs until SIGTERM,

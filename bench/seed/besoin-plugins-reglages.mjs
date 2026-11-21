@@ -4,7 +4,7 @@
  *   atlas (app, ON), boussole (app, off), loupe (tool, ON), veille (feature, off), socle (core),
  *   casse (refused: its manifest says another id), and a source folder holding lointain (app, off).
  * The apps carry a tile and a view (an h1 with their label), so a restart can be seen applying.
- * Run with `--restart` to get the real boot loop behind `/api/restart`.
+ * Run with `--restart` to get the binary's boot loop, replayed with the scripted engine (bench/restart-loop.mjs), behind `/api/restart`.
  */
 import { join } from 'node:path'
 

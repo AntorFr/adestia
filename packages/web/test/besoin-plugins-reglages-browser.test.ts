@@ -1,7 +1,7 @@
 /**
  * Feature `adestia-plugins-reglages` seen from its need only (B-plugins-1 to B-plugins-4, P-plugins-1, E-9 tile, E-37),
- * through a driven browser on the bench instance (`bench/launch.mjs --restart --seed besoin-plugins-reglages`: the plain
- * binary's boot loop, so `/api/restart` really restarts it; scripted engine, two turns running). Every expectation is
+ * through a driven browser on the bench instance (`bench/launch.mjs --restart --seed besoin-plugins-reglages`: the
+ * binary's boot loop replayed by bench/restart-loop.mjs, so `/api/restart` really restarts it; scripted engine, two turns running). Every expectation is
  * written by hand from docs/parcours.md and docs/ecrans.md, never read back from the code. Needs `npm run build`.
  * The effects themselves (the file, the 404, the 409) are proved at the server door in
  * packages/server/test/besoin-plugins-reglages.test.ts; here is the nominal of each gesture and what the screen shows.
