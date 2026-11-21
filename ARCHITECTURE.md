@@ -1244,18 +1244,15 @@ The gallery is a sheet (`.adestia-sheet*`, bottom sheet on a phone) like the oth
 *Reversed if* (AD-34 to AD-36): AD-34 and AD-35 not expected; AD-36 only if Monsieur's choice on the mockup `etat-projet` (blocks A, B, C, B-29) needs a seed shape the frontmatter cannot carry — settled in the design of tranche 4.
 
 ### AD-37 — Creations are declared, by the core and by each plugin's manifest
-What the user can create is a list of declarations (`docs/donnees.md`): the core's in a table of the web package, each plugin's in a `creations` key of its manifest, validated in `packages/schemas`, read by the shell from the manifests of **enabled** plugins only, as `templates` and `gallery` are (AD-36, AD-deplacer-2). `app/creations.ts` merges and scopes them; E-38 draws them from that one list: behind the always-present **+** button of the home and of a folder (the main way to discover, Monsieur 2026-11-19) and as buttons in the empty states, so a plugin appears everywhere by declaring once and the core changes nowhere. A button creates the page itself, never by a sentence for the agent (Monsieur, 2026-11-19): it can only open E-36 on a template or (core) make a folder; no plugin code runs at the click, and a plugin lists only what it knows how to create. The official plugins of the repository are reviewed one by one (B-34): a plugin with no useful template adds nothing; plugins carried elsewhere, the cockpit included, are not touched.
-*Built (`adestia-decouverte-creer-dossier`)*: the core's side only — `app/creations.ts` merges and scopes by place and `writableFolders` (the table holds `folder`, the type already admits `template`), `app/CreateEntry.tsx` draws the **+** and the empty-state buttons, `app/ui/NameSheet.tsx` is the shared name sheet. The `creations` key of the plugin manifest, its validation and the `template` action are the next tranche's.
+What the user can create is a list of declarations (`docs/donnees.md`): the core's in a table of the web package, each plugin's in a `creations` key of its manifest, validated in `packages/schemas`, read by the shell from the manifests of **enabled** plugins only, as `templates` and `gallery` are (AD-36, AD-deplacer-2). `app/creations.ts` merges and scopes them; E-37 draws them from that one list: behind the always-present **+** button of the home and of a folder (the main way to discover, Monsieur 2026-11-19) and as buttons in the empty states, so a plugin appears everywhere by declaring once and the core changes nowhere. A button creates the page itself, never by a sentence for the agent (Monsieur, 2026-11-19): it can only open E-36 on a template or (core) make a folder; no plugin code runs at the click, and a plugin lists only what it knows how to create. The official plugins of the repository are reviewed one by one (B-34): a plugin with no useful template adds nothing; plugins carried elsewhere, the cockpit included, are not touched.
 *Rejected*: a hard-coded list in the home (a plugin would need a core change); a plugin-supplied component per button (runtime code on the home, no design-system check); an action that fills the composer with a sentence for the agent (Monsieur removed it: a line creates, it does not ask); deriving the buttons from `gallery` alone.
 *Reversed if* a plugin has a creation that neither a folder nor a template can make: then a new action is added by its own tranche, not here.
 
 ### AD-39 — A folder is renamed by one route that moves the directory and rewrites the path links
-*Built*: the route (`routes/pages.ts`, rewriting in `folder-links.ts`); the **Rename** control belongs to a later task. A folder an app owns is refused through `absorbs` only: `folderRoute` lives in the shell, the server cannot ask a plugin's `routeFor`.
 `POST /api/folders/rename` renames the last segment of a folder held by one writable store, then rewrites, page by page, the path links that led into it (`docs/donnees.md`, Renaming a folder). *Rejected*: leaving a redirect file or a stored alias under the old name (state the user did not ask for, which hides a stale link instead of mending it); resolving a dead path by searching for a folder of the same content (a guess, and wrong on two similar folders); renaming only in the client (lost on reload). A partial rewrite is told (`unrewritten`), never hidden; the directory rename is not undone, since a link left behind is a text the user can mend and a half-restored tree is not. Rights as AD-38, no role: whoever may write in the folder and in its parent (the name lives in the parent), both read from `writableFolders`.
 
 ### AD-38 — A folder is created by a route and listed with the page index
-`POST /api/folders` makes the directory (E-36's store choice and write check, atomic `mkdir`, 409 on a taken path judged across the union of stores); the page index gains `folders` so an empty folder is a section. *Built*: `POST /api/folders` (the client sends the path already reduced to slugs; the server only refuses a last segment that is not one, 400) and `folders` in `GET /api/pages/index` (every directory of every store, read-only ones too, `allFolders` in `writable-folders.ts`). A folder under an active app's `absorbs` gets 403.
-*Rejected*: writing a placeholder page (a file the user did not ask for, to hide); creating the folder only in the client until its first page (lost on reload). Who may create: anyone who may write in the store, as for a page (E-36); there is no other role. Checked against the code: no store code removes an empty directory, and `sections.ts` derives sections from pages only (« a folder holding pages IS a section »), so it cannot take a folder without a page. *Decided*: E-2 adds a tile for each entry of `folders` that no section covers, and E-3 opens on it as an empty folder; B-33 holds either way.
+`POST /api/folders` makes the directory (E-36's store choice and write check, atomic `mkdir`, 409 on a taken path judged across the union of stores); the page index gains `folders` so an empty folder is a section. *Rejected*: writing a placeholder page (a file the user did not ask for, to hide); creating the folder only in the client until its first page (lost on reload). Who may create: anyone who may write in the store, as for a page (E-36); there is no other role. Checked against the code: no store code removes an empty directory, and `sections.ts` derives sections from pages only (« a folder holding pages IS a section »), so it cannot take a folder without a page. *Decided*: E-2 adds a tile for each entry of `folders` that no section covers, and E-3 opens on it as an empty folder; B-33 holds either way.
 *Reversed if* the tranche finds a store whose mount cannot hold an empty directory (object storage): then that store is skipped like a read-only one.
 
 ### AD-structure-1 — How a block moves into, out of and between containers
@@ -2016,68 +2013,3 @@ built without `ADESTIA_VERSION`, which does not copy it), the line says "Adestia
 **Dimensions.** Security: no input, a file of the repository read once, the string is matched by
 `^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$` before it is served. Cost: one read of ~65 KB at boot.
 Observability: the line of E-15 is the check. No data, no migration, no new setting.
-
-## Decisions of adestia-plugins-reglages
-
-### AD-plugins-1 — Plugins have their own route and writer; the settings catalogue stays scalar
-
-**Invariant.** The browser can change exactly one thing about extensions: whether a plugin the instance
-*already found* is named in the list of its kind. It cannot name a plugin the instance did not
-discover, add a source, or write any other key. `extensions.sources`, `driver.command` and the
-secrets keep their frontier (the file, edited from the machine), as `settings.ts` states.
-
-**Decision.** `GET /api/plugins` and `PUT /api/plugins/:id` (`routes/plugins.ts`), not a new
-`SETTINGS` entry (the catalogue is scalar keys: a list is not one, and adding it would let a "write
-any list" path in). The body is `{ active: boolean, revision?: string }`. The route looks `:id` up in
-the discovered plugins (`404` otherwise; `409` for `core`, always on), takes the list from its
-manifest kind (`apps`, `features`, `tools`) and calls a new `setActivation(file, list, id, active,
-revision)` in `settings-file.ts`: the same `readDocument` / revision / safe-write / `writability`
-round trip as `applyChanges` (comments, layout and file mode kept; `409 stale` on a changed revision;
-`503` read-only; `400` when `active` is not a boolean, `revision` not a string, or `extensions.<list>` is not a list), adding or removing that one entry of that one sequence (creating `extensions.<list>` when absent, and
-leaving the key as an empty list rather than deleting it when the last entry goes). Alternatives
-rejected: a catalogue `list` kind (opens generic list writes); a second state file for overrides
-(a second source of truth: `adestia.config.yaml` stays the only one, as for E-14's settings, see the E-14 section above).
-
-**Why this is not widening the frontier.** Turning on a plugin runs code the owner already put on the
-instance (image, plugins folder, or a source already in the file); installing stays out. An instance
-with `auth.mode: none` already lets any visitor rewrite settings and restart (E-14, `/api/restart`);
-this route has the same reach and the same absence of role (P-1 "Who it is for"), and is mounted only
-when the server has a `configPath`, like `registerSettings`.
-
-**Accepted risk (decided by the owner).** `PUT /api/plugins/:id` is open to whoever reaches the port
-(`auth.mode: none`) or to any OIDC account: no administrator role gates it, and the route is kept as
-is. Two reasons. Without authentication, anyone who reaches the machine can already get code run,
-directly or through the agent, so enabling a found plugin opens nothing more. With OIDC, Adestia has no
-notion of administrator at this stage, which amounts to assuming all its users are trusted. Reopen this if
-an administrator role arrives, or if an instance becomes reachable beyond people the owner trusts.
-
-### AD-plugins-2 — The payload says what is found, what is loaded and what the file wants
-
-**Decision.** `GET /api/plugins` returns `{ plugins: [...], refused: [...], file, writable,
-readOnlyReason?, revision, pluginsDir }`. Per found plugin: `id`, `kind`, `description`, `version?`,
-`origin` (`{ kind: 'folder' }` or `{ kind: 'source', name }`), `loaded` (the `active` of discovery, i.e. the
-boot-time answer), `wanted` (from the file: the id is in the list of its kind; `core` always true),
-`problems` (the degraded `DiscoveryProblem`s of that id). `refused`: every `DiscoveryProblem` with no
-`severity` or `refused` — id, reason, `code`/`params` — including the loser of a duplicate id, whose
-row is the problem, not a plugin. `DiscoveredPlugin` gains `origin` (set by `discoverPlugins` from the
-root it came from; `extensionFolders` already knows the root). The frontend payload of
-`/api/instance` (`frontendPayload`) is unchanged: it lists only active plugins, which is why a
-separate route exists. `wanted` is read from the file, not the loaded config, for the reason `routes/settings.ts`
-gives; a file that does not parse gives `wanted = loaded` and the read-only reason. Types in `packages/schemas`
-(`PluginsPayload`), the web reads them with the existing `request` helper.
-
-### AD-plugins-3 — Applying is the restart that exists
-
-**Decision.** Plugins are discovered, set up and mounted at boot (`start.ts`: `discoverExtensions`,
-`runSetups`, `mountPluginApis`, the manifest merge), and a plugin's vocabulary, MCP servers and skills
-are all registered there; no in-place reload exists and none is built (it would touch six
-modules for a rare action). A change therefore always *applies after a restart*, through
-`POST /api/restart` and the E-14 components (`RestartBar`, `useRestart`) reused unchanged: refused
-while turns run, `force`, "Coming back…". The criterion "after application the app appears" is proved
-through a real restart of a booted instance (the launcher loop), not a mocked one.
-
-**Dimensions.** Security: AD-plugins-1; `id` is matched against the discovered set, never interpolated;
-YAML written through the document API only. Failure: a plugin that fails at the next boot is refused and
-listed on E-19 and E-37, the instance still boots (existing behaviour); the owner switches it off from E-37.
-Concurrency: revision check; two tabs get `409 stale`. Observability: the page is the check; the restart
-log line of the launcher. Data: no migration, no new store. i18n: new strings in `i18n.ts`, English and French.
