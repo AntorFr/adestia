@@ -82,7 +82,7 @@ function iconOf(name: string | undefined): IconName {
  * to the page icon (a manifest is data, an unknown name must not leave a hole).
  */
 export function pluginCreations(
-  plugins: readonly { readonly id: string; readonly creations?: readonly PluginCreation[] }[],
+  plugins: readonly { readonly id: string; readonly creations?: readonly PluginCreation[] | undefined }[],
   locale: string = 'en',
 ): readonly { readonly plugin: string; readonly declaration: CreationDeclaration }[] {
   return plugins.flatMap((plugin) =>
