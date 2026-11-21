@@ -1108,6 +1108,14 @@ branch and that `test:plugins` is replayed after a red vitest run.
   taken is refused under the field. An empty home or folder offers the same entries as buttons, and a
   read-only folder offers none.
 
+- **A folder can be renamed from its header** — a **Rename** button (pencil) sits after **+** and
+  **New from template** in a folder's header, only where the folder and its parent can be written,
+  and never on a folder an app owns. It opens the folder-name sheet preset to the current name
+  (the parent shown above it); an empty or unchanged name leaves Rename disabled, a name already
+  taken or a folder that cannot be renamed is explained under the field, and the sheet stays. When
+  it succeeds the folder opens at its new address. If some pages (in a read-only store) still point
+  to the old name, a line says how many, and **Details** lists them. Behind it, `POST /api/folders/rename` renames the directory and mends, page by page, the `[[old/…]]` and markdown links that led into it in every writable store; a read-only store keeps its links and is counted. English and French.
+
 ## v0.98.10
 
 - **Settings lists the instance's plugins and switches them on or off** — a new Plugins tile in
@@ -1123,13 +1131,3 @@ branch and that `test:plugins` is replayed after a red vitest run.
 - **The pages browser tests no longer fail under load** — the six `nestor / en` pages tests now
   wait on signals from the page within a per-test budget, so a loaded host reports what the page
   did instead of timing out. Tests only: nothing changes for users.
-
-## Unreleased
-
-- **A folder can be renamed from its header** — a **Rename** button (pencil) sits after **+** and
-  **New from template** in a folder's header, only where the folder and its parent can be written,
-  and never on a folder an app owns. It opens the folder-name sheet preset to the current name
-  (the parent shown above it); an empty or unchanged name leaves Rename disabled, a name already
-  taken or a folder that cannot be renamed is explained under the field, and the sheet stays. When
-  it succeeds the folder opens at its new address. If some pages (in a read-only store) still point
-  to the old name, a line says how many, and **Details** lists them. English and French.

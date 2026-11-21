@@ -67,7 +67,7 @@
     "packages/web/test/nouveau-modele-browser.test.ts": ["E-3"],
     "packages/web/test/verify-etat-projet-browser.test.ts": ["E-3"],
     "packages/web/test/besoin-creer-dossier-browser.test.ts": ["E-2", "E-3"],
-    "packages/web/test/besoin-renommer-browser.test.ts": ["E-3", "E-37"],
+    "packages/web/test/besoin-renommer-browser.test.ts": ["E-3"],
     "packages/web/test/complement-formulaires-browser.test.ts": ["E-4", "E-5", "E-6"],
     "packages/web/test/ensemble-pages-deplacer-browser.test.ts": ["E-4", "E-5", "E-6"],
     "packages/web/test/ensemble-pages-deplacer-cartes-browser.test.ts": ["E-4", "E-5", "E-6"],
