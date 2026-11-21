@@ -41,6 +41,8 @@ export const CORE_CREATIONS: readonly CreationDeclaration[] = [
 function allowed(creation: CreationDeclaration, place: CreationPlace, writableFolders: readonly string[]): boolean {
   if (creation.where && !creation.where.includes(place.at)) return false
   if ('folder' in creation.action) return writableFolders.includes(place.at === 'home' ? '' : place.folder)
+  // From the home a template is written in a folder the user picks: one must be writable.
+  if (place.at === 'home') return writableFolders.length > 0
   return true
 }
 
