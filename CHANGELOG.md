@@ -1111,6 +1111,12 @@ branch and that `test:plugins` is replayed after a red vitest run.
 
 ## Unreleased
 
+- **A script plays the web plugin on a real turn** — `bench/web-reel.sh <image>` boots the named image with
+  `extensions.tools: [web]` then `[]`, runs a real claude turn asking the price of the protected shop page, and
+  prints the rendered text, the page file written under `.adestia-web/` and the tool names seen, then checks that no
+  Chrome process survives. **Not played yet**: the pods have no Docker, so the real run (plugin on and off, then from
+  `homenode`) remains to be played on the image published at the delivery tag, with the image's measured extra size
+  (also not measured, see the entry above).
 - **The image carries the headless Chrome of the web plugin** — the `Dockerfile` installs the
   plugin's dependencies in a build stage and, in the runtime stage, `chromium-headless-shell` and its
   libraries through the plugin's own `playwright-core`, into `/opt/browsers`, for amd64 and arm64. No
