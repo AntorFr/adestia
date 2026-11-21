@@ -22,7 +22,7 @@ node bench/launch.mjs --engine fake                               # the scripted
 CLAUDE_CODE_OAUTH_TOKEN=… node bench/launch.mjs --engine claude   # a real Claude turn
 ```
 
-Options: `--restart` (with `--engine fake`: the real boot loop, so `/api/restart` is mounted), `--skin <id>`, `--locale en|fr`, `--seed <name>` (default `base`),
+Options: `--restart` (with `--engine fake`: the binary's boot loop replayed with the scripted engine, so `/api/restart` is mounted), `--skin <id>`, `--locale en|fr`, `--seed <name>` (default `base`),
 `--no-end-session` (the `oidc` seed's provider announces no `end_session_endpoint`, so sign-out takes the `/auth/login?switch=1` fallback), `--port <n>` (default: a free one), `--data <dir>` (default: a throwaway
 directory under `os.tmpdir()`; a directory you name is kept). It prints
 `listening on <url>` once `/api/health` answers `ok`, and runs until SIGTERM,
@@ -71,7 +71,7 @@ or scenario caller. It uses the repository's TypeScript parser, without a browse
 | `chat-permission` | E-17/E-18: isolated desk/phone threads, pending/signed/denied/expired signatures, questions with and without a lasting rule; `permissions.mode: ask` also supports the real-Claude proof. |
 | `besoin-copie` | E-16 copy box (AD-copie-1): settled replies with `copy` fences (an email, a short line, an empty and an unclosed block, a `sh` block that gets no button) and one turn that streams a fence; `scenarios/copy-block.mjs` takes the pictures (docker); without docker open the threads by hand. |
 | `config-writable` | `base`, with the configuration file the screen reads and writes. |
-| `plugins-reglages` | `config-writable` plus two apps in the plugins folder — `bench-actif` (named in `extensions.apps`) and `bench-inactif` (found, not named) — beside the plugins `base` refuses, for the Plugins page (E-37, `scenarios/plugins-reglages.mjs`). With `--restart` the launcher runs the plain binary's boot loop (`packages/server/bin/adestia.js`) behind the fake-engine seed, no token: `/api/restart` really restarts the instance. |
+| `plugins-reglages` | `config-writable` plus two apps in the plugins folder — `bench-actif` (named in `extensions.apps`) and `bench-inactif` (found, not named) — beside the plugins `base` refuses, for the Plugins page (E-37, `scenarios/plugins-reglages.mjs`). With `--restart` the launcher runs the binary's boot loop with the scripted engine (`bench/restart-loop.mjs`, held turns stay held): `/api/restart` really restarts the instance. |
 | `config-readonly` | `base`, with the file read-only and the credential refused upstream. A process running as root can write a `0444` file: the screen then shows it writable. |
 | `oidc` | `base` behind a sign-in; the provider is `bench/oidc-stub.mjs`. |
 | `empty` | Nothing: no plugin, page, conversation, server, catalogue or credential. |

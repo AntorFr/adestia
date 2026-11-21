@@ -1143,3 +1143,10 @@ branch and that `test:plugins` is replayed after a red vitest run.
   prints the rendered text, the page file written under `.adestia-web/` and the tool names seen, then checks that no
   Chrome process survives. **Not played yet**: the real run (plugin on and off, then from `homenode`) remains to be
   played on the image published at the delivery tag.
+
+## v0.98.14
+
+- **The Plugins settings restart browser test no longer fails under load** — the test that turns one app on and
+  another off, restarts the instance and checks the page afterwards now waits for the restart through a launcher
+  that replays the binary's boot loop with the scripted engine. Tests and bench launcher only: nothing changes
+  for users.

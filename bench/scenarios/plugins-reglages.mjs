@@ -4,7 +4,7 @@
  *   npm run build && node bench/scenarios/plugins-reglages.mjs
  *
  * One instance of `node bench/launch.mjs --engine fake --restart --seed plugins-reglages`
- * (the plain binary's boot loop, no token: `/api/restart` really restarts it, no
+ * (the binary's boot loop replayed with the scripted engine, bench/restart-loop.mjs, no token: `/api/restart` really restarts it, no
  * stand-in). No docker: the bench's host path, and the report says so.
  *
  *  1. the four pictures of the page with its three groups — light/dark × desk/phone —
@@ -63,7 +63,7 @@ async function launch(flags) {
   })
   return { url, child }
 }
-// The pictures come from the scripted engine (no console error to hide); the restart is the plain binary's loop.
+// The pictures come from the scripted engine (no console error to hide); the restart is the binary's boot loop, replayed with the scripted engine.
 const shown = await launch([])
 const looped = await launch(['--restart'])
 let base = shown.url

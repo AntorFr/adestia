@@ -17,10 +17,12 @@
  *                   `CLAUDE_CODE_OAUTH_TOKEN` from the environment; refused
  *                   without it, before anything is created.
  *
- * `--restart`      the plain binary's boot loop (packages/server/bin/adestia.js),
- *                   so `/api/restart` is mounted and a restart really happens —
- *                   with the scripted engine's seed, no token and no real turn
- *                   (the claude driver is only reached by a turn).
+ * `--restart`      the binary's boot loop with the scripted engine behind it
+ *                   (bench/restart-loop.mjs, the same cycle as
+ *                   packages/server/bin/adestia.js), so `/api/restart` is mounted
+ *                   and a restart really happens — and the turns a seed's `ready`
+ *                   starts stay running until stopped: the plain binary's real
+ *                   driver ends them by itself, at a time that depends on load.
  *
  * A seed (bench/seed/<name>.mjs) is `default(ctx) => yamlText`, with
  * optional exports: `scripts` (the engine's answers), `engine`
@@ -186,7 +188,8 @@ try {
     if (configFile === 'none') hideSettings(instance.app.server)
   } else {
     if (configFile === 'none') console.error('launch: the plain binary always has a configuration file — /api/settings stays exposed')
-    child = spawn(process.execPath, [join(root, 'packages/server/bin/adestia.js'), '--config', configPath], {
+    const entry = options.engine === 'fake' ? [join(here, 'restart-loop.mjs'), '--config', configPath, '--seed-file', seedFile] : [join(root, 'packages/server/bin/adestia.js'), '--config', configPath]
+    child = spawn(process.execPath, entry, {
       cwd: base,
       env: env,
       stdio: ['ignore', 'inherit', 'inherit'],

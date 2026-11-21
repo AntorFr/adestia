@@ -5,7 +5,7 @@
  *
  * The apps carry a tile and a view, so the proof after a restart is visible:
  * the tile and `#/bench-<name>` exist for the one the file names, and for no other.
- * Run with `--restart` to get the real boot loop behind `/api/restart`.
+ * Run with `--restart` to get the binary's boot loop, replayed with the scripted engine (bench/restart-loop.mjs), behind `/api/restart`.
  */
 import { populate, storeToken, configFor } from './_base.mjs'
 import { put } from './_lib.mjs'
