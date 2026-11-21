@@ -1108,3 +1108,9 @@ branch and that `test:plugins` is replayed after a red vitest run.
   When turns are running, the restart is refused with their count until you choose **Restart
   anyway**. Core plugins stay locked, and a read-only or missing configuration file leaves the
   switches inert with the reason shown.
+
+## v0.98.11
+
+- **The pages browser tests no longer fail under load** — the six `nestor / en` pages tests now
+  wait on signals from the page within a per-test budget, so a loaded host reports what the page
+  did instead of timing out. Tests only: nothing changes for users.
