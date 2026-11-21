@@ -1123,3 +1123,10 @@ branch and that `test:plugins` is replayed after a red vitest run.
 - **The pages browser tests no longer fail under load** — the six `nestor / en` pages tests now
   wait on signals from the page within a per-test budget, so a loaded host reports what the page
   did instead of timing out. Tests only: nothing changes for users.
+
+## v0.99.0-adestia-decouverte.1
+
+- **The + creates a folder** — the pre-release of the `adestia-decouverte` epic so far: a **+**
+  beside Ask on the home and in a folder's header lists what can be created, and **New folder**
+  makes an empty folder (`POST /api/folders`) that shows as a tile at once. A fresh instance can
+  create its first folder. Rename, plugin creations and templates come in later features of the epic.
