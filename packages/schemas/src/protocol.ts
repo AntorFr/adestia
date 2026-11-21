@@ -99,3 +99,22 @@ export interface McpServerView {
    */
   readonly shadowed?: boolean
 }
+
+/**
+ * The folder fields of `GET /api/pages/index` (AD-38). `folders` lists every
+ * folder that exists as a directory in some store, empty ones included, so a
+ * folder with no page yet still shows; `writableFolders` is the subset where
+ * a page or a folder may be written.
+ */
+export interface PageIndexFolders {
+  readonly writableFolders: readonly string[]
+  readonly folders: readonly string[]
+}
+
+/** `POST /api/folders` `{path}` → 201 with the logical path made. */
+export interface CreateFolderRequest {
+  readonly path: string
+}
+export interface CreateFolderResponse {
+  readonly path: string
+}
