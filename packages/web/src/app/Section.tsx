@@ -41,6 +41,8 @@ export interface SectionProps {
   readonly t?: (key: string) => string
   /** A control for the header's right edge (E-3's New from template); drawn only when given. */
   readonly headerAction?: ReactNode
+  /** A line under the header (B-35: pages that still point to the old name). */
+  readonly notice?: ReactNode
   /** Every folder the stores hold, empty ones included. */
   readonly folders?: readonly string[]
   /** What fills an empty folder: the creation entries as buttons. */
@@ -205,6 +207,7 @@ export function Section({
   ready = true,
   t = (key) => key,
   headerAction,
+  notice,
   folders = [],
   emptyAction,
 }: SectionProps) {
@@ -319,6 +322,7 @@ export function Section({
         </div>
         {headerAction ? <div className="adestia-chead__actions">{headerAction}</div> : null}
       </header>
+      {notice}
 
       {rooms.length > 0 && (
         <>

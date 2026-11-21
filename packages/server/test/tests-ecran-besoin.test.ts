@@ -102,6 +102,7 @@ describe('tests d\'écran hors écran — inventaire (docs/tests-ecran)', () => 
       'packages/web/test/besoin-creer-dossier-browser.test.ts',
       'packages/web/test/besoin-pages-structure-browser.test.ts',
       'packages/web/test/besoin-popover-bandeau-tardif-browser.test.ts',
+      'packages/web/test/besoin-renommer-browser.test.ts',
       'packages/web/test/besoin-rouge-23-spinner-config.test.ts',
       'packages/web/test/besoin-rouge-25-menu-rouage-browser.test.ts',
       'packages/web/test/blocs-projet-browser.test.ts',
