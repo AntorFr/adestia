@@ -57,6 +57,36 @@ const lines = async (page: any, selector: string): Promise<string[]> =>
 const crumbs = async (page: any): Promise<string[]> => (await lines(page, 'nav.adestia-crumbs')).filter((l) => l !== '/')
 const body = (page: any) => lines(page, '.adestia-canvas__body')
 
+/**
+ * The waits of one test share one budget: its own timeout less a margin, so a wait that runs out
+ * says what it waited for and what the page showed, before vitest cuts the test with a bare timeout.
+ */
+const MARGIN_MS = 8_000
+interface Budget {
+  left(cap?: number): number
+}
+function budget(total: number): Budget {
+  const end = Date.now() + total - MARGIN_MS
+  return { left: (cap = Infinity) => Math.max(1_000, Math.min(cap, end - Date.now())) }
+}
+const spec = (name: string, timeout: number, fn: (b: Budget) => Promise<void>) => it(name, () => fn(budget(timeout)), timeout)
+
+/** What the page shows, for the message of a wait that ran out. */
+async function shows(page: any): Promise<string> {
+  return (await page.evaluate(() => (document.body?.innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 300)).catch(() => '(page unreadable)')) as string
+}
+/** Waits for `fn` to hold in the page (rAF-polled), within the budget; on expiry says what was awaited and what the page shows. */
+async function until(page: any, b: Budget, what: string, fn: (arg: any) => unknown, arg?: unknown): Promise<void> {
+  const timeout = b.left()
+  try {
+    await page.waitForFunction(fn, arg, { timeout, polling: 'raf' })
+  } catch (error) {
+    const cause = error instanceof Error ? error.message.split('\n')[0] : String(error)
+    throw new Error(`${what}: not reached within ${timeout} ms (${cause}); the page shows: « ${await shows(page)} »`)
+  }
+}
+const appears = (page: any, b: Budget, selector: string) => until(page, b, `'${selector}' never appeared`, (s: string) => !!document.querySelector(s), selector)
+
 describe.skipIf(!playwright)('pages tranche, from the need', () => {
   for (const skin of SKINS) {
     for (const locale of LOCALES) {
@@ -65,12 +95,18 @@ describe.skipIf(!playwright)('pages tranche, from the need', () => {
         let instance: Instance
         let browser: BrowserOf
         beforeAll(async () => {
-          instance = await launch('besoin-pages', skin, locale)
-          browser = await newBrowser()
-        }, 60_000)
+          try {
+            instance = await launch('besoin-pages', skin, locale)
+            browser = await newBrowser()
+          } catch (error) {
+            await browser?.close().catch(() => {})
+            await instance?.stop().catch(() => {})
+            throw new Error(`the instance or the browser did not open for ${skin} / ${locale}: ${error instanceof Error ? error.message : String(error)}`, { cause: error })
+          }
+        }, 120_000)
         afterAll(async () => {
-          await browser?.close()
-          await instance?.stop()
+          await browser?.close().catch(() => {})
+          await instance?.stop().catch(() => {})
         })
 
         // B-16 / P-4 step 6: a root page's trail is Home and its title, never a folder it does not sit in.
@@ -171,48 +207,48 @@ describe.skipIf(!playwright)('pages tranche, from the need', () => {
         // P-6 step 4 / E-6: the settings popover never covers the canvas header nor the bands above the page,
         // and stays in the viewport — at 1440 px with the anchor low on the page (the panel then flips above),
         // and at phone width.
-        it('reglages_de_bloc_ne_recouvrent_ni_entete_ni_bandeaux', async () => {
+        spec('reglages_de_bloc_ne_recouvrent_ni_entete_ni_bandeaux', 240_000, async (b) => {
           for (const theme of THEMES)
             for (const size of SIZES) {
               const { context, page } = await visit(browser, instance.url, locale, theme, size, '/page/haute')
-              await page.waitForSelector('.adestia-problems', { timeout: 15_000 })
+              await appears(page, b, '.adestia-problems')
               await page.getByRole('button', { name: w.edit, exact: true }).click()
-              await page.waitForSelector('[data-block="callout"]', { timeout: 15_000 })
-              await openBlockSettings(page, w.block)
+              await appears(page, b, '[data-block="callout"]')
+              await openBlockSettings(page, b, w.block)
               await expectPopoverClear(page, `${theme} ${size}`)
               await shot(page, `reglages-${skin}-${locale}-${theme}-${size}`)
               await context.close()
             }
-        }, 240_000)
+        })
 
         // E-6 bords: the anchor scrolled up under the header — the panel stays at the header's edge and stays open.
-        it('reglages_de_bloc_suivent_leur_ancre_sous_lentete', async () => {
+        spec('reglages_de_bloc_suivent_leur_ancre_sous_lentete', 60_000, async (b) => {
           const { context, page } = await visit(browser, instance.url, locale, 'light', 'desk', '/page/haute')
-          await page.waitForSelector('.adestia-problems', { timeout: 15_000 })
+          await appears(page, b, '.adestia-problems')
           await page.getByRole('button', { name: w.edit, exact: true }).click()
-          await page.waitForSelector('[data-block="callout"]', { timeout: 15_000 })
-          await openBlockSettings(page, w.block)
+          await appears(page, b, '[data-block="callout"]')
+          await openBlockSettings(page, b, w.block)
           await page.evaluate(() => {
             const bodyEl = document.querySelector('.adestia-canvas') as HTMLElement
             const gear = document.querySelector('.adestia-edblock__gear') as HTMLElement
             bodyEl.scrollTop += gear.getBoundingClientRect().top + 60 // gear 60 px above the viewport top: wholly under the header
           })
-          await page.waitForFunction(() => (document.querySelector('.adestia-edblock__gear') as HTMLElement).getBoundingClientRect().bottom < 0, null, { timeout: 5_000 })
-          await page.waitForFunction(() => {
+          await until(page, b, 'the gear never scrolled under the header', () => (document.querySelector('.adestia-edblock__gear') as HTMLElement).getBoundingClientRect().bottom < 0)
+          await until(page, b, 'the popover never followed its anchor to the header edge', () => {
             const pop = document.querySelector('.adestia-popover')
             const head = document.querySelector('.adestia-canvas__header')
             // follows its anchor to the header's lower edge (a few px of gap): not left where it was, not under the header
             const gap = !pop || !head ? NaN : pop.getBoundingClientRect().top - head.getBoundingClientRect().bottom
             return gap >= -0.5 && gap <= 16
-          }, null, { timeout: 5_000 })
+          })
           expect(await page.evaluate(() => !!document.querySelector('.adestia-popover'))).toBe(true)
           await shot(page, `reglages-sous-entete-${skin}-${locale}`)
           await context.close()
-        }, 60_000)
+        })
 
         // P-4 step 5, P-12 step 5, E-3: frontmatter in \r\n is read as one in \n.
         // Breaks if the index reads \r\n lines as no frontmatter.
-        it('sections_crlf_lisent_les_memes_champs_que_lf', async () => {
+        spec('sections_crlf_lisent_les_memes_champs_que_lf', 120_000, async (b) => {
           const expected: Record<string, string[]> = {
             '': ['fermée', 'ouverte'], // status
             '-role': ['cuisine', 'jardin'],
@@ -221,49 +257,51 @@ describe.skipIf(!playwright)('pages tranche, from the need', () => {
           for (const [suffix, pills] of Object.entries(expected))
             for (const dir of ['lf', 'crlf']) {
               const { context, page } = await visit(browser, instance.url, locale, 'light', 'desk', `/section/${dir}${suffix}`)
-              await page.waitForSelector('button.adestia-card', { timeout: 15_000 })
+              await appears(page, b, 'button.adestia-card')
+              await until(page, b, `${dir}${suffix}: the chips never settled`, (n: number) => document.querySelectorAll('button.adestia-chip').length === n && document.querySelectorAll('button.adestia-card').length === 3, pills.length + 1)
               const chips = (await page.evaluate(() => [...document.querySelectorAll('button.adestia-chip')].map((e) => (e.textContent ?? '').trim()))) as string[]
               expect(chips.slice(1), `${dir}${suffix}`).toEqual(pills) // the first chip is "All" / "Tout"
               expect(await page.locator('button.adestia-card').count()).toBe(3)
               await context.close()
             }
-        }, 120_000)
+        })
 
-        it('section_crlf_filtre_par_facette', async () => {
+        spec('section_crlf_filtre_par_facette', 60_000, async (b) => {
           const { context, page } = await visit(browser, instance.url, locale, 'light', 'desk', '/section/crlf')
-          await page.waitForSelector('button.adestia-card', { timeout: 15_000 })
-          await page.getByRole('button', { name: 'ouverte', exact: true }).click()
-          await page.waitForFunction(() => document.querySelectorAll('button.adestia-card').length === 2, null, { timeout: 5_000 })
+          await appears(page, b, 'button.adestia-card')
+          await until(page, b, 'the three cards never settled', () => document.querySelectorAll('button.adestia-card').length === 3)
+          await page.getByRole('button', { name: 'ouverte', exact: true }).click({ timeout: b.left(15_000) })
+          await until(page, b, 'the facette never narrowed the list to two cards', () => document.querySelectorAll('button.adestia-card').length === 2)
           const cards = (await page.evaluate(() => [...document.querySelectorAll('button.adestia-card')].map((e) => e.textContent ?? ''))) as string[]
           expect(cards.some((c) => c.includes('Fiche A'))).toBe(true)
           expect(cards.some((c) => c.includes('Fiche C'))).toBe(true)
           expect(cards.some((c) => c.includes('Fiche B'))).toBe(false)
           await shot(page, `crlf-facette-${skin}-${locale}`)
           await context.close()
-        }, 60_000)
+        })
 
         // E-7: the collection groups its CRLF members by `cat` as it groups the LF ones.
-        it('collection_crlf_groupe_comme_lf', async () => {
+        spec('collection_crlf_groupe_comme_lf', 60_000, async (b) => {
           for (const dir of ['lf', 'crlf']) {
             const { context, page } = await visit(browser, instance.url, locale, 'light', 'desk', `/page/${dir}-coll/INDEX`)
-            await page.waitForFunction(() => /Bois|Wood/i.test(document.querySelector('.adestia-canvas__body')?.textContent ?? ''), null, { timeout: 15_000 })
+            await until(page, b, `${dir}: the groups never appeared`, () => /Bois/.test(document.querySelector('.adestia-canvas__body')?.textContent ?? '') && /Métal/.test(document.querySelector('.adestia-canvas__body')?.textContent ?? '') && /(Ask for a new page|Demander une nouvelle fiche)/.test(document.querySelector('.adestia-canvas__body')?.textContent ?? ''))
             const text = (await body(page)).join('|')
             // two groups only, "Bois" (2 members) then "Métal" (1), then the ask button: no group of members the index could not read
             expect(text, dir).toMatch(/Bois\|2 \S+\|Métal\|1 \S+\|(Ask for a new page|Demander une nouvelle fiche)/)
             await context.close()
           }
-        }, 60_000)
+        })
 
         // P-12 step 5 / E-23: the planif app lists a CRLF note as valid, with its cadence, and a CRLF note
         // the clock would refuse with its problem (the sentence itself is server data, kept English).
-        it('planif_lit_les_champs_dune_note_crlf', async () => {
+        spec('planif_lit_les_champs_dune_note_crlf', 180_000, async (b) => {
           for (const theme of THEMES)
             for (const size of SIZES) {
               const { context, page } = await visit(browser, instance.url, locale, theme, size, '/planif')
-              await page.waitForFunction(() => /Note CRLF valide/.test(document.querySelector('.adestia-canvas__body')?.textContent ?? ''), null, { timeout: 15_000 })
+              await until(page, b, `${theme} ${size}: the planif list never appeared`, () => /Note CRLF valide/.test(document.querySelector('.adestia-canvas__body')?.textContent ?? ''))
               // the title paints before its cadence: wait for the settled list, not for the first title (a loaded run read the row half drawn)
               const next = (all: string[], title: string) => all[all.indexOf(title) + 1]
-              await expect.poll(async () => { const l = await body(page); return [next(l, 'Note CRLF valide'), next(l, 'Note LF valide'), next(l, 'Note CRLF trop rapide')].join('|') }, { timeout: 15_000 }).toBe('2h|2h|5m')
+              await expect.poll(async () => { const l = await body(page); return [next(l, 'Note CRLF valide'), next(l, 'Note LF valide'), next(l, 'Note CRLF trop rapide')].join('|') }, { timeout: b.left(), message: `${theme} ${size}: the planif list never settled to the cadences` }).toBe('2h|2h|5m')
               const all = await body(page)
               const at = (title: string) => all.indexOf(title)
               const ok = at('Note CRLF valide')
@@ -277,13 +315,13 @@ describe.skipIf(!playwright)('pages tranche, from the need', () => {
               await shot(page, `planif-${skin}-${locale}-${theme}-${size}`)
               await context.close()
             }
-        }, 180_000)
+        })
       })
     }
   }
 })
 
-async function openBlockSettings(page: any, name: string) {
+async function openBlockSettings(page: any, b: Budget, name: string) {
   await page.locator('[data-block="callout"]').scrollIntoViewIfNeeded()
   const bar = page.locator('[data-block="callout"]')
   try {
@@ -291,9 +329,17 @@ async function openBlockSettings(page: any, name: string) {
   } catch {
     // touch screens have no hover
   }
-  await page.getByRole('button', { name }).first().click()
-  await page.waitForSelector('.adestia-popover', { timeout: 10_000 })
-  await page.waitForTimeout(300) // the panel measures itself once mounted; waiting for it is a visual settle, the assertions below read the geometry
+  await page.getByRole('button', { name }).first().click({ timeout: b.left(15_000) })
+  await appears(page, b, '.adestia-popover')
+  // the panel measures itself once mounted: its rectangle is the same on six consecutive frames before anything reads it
+  await until(page, b, 'the popover never settled', () => {
+    const w = window as any
+    const r = document.querySelector('.adestia-popover')?.getBoundingClientRect()
+    const key = r ? [r.top, r.bottom, r.left, r.right].map((n) => n.toFixed(1)).join(',') : ''
+    w.__popSeen = key && key === w.__popKey ? (w.__popSeen ?? 0) + 1 : 0
+    w.__popKey = key
+    return w.__popSeen >= 6
+  })
 }
 
 async function expectPopoverClear(page: any, label: string) {
