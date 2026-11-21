@@ -23,7 +23,7 @@ import { MissingPage } from './MissingPage.js'
 import { Preferences, prefsTitle, type PrefsPage } from './Preferences.js'
 import { NewFromTemplate } from './NewFromTemplate.js'
 import { CreateEntry } from './CreateEntry.js'
-import { creationsFor } from './creations.js'
+import { creationsFor, pluginCreations } from './creations.js'
 import { Section } from './Section.js'
 import { templateSources } from './templates.js'
 import { Loading } from './ui/Loading.js'
@@ -185,7 +185,7 @@ export function Canvas(props: CanvasProps) {
     }
     const folders = props.folders ?? []
     const creatable =
-      props.indexed !== false && creationsFor({ at: 'folder', folder: section }, props.writableFolders ?? []).length > 0
+      props.indexed !== false && creationsFor({ at: 'folder', folder: section }, props.writableFolders ?? [], pluginCreations(loaded, props.locale)).length > 0
     const create = (variant: 'plus' | 'buttons') =>
       !creatable ? null : (
         <CreateEntry
@@ -194,6 +194,11 @@ export function Canvas(props: CanvasProps) {
           variant={variant}
           fetchImpl={props.fetchImpl}
           onCreated={created}
+          plugins={loaded}
+          pages={pages}
+          stores={stores}
+          locale={props.locale}
+          openPage={openPage}
           t={t}
         />
       )

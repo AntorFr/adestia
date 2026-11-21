@@ -9,7 +9,7 @@ import { ICON_NAMES, type IconName } from './icons.js'
 
 export type CreationPlace = { readonly at: 'home' } | { readonly at: 'folder'; readonly folder: string }
 
-/** `folder`: a new empty folder here. `template`: a page seed (played by a later slice). */
+/** `folder`: a new empty folder here. `template`: a page seed: opens E-36 on that template. */
 export type CreationAction = { readonly folder: true } | { readonly template: string }
 
 export interface CreationDeclaration {

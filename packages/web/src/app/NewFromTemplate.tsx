@@ -17,8 +17,12 @@ import type { IndexEntry, StoreInfo } from './sections.js'
 import { cardOf, pageFrom, slugOf, storeOrder, type TemplateCard, type TemplateSource } from './templates.js'
 
 export interface NewFromTemplateProps {
-  /** The open folder: where the page is written. */
-  readonly folder: string
+  /** The open folder: where the page is written. Absent from the home: the Folder field chooses. */
+  readonly folder?: string
+  /** From the home: where a page may be written; the Folder field is drawn over it once known. */
+  readonly writableFolders?: readonly string[] | undefined
+  /** Opened on one creation's template (E-38): no gallery, and an unreadable file says so on the card. */
+  readonly creation?: boolean
   readonly sources: readonly TemplateSource[]
   readonly pages: readonly IndexEntry[]
   readonly stores: readonly StoreInfo[]
@@ -53,7 +57,7 @@ export function NewFromTemplate(props: NewFromTemplateProps) {
   )
 }
 
-function TemplateSheet({ folder, sources, pages, stores, fetchImpl, locale, openPage, t, onClose }: NewFromTemplateProps & { readonly onClose: () => void }) {
+export function TemplateSheet({ folder, writableFolders, creation = false, sources, pages, stores, fetchImpl, locale, openPage, t, onClose }: NewFromTemplateProps & { readonly onClose: () => void }) {
   const [seeds, setSeeds] = useState<readonly Seed[]>(() => sources.map((source) => ({ state: 'loading', source })))
   const [chosen, setChosen] = useState(0)
   const [title, setTitle] = useState('')
@@ -62,6 +66,13 @@ function TemplateSheet({ folder, sources, pages, stores, fetchImpl, locale, open
   const radios = useRef<(HTMLElement | null)[]>([])
   const alive = useRef(true)
   const headingId = useId()
+  const [picked, setPicked] = useState<string>()
+  // The Folder field exists only from the home, once the index has said where one may write:
+  // the root first when it is writable, then the others by path.
+  const fromHome = folder === undefined
+  const options = fromHome ? [...new Set(writableFolders ?? [])].sort((a, b) => a.localeCompare(b)) : []
+  const target = fromHome ? (picked !== undefined && options.includes(picked) ? picked : options[0]) : folder
+  const where = target === '' ? t('Root') : (target ?? '')
 
   useEffect(() => {
     alive.current = true
@@ -107,12 +118,13 @@ function TemplateSheet({ folder, sources, pages, stores, fetchImpl, locale, open
   const selected = seeds[chosen]
   const ready = selected?.state === 'ready' ? selected.card : undefined
   const busy = verdict === 'writing'
+  const unreadable = creation && selected?.state === 'failed'
   const noSlug = slug === ''
   const taken = verdict === 'taken'
 
   const create = async () => {
-    if (busy || noSlug || !ready) return
-    const path = `${folder}/${slug}.md`
+    if (busy || noSlug || !ready || target === undefined) return
+    const path = target === '' ? `${slug}.md` : `${target}/${slug}.md`
     if (pages.some((entry) => entry.path === path)) {
       setVerdict('taken')
       input.current?.focus()
@@ -120,7 +132,7 @@ function TemplateSheet({ folder, sources, pages, stores, fetchImpl, locale, open
     }
     setVerdict('writing')
     const markdown = pageFrom(ready.text, title)
-    const order = storeOrder(folder, pages, stores)
+    const order = storeOrder(target, pages, stores)
     let attempts: readonly (string | undefined)[] = order.length > 0 ? order : [undefined]
     const tried = new Set<string | undefined>()
     while (attempts.length > 0) {
@@ -171,7 +183,9 @@ function TemplateSheet({ folder, sources, pages, stores, fetchImpl, locale, open
   }
 
   const name = (slugText: string) =>
-    t('A page named "%slug" already exists here. Choose another title.').replace('%slug', slugText)
+    fromHome
+      ? t('A page named "%slug" already exists in %folder. Choose another title.').replace('%slug', slugText).replace('%folder', where)
+      : t('A page named "%slug" already exists here. Choose another title.').replace('%slug', slugText)
 
   // Said under the field, never in a toast: taken, or a title with nothing to make a name of.
   const fieldError = taken ? name(slug) : noSlug && title.trim() !== '' ? t(NO_SLUG) : undefined
@@ -199,6 +213,8 @@ function TemplateSheet({ folder, sources, pages, stores, fetchImpl, locale, open
               />
             ) : seed.state === 'loading' ? (
               <Loading key={seed.source.id} t={t} />
+            ) : creation ? (
+              <p key={seed.source.id} className="adestia-templates__error" role="alert">{t('This template cannot be read')}</p>
             ) : (
               <Failure
                 key={seed.source.id}
@@ -209,6 +225,15 @@ function TemplateSheet({ folder, sources, pages, stores, fetchImpl, locale, open
             ),
           )}
         </div>
+        {fromHome && options.length > 0 ? (
+          <Field label={t('Folder')}>
+            <select className="adestia-select" value={target ?? ''} onChange={(event) => { setPicked(event.target.value); if (verdict !== 'writing') setVerdict('idle') }}>
+              {options.map((option) => (
+                <option key={option} value={option}>{option === '' ? t('Root') : option}</option>
+              ))}
+            </select>
+          </Field>
+        ) : null}
         <Field
           label={t('Title')}
           {...(fieldError ? { error: fieldError } : noSlug ? { help: t(NO_SLUG) } : {})}
@@ -226,12 +251,14 @@ function TemplateSheet({ folder, sources, pages, stores, fetchImpl, locale, open
         </Field>
         {verdict === 'refused' ? (
           <p className="adestia-templates__error" role="alert">
-            {t('The page could not be written. Try again.')}
+            {fromHome
+              ? t('The page could not be written in %folder. Try again.').replace('%folder', where)
+              : t('The page could not be written. Try again.')}
           </p>
         ) : null}
         <div className="adestia-templates__foot">
           <Button type="button" onClick={onClose}>{t('Cancel')}</Button>
-          <Button type="submit" variant="accent" icon="check" busy={busy} disabled={busy || noSlug || !ready}>
+          <Button type="submit" variant="accent" icon="check" busy={busy} disabled={busy || noSlug || !ready || unreadable || target === undefined}>
             {t('Create')}
           </Button>
         </div>
