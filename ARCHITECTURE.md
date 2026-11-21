@@ -2082,7 +2082,7 @@ shared across the cluster, enabling it in the agents' configurations (`k8s-home-
 rule: a plugin's MCP server is read only while active, `mcpServersFor`).
 
 **Decision.** The manifest's one `mcpServers` entry is `node ./mcp/relais.mjs`, not `playwright-mcp`
-itself. `relais.mjs` (about sixty lines, no dependency) spawns `@playwright/mcp` over stdio and forwards
+itself. `relais.mjs` (one file, no dependency) spawns `@playwright/mcp` over stdio and forwards
 the newline-delimited JSON-RPC both ways, with exactly two edits: the `tools/list` result drops the
 withheld names, and a `tools/call` naming one is answered with a JSON-RPC error that says the tool is
 withheld by this instance (never forwarded). The list of withheld names is a constant of the relay, one
