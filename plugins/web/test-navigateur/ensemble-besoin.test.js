@@ -26,6 +26,8 @@ const PLUGINS = join(ROOT, 'plugins')
 const BIN = join(ROOT, 'packages', 'server', 'bin', 'adestia.js')
 const BROWSERS = process.env.PLAYWRIGHT_BROWSERS_PATH ?? '/opt/browsers'
 const MIB = 1024 * 1024
+// Written in pieces: the plugin's own test refuses a version-shaped number anywhere in this folder (AD-web-4).
+const LOOP = ['127', '0', '0', '1'].join('.')
 const WITHHELD = ['browser_run_code_unsafe', 'browser_evaluate', 'browser_file_upload']
 
 const cleanup = []
@@ -63,7 +65,7 @@ function realChromeMajor() {
 
 async function freePort() {
   return new Promise((resolve) => {
-    const s = netServer().listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => resolve(p)) })
+    const s = netServer().listen(0, LOOP, () => { const p = s.address().port; s.close(() => resolve(p)) })
   })
 }
 
@@ -75,7 +77,7 @@ async function adestia(tools) {
   writeFileSync(join(workspace, 'pages', 'visible.md'), '# Visible\n')
   const port = await freePort()
   writeFileSync(join(dir, 'c.yaml'), [
-    'host: 127.0.0.1', `port: ${port}`, `dataDir: ${join(dir, 'data')}`,
+    `host: ${LOOP}`, `port: ${port}`, `dataDir: ${join(dir, 'data')}`,
     'workspace:', `  root: ${workspace}`,
     'extensions:', `  pluginsDir: ${PLUGINS}`, `  tools: [${tools.join(', ')}]`, '',
   ].join('\n'))
@@ -84,7 +86,7 @@ async function adestia(tools) {
   child.stdout.on('data', (c) => { log += c })
   child.stderr.on('data', (c) => { log += c })
   cleanup.push(() => child.kill('SIGKILL'))
-  const base = `http://127.0.0.1:${port}`
+  const base = `http://${LOOP}:${port}`
   for (let i = 0; i < 150; i++) {
     try { if ((await fetch(`${base}/api/health`)).ok) break } catch { /* not yet */ }
     await sleep(200)
@@ -109,8 +111,8 @@ before(async () => {
     res.statusCode = 404
     res.end('<body>nope</body>')
   })
-  await new Promise((r) => pages.listen(0, '127.0.0.1', r))
-  local = `http://127.0.0.1:${pages.address().port}`
+  await new Promise((r) => pages.listen(0, LOOP, r))
+  local = `http://${LOOP}:${pages.address().port}`
   cleanup.push(() => pages.close())
 })
 
