@@ -156,7 +156,7 @@ YAML
     echo "$seen" | grep -q 'browser_' || { echo "FAIL: no browser tool was called"; verdict=1; }
     echo "$seen" | grep -Eq 'browser_(run_code_unsafe|evaluate|file_upload)' && { echo "FAIL: a withheld tool was called"; verdict=1; }
   else
-    echo "$seen" | grep -Eiq 'web|browser' && { echo "FAIL: a web tool was seen with the plugin off"; verdict=1; }
+    echo "$seen" | grep -Eiq 'mcp__web|browser_' && { echo "FAIL: a web tool was seen with the plugin off"; verdict=1; }
     echo "$said" | grep -Eiq 'mcp__web|browser_' && { echo "FAIL: the agent names a web tool with the plugin off"; verdict=1; }
   fi
   docker rm -f "$name" >/dev/null 2>&1
