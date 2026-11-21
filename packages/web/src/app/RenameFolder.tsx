@@ -156,6 +156,8 @@ export function RenameNotice({ section, pages, fetchImpl = (...args) => fetch(..
   return (
     <Notice
       id="adestia-rename-notice"
+      listId="adestia-rename-details"
+      expanded={details}
       text={text}
       actions={
         <>
@@ -166,7 +168,7 @@ export function RenameNotice({ section, pages, fetchImpl = (...args) => fetch(..
         </>
       }
     >
-      <div id="adestia-rename-details" hidden={!details}>
+      <>
         {links === undefined ? (
           <p>{t('Looking for them…')}</p>
         ) : links.length === 0 ? (
@@ -180,7 +182,7 @@ export function RenameNotice({ section, pages, fetchImpl = (...args) => fetch(..
             ))}
           </ul>
         )}
-      </div>
+      </>
     </Notice>
   )
 }
