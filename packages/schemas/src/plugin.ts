@@ -193,6 +193,18 @@ export interface PluginMcpServer {
   readonly env?: Readonly<Record<string, string>>
 }
 
+/** One entry a plugin adds to the create list. */
+export interface PluginCreation {
+  readonly id: string
+  readonly label: PluginGalleryText
+  readonly line: PluginGalleryText
+  /** A name of the shell's closed icon set; an unknown name is drawn as a plain page. */
+  readonly icon?: string
+  /** Where it is offered; absent means both. */
+  readonly where?: readonly ('home' | 'folder')[]
+  readonly action: { readonly template: string }
+}
+
 export interface PluginManifest {
   readonly schemaVersion: number
   /** Must equal the folder name — the folder wins, a lying manifest is refused. */
@@ -250,6 +262,13 @@ export interface PluginManifest {
    * file, served by the plugin's static route; nothing is restated here.
    */
   readonly templates?: readonly string[]
+
+  /**
+   * What this plugin offers to create from the + (AD-37), while it is ACTIVE.
+   * Pure data: no code of the plugin runs at the click. `{ folder: true }` is
+   * the core's own action and is refused here.
+   */
+  readonly creations?: readonly PluginCreation[]
 
   /**
    * Frontmatter `type:` values this plugin's own code dispatches on — e.g. a

@@ -4,7 +4,8 @@
  * Pure: the list and the buttons draw what this returns.
  */
 
-import type { IconName } from './icons.js'
+import type { PluginCreation, PluginGalleryText } from '@antorfr/adestia-schemas'
+import { ICON_NAMES, type IconName } from './icons.js'
 
 export type CreationPlace = { readonly at: 'home' } | { readonly at: 'folder'; readonly folder: string }
 
@@ -61,4 +62,40 @@ export function needsCaption(creation: Creation, all: readonly Creation[]): bool
   if (!creation.plugin) return false
   const label = creation.label.trim().toLowerCase()
   return all.some((other) => other !== creation && other.label.trim().toLowerCase() === label)
+}
+
+/** The plain page icon, drawn when a manifest names an icon outside the closed set. */
+export const DEFAULT_CREATION_ICON: IconName = 'file-text'
+
+function textIn(text: PluginGalleryText, locale: string): string {
+  if (typeof text === 'string') return text
+  return (locale === 'fr' ? text.fr : undefined) ?? text.en
+}
+
+function iconOf(name: string | undefined): IconName {
+  return ICON_NAMES.find((known) => known === name) ?? DEFAULT_CREATION_ICON
+}
+
+/**
+ * The declarations of the plugins that are LOADED, in the shape `creationsFor` merges.
+ * A plugin that is off is not loaded and so offers nothing; an unknown icon falls back
+ * to the page icon (a manifest is data, an unknown name must not leave a hole).
+ */
+export function pluginCreations(
+  plugins: readonly { readonly id: string; readonly creations?: readonly PluginCreation[] }[],
+  locale: string = 'en',
+): readonly { readonly plugin: string; readonly declaration: CreationDeclaration }[] {
+  return plugins.flatMap((plugin) =>
+    (plugin.creations ?? []).map((entry) => ({
+      plugin: plugin.id,
+      declaration: {
+        id: entry.id,
+        label: textIn(entry.label, locale),
+        line: textIn(entry.line, locale),
+        icon: iconOf(entry.icon),
+        ...(entry.where ? { where: entry.where } : {}),
+        action: { template: entry.action.template },
+      },
+    })),
+  )
 }

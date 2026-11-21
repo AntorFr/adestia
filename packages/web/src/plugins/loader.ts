@@ -14,7 +14,7 @@
  */
 
 import { forgetContributedBlocks, registerBlocks, type ContributedBlock, type ContributedField } from '@antorfr/adestia-content'
-import type { PluginGalleryEntry } from '@antorfr/adestia-schemas'
+import type { PluginCreation, PluginGalleryEntry } from '@antorfr/adestia-schemas'
 import { createElement, type ComponentType } from 'react'
 
 import {
@@ -70,6 +70,8 @@ export interface PluginDescriptor {
   readonly gallery?: Readonly<Record<string, PluginGalleryEntry>>
   /** The page seeds it ships, as paths under its folder (AD-36). */
   readonly templates?: readonly string[]
+  /** What it offers to create (AD-37). */
+  readonly creations?: readonly PluginCreation[]
   readonly chrome?: string
   readonly styles?: readonly string[]
   readonly contract?: number
@@ -103,6 +105,8 @@ export interface LoadedPlugin {
   readonly gallery?: PluginDescriptor['gallery']
   /** The page seeds it ships (AD-36). */
   readonly templates?: PluginDescriptor['templates']
+  /** What it offers to create (AD-37). */
+  readonly creations?: PluginDescriptor['creations']
   /**
    * This plugin's own words, in the reader's language — what the shell says
    * when it draws something the MANIFEST declared. See `Words`.
@@ -298,7 +302,8 @@ export async function loadPlugins(
       chrome === undefined &&
       layouts === undefined &&
       // A plugin that only ships page seeds is a plugin: its templates are read by the shell itself.
-      (descriptor.templates ?? []).length === 0
+      (descriptor.templates ?? []).length === 0 &&
+      (descriptor.creations ?? []).length === 0
     ) {
       // Nothing usable came back: drop the styles we just injected rather than
       // leaving a dead plugin's CSS restyling the page.
@@ -321,6 +326,7 @@ export async function loadPlugins(
       ...(descriptor.vocabulary ? { blockNames: Object.keys(descriptor.vocabulary) } : {}),
       ...(descriptor.gallery ? { gallery: descriptor.gallery } : {}),
       ...(descriptor.templates ? { templates: descriptor.templates } : {}),
+      ...(descriptor.creations ? { creations: descriptor.creations } : {}),
       ...(words ? { words } : {}),
     })
   }
