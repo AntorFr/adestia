@@ -1124,6 +1124,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
   wait on signals from the page within a per-test budget, so a loaded host reports what the page
   did instead of timing out. Tests only: nothing changes for users.
 
+## v0.98.12
+
+- **The projet blocks browser test no longer fails under load** — the test that checks the progress,
+  milestones and risks states now waits until all seven state words and both bars are drawn before
+  reading them, instead of reading as soon as the first one appears. Tests only: nothing changes
+  for users.
+
 ## v0.99.0-adestia-decouverte.1
 
 - **The + creates a folder** — the pre-release of the `adestia-decouverte` epic so far: a **+**
