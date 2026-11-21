@@ -132,6 +132,7 @@ Tests d'écran nés dans `epic/adestia-pages`, après l'inventaire par grappe : 
 
 - `packages/web/test/besoin-pages-structure-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/besoin-coller-tableau-browser.test.ts` — écran de la feature `adestia-coller-tableau` (B-paste-1), classement à faire
+- `packages/web/test/besoin-creer-dossier-browser.test.ts` — écran de la feature `adestia-decouverte-creer-dossier` (B-32, B-33 ; E-2, E-3, E-38), classement à faire
 - `packages/web/test/besoin-etat-projet-browser.test.ts` — écran de l'epic `adestia-pages` (E-3, E-4, E-31, E-36), classement à faire
 - `packages/web/test/besoin-popover-bandeau-tardif-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/besoin-rouge-23-spinner-config.test.ts` — écran de l'epic `adestia-pages`, classement à faire

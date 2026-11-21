@@ -152,8 +152,14 @@ export function sectionsOf(
   entries: readonly IndexEntry[],
   /** Folders an app's tile already stands for — see `absorbs` in a manifest. */
   absorbed: readonly string[] = [],
+  /** Every folder the stores hold, empty ones included (AD-38): a folder with no page is still a tile. */
+  folders: readonly string[] = [],
 ): readonly SectionTile[] {
   const top = new Set<string>()
+  for (const folder of folders) {
+    const first = folder.split('/')[0]!
+    if (first !== '' && !NOT_A_SECTION.has(first)) top.add(first)
+  }
   for (const entry of entries) {
     const folder = folderOf(entry.path)
     if (folder === '') continue
@@ -221,8 +227,11 @@ function tileFor(
 export function sectionAt(
   entries: readonly IndexEntry[],
   folder: string,
+  folders: readonly string[] = [],
 ): SectionTile | undefined {
-  const holds = entries.some((entry) => entry.path.startsWith(`${folder}/`))
+  const holds =
+    entries.some((entry) => entry.path.startsWith(`${folder}/`)) ||
+    folders.some((one) => one === folder || one.startsWith(`${folder}/`))
   return holds ? tileFor(entries, folder, indexOf(entries, folder)) : undefined
 }
 
@@ -263,8 +272,10 @@ export function pagesIn(
 export function subsectionsOf(
   entries: readonly IndexEntry[],
   folder: string,
+  folders: readonly string[] = [],
 ): readonly SectionTile[] {
   const prefix = `${folder}/`
+  const innerFolders = folders.filter((one) => one.startsWith(prefix)).map((one) => one.slice(prefix.length))
   const inside = entries
     .filter((entry) => entry.path.startsWith(prefix))
     .map((entry) => ({ ...entry, path: entry.path.slice(prefix.length) }))
@@ -274,7 +285,7 @@ export function subsectionsOf(
     .filter((entry) => entry.path.includes('/'))
 
   // Re-run the same rule one level down, on the subtree alone.
-  return sectionsOf(inside).map((section) => ({
+  return sectionsOf(inside, [], innerFolders).map((section) => ({
     ...section,
     path: `${folder}/${section.path}`,
   }))

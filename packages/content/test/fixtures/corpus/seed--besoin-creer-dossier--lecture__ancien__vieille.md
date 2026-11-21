@@ -1,0 +1,5 @@
+---
+title: Vieille page
+---
+
+Texte.

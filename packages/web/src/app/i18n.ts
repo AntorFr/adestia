@@ -174,6 +174,12 @@ const FR: Readonly<Record<string, string>> = {
   Catalogues: 'Catalogues',
   'A name': 'Un nom',
   Create: 'Créer',
+  'New folder': 'Nouveau dossier',
+  'An empty folder to group pages.': 'Un dossier vide pour regrouper des pages.',
+  'New…': 'Nouveau…',
+  'Folder name': 'Nom du dossier',
+  'name already taken': 'ce nom est déjà pris',
+  'Could not write the name. Try again.': 'Impossible d’écrire le nom. Réessayez.',
   'Remove catalogue': 'Retirer le catalogue',
   'Remove this catalogue and its imported instructions':
     'Retirer ce catalogue et ses instructions importées',

@@ -27,6 +27,8 @@ const CHARTE = [
   // The page and its editor (adestia-qualite-pages-editeur)
   'grip-vertical', 'eye', 'code', 'corner-left-up', 'corner-down-left', 'image', 'music', 'film',
   'table', 'chart-column',
+  // The create list (adestia-decouverte-creer-dossier)
+  'folder-plus',
 ]
 
 afterEach(() => {
@@ -55,7 +57,7 @@ describe('icon sprite', () => {
     mountSprite()
     mountSprite()
     expect(document.querySelectorAll('#adestia-icon-sprite')).toHaveLength(1)
-    expect(document.querySelectorAll('symbol')).toHaveLength(55)
+    expect(document.querySelectorAll('symbol')).toHaveLength(56)
   })
 
   it('is decorative and takes the text colour, not a hard-coded one', () => {

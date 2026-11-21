@@ -41,6 +41,10 @@ export interface SectionProps {
   readonly t?: (key: string) => string
   /** A control for the header's right edge (E-3's New from template); drawn only when given. */
   readonly headerAction?: ReactNode
+  /** Every folder the stores hold, empty ones included. */
+  readonly folders?: readonly string[]
+  /** What fills an empty folder: the creation entries as buttons. */
+  readonly emptyAction?: ReactNode
 }
 
 function text(value: unknown): string | undefined {
@@ -201,8 +205,10 @@ export function Section({
   ready = true,
   t = (key) => key,
   headerAction,
+  folders = [],
+  emptyAction,
 }: SectionProps) {
-  const rooms = subsectionsOf(entries, path)
+  const rooms = subsectionsOf(entries, path, folders)
   const all = pagesIn(entries, path)
   const live = all.filter((entry) => !isFinished(entry.fields))
   const finished = all.filter((entry) => isFinished(entry.fields))
@@ -311,7 +317,7 @@ export function Section({
             </ul>
           )}
         </div>
-        {headerAction}
+        {headerAction ? <div className="adestia-chead__actions">{headerAction}</div> : null}
       </header>
 
       {rooms.length > 0 && (
@@ -417,7 +423,7 @@ export function Section({
       {!ready && rooms.length === 0 && all.length === 0 && <Loading t={t} />}
 
       {ready && rooms.length === 0 && all.length === 0 && (
-        <EmptyState icon="folder-open" text={t('This section holds nothing yet.')} />
+        <EmptyState icon="folder-open" text={t('This section holds nothing yet.')} action={emptyAction} />
       )}
     </div>
   )
