@@ -46,6 +46,22 @@ This serves `http://127.0.0.1:8730` and answers 200 on `/`. It leaves `data/` an
 `CLAUDE_CODE_OAUTH_TOKEN` it still starts: the app is there, but a real agent
 turn fails (use the scripted engine below to look at it without one).
 
+### The `web` plugin: a real browser for refused pages
+
+Off until named: `extensions: { tools: [web] }` in `adestia.config.yaml`. The agent then has the browser tools
+(minus the three that run code or read local files) and reads a page a plain fetch is refused, through a
+headless Chrome started on demand and closed after the turn. The image carries it by default; build without it
+with `docker build --build-arg WEB_BROWSER=none .`. Without Docker, install the plugin's one dependency and the
+browser it pins, and point the instance at them:
+
+```sh
+(cd plugins/web && npm ci --omit=dev --ignore-scripts && PLAYWRIGHT_BROWSERS_PATH=/opt/browsers node node_modules/playwright-core/cli.js install chromium-headless-shell)
+PLAYWRIGHT_BROWSERS_PATH=/opt/browsers node packages/server/bin/adestia.js   # with tools: [web] in the config
+```
+
+Not yet measured, since pods have no Docker: the image's extra size and whether Chrome's sandbox starts as the
+`node` user. Play a real turn on the published image with `bench/web-reel.sh <image>` (see `bench/README.md`).
+
 To look at the app without an agent or Docker (a scripted engine, seeded data):
 
 ```sh
@@ -66,7 +82,7 @@ BENCH_URL=<printed-url> node bench/scenarios/reglages-blocs.mjs   # the block se
 The scenarios need Playwright and Chromium installed on the host (the runner image ships Playwright 1.63; nothing in the repo installs them); `BENCH_SIZES` (only where a scenario says so), `BENCH_SKINS`, `BENCH_LOCALES` and `BENCH_OUT` narrow or move a run. It takes them from the environment (it looks in `/usr/lib/node_modules`, then `npm root -g`); the `pages-*` scenarios look only in `/usr/lib/node_modules`, so a host with another global root must link it there for them (`chargements.mjs`, `page-suivie.mjs` and the sweep search both places, as above): `ln -s "$(npm root -g)/playwright" /usr/lib/node_modules/playwright`); do not
 add them to the repo. The launcher runs until SIGTERM (`kill <pid>`, or Ctrl-C), which
 removes its throwaway data; in a script, start it in the background and keep its pid
-(`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. The seed brings its own two small plugins (`bench-notes`, `bench-degraded`), so the boot log says `2 of 2 plugin(s) active` (`3 of 3` with `--seed pages`, which adds `project-management`), not the ten of `plugins/`: that is normal. Its boot log includes two plugins refused on purpose (`bench-refused`, a name mismatch, and `bench-invalid`, an invalid manifest; both part of the seed): not an error.
+(`$!`). Run it from the clone's root: the bundled plugins are found through `./plugins`, and from elsewhere the server starts with `0 of 0 plugin(s) active`. The seed brings its own two small plugins (`bench-notes`, `bench-degraded`), so the boot log says `2 of 2 plugin(s) active` (`3 of 3` with `--seed pages`, which adds `project-management`), not the eleven of `plugins/`: that is normal. Its boot log includes two plugins refused on purpose (`bench-refused`, a name mismatch, and `bench-invalid`, an invalid manifest; both part of the seed): not an error.
 
 `--engine claude` runs a real turn instead (needs `CLAUDE_CODE_OAUTH_TOKEN`).
 For the pages state matrix (four skins, both languages, both themes, desktop

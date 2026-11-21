@@ -17,7 +17,7 @@ for (const n of ['install', 'typecheck', 'lint', 'build', 'boot'])
   if (!steps.some(([s]) => s === n)) cases.push(`<testcase classname="etape" name="${n}"><failure message="step ${n} not run"/></testcase>`)
 
 // Pull the <testcase> elements (with their children) out of each tool report.
-for (const f of ['vitest.xml', 'plugins.xml', 'guards.xml']) {
+for (const f of ['vitest.xml', 'plugins.xml', 'web-navigateur.xml', 'guards.xml']) {
   const p = join(dir, f)
   if (!existsSync(p)) continue
   const xml = readFileSync(p, 'utf8')

@@ -4,6 +4,13 @@
 # NOT baked in — a driver's binary is chosen by the operator's configuration,
 # and freezing one into the image would make the engine an image property
 # rather than a configuration one.
+#
+# What IS baked in, optionally: the `web` plugin's headless Chrome
+# (chromium-headless-shell, installed by the plugin's own pinned
+# `playwright-core`, in /opt/browsers) and the system libraries it needs, plus
+# the plugin's npm dependencies. That costs image size on both architectures
+# (see CHANGELOG.md); `--build-arg WEB_BROWSER=none` skips all of it and gives
+# the image without the browser.
 
 # Pinned to the BUILDER's architecture, not the target's, and that is what
 # keeps a multi-arch release cheap. Everything this stage produces is
@@ -39,6 +46,18 @@ RUN npm run build --workspace @antorfr/adestia-server \
 # that is already correct rather than reinstalling and risking a different
 # resolution than the one that was built and tested.
 RUN npm prune --omit=dev
+
+# The web plugin's dependencies (AD-web-2): pure JavaScript, so this stays on
+# the builder's architecture like the rest. `--ignore-scripts` keeps Playwright
+# from downloading a browser here — the browser is installed in the runtime
+# stage, where the architecture is the right one. `WEB_BROWSER=none` leaves an
+# empty directory so the runtime COPY below has something to copy.
+ARG WEB_BROWSER=on
+COPY plugins/web/package.json plugins/web/package-lock.json ./plugins/web/
+RUN mkdir -p /build/web-deps \
+ && if [ "$WEB_BROWSER" != none ]; then \
+      cd plugins/web && npm ci --omit=dev --ignore-scripts && mv node_modules /build/web-deps/node_modules; \
+    fi
 
 FROM node:22-slim AS runtime
 WORKDIR /app
@@ -97,6 +116,27 @@ RUN set -eu; \
       chmod 0755 /usr/local/bin/yt-dlp; \
     fi
 
+# Chrome for the `web` plugin (AD-web-3). The browser is whatever the plugin's
+# own `playwright-core` pins, so the two cannot drift; it is fetched here, in
+# the runtime stage, because only here is the architecture the target's.
+# `install-deps` pulls its system libraries through apt. Readable by `node`.
+# `WEB_BROWSER=none` skips this and the plugin's node_modules (the plugin then
+# says it has no browser when named in `extensions.tools`).
+ARG WEB_BROWSER=on
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/browsers
+COPY --from=build /build/web-deps /tmp/web-deps
+RUN set -eu; \
+    if [ "$WEB_BROWSER" != none ]; then \
+      mkdir -p /app/plugins/web && mv /tmp/web-deps/node_modules /app/plugins/web/node_modules; \
+      cli=/app/plugins/web/node_modules/playwright-core/cli.js; \
+      apt-get update; \
+      node "$cli" install-deps chromium-headless-shell; \
+      node "$cli" install chromium-headless-shell; \
+      chmod -R a+rX /opt/browsers; \
+      rm -rf /var/lib/apt/lists/*; \
+    fi; \
+    rm -rf /tmp/web-deps
+
 ENV NODE_ENV=production
 
 COPY --from=build /build/node_modules ./node_modules
@@ -113,7 +153,7 @@ COPY --from=build /build/packages/server/bin ./packages/server/bin
 COPY --from=build /build/packages/web/package.json ./packages/web/
 COPY --from=build /build/packages/web/dist-web ./packages/web/dist-web
 
-# The extensions the product SHIPS — ten plugins and four skins, loaded by
+# The extensions the product SHIPS — eleven plugins and four skins, loaded by
 # the same runtime path as any operator-mounted folder. Baked in because a
 # default install advertising "ships with todo, collections…" and starting
 # with none would be a box with a picture on it; an operator points
@@ -158,7 +198,10 @@ EXPOSE 8730
 # spawns a CLI process costing ~300 MB of RSS (measured, spikes/concurrency).
 # Give the container `baseline + maxConcurrentTurns × 300 MB`, and keep the two
 # numbers in step — a generous cap behind a small limit is a burst that gets
-# OOM-killed instead of politely refused.
+# OOM-killed instead of politely refused. With the web plugin active, a turn
+# that reads a page also holds a headless Chrome for its duration (closed after
+# 60 s idle and at the end of the turn): budget extra memory per such turn;
+# the figure has not been measured here.
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
   CMD node -e "fetch('http://127.0.0.1:8730/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
