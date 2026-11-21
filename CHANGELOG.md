@@ -1114,3 +1114,25 @@ branch and that `test:plugins` is replayed after a red vitest run.
 - **The pages browser tests no longer fail under load** — the six `nestor / en` pages tests now
   wait on signals from the page within a per-test budget, so a loaded host reports what the page
   did instead of timing out. Tests only: nothing changes for users.
+
+## Unreleased
+
+- **The agent can read a page that plain fetching is refused — the `web` plugin** — a new `tool` plugin
+  (`extensions.tools: [web]`, off until named) starts a headless Chrome on demand in the agent's pod, through
+  the pinned `@playwright/mcp` behind a relay (`plugins/web/mcp/relais.mjs`) that withholds
+  `browser_run_code_unsafe`, `browser_evaluate` and `browser_file_upload` on every engine. The browser's
+  `User-Agent` is derived from the binary's own `--version`, nothing is kept between turns (in-memory profile),
+  pages are saved under `.adestia-web/` of the workspace (20 MiB bound, never listed by the pages screen), and no
+  Chrome survives a turn. A skill tells the agent when to use it, and to say so when a site refuses anyway.
+  Proved in the attested suite against a real browser and a locally served page (`npm run test:web-navigateur`).
+- **The image carries the headless Chrome of the web plugin** — the `Dockerfile` installs the
+  plugin's dependencies in a build stage and, in the runtime stage, `chromium-headless-shell` and its
+  libraries through the plugin's own `playwright-core`, into `/opt/browsers`, for amd64 and arm64. No
+  Chrome version is written in the `Dockerfile`. `--build-arg WEB_BROWSER=none` skips both, for an
+  image without the web tool. Image overhead (amd64, arm64), build duration and the sandbox
+  measurement: non mesuré — à mesurer sur l'image du tag de livraison (the pods have no Docker).
+- **A script plays the web plugin on a real turn** — `bench/web-reel.sh <image>` boots the named image with
+  `extensions.tools: [web]` then `[]`, runs a real claude turn asking the price of a protected shop page, and
+  prints the rendered text, the page file written under `.adestia-web/` and the tool names seen, then checks that no
+  Chrome process survives. **Not played yet**: the real run (plugin on and off, then from `homenode`) remains to be
+  played on the image published at the delivery tag.

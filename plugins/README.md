@@ -1,6 +1,6 @@
 # Bundled plugins
 
-Adestia ships ten plugins and four skins. None of them is active until you name it
+Adestia ships eleven plugins and four skins. None of them is active until you name it
 in your config — discovery is not activation, and a folder sitting here costs
 nothing until you ask for it.
 
@@ -29,6 +29,7 @@ leaving you to wonder where the tile went.
 | [`meals`](meals/) | feature | Meals over a period. A page typed `meals` IS the period: its frontmatter carries the shape — dates, sections, where its cards are filed — and the plugin draws that page as a day-by-day frise with a tray you drag from. So it lives in whatever folder its subject lives in (a trip's, a health carnet's) and stays an ordinary page: indexed, searchable, edited with the same ✎. One mechanism for two uses, deliberately: a week of menus you DECIDE and a fortnight of what you ATE differ in what you write, not in how it works, so there is no mode field anywhere. The card's face stays quiet (an icon, a title, a quantity) and everything else — free `props` the plugin never reads, converts or totals — waits for a click. One data file, written by the front and the agent alike, guarded by a revision rather than a lock. |
 | [`parcours`](parcours/) | feature | Walks and hikes. Adds the `:::parcours` block, which draws a `.parcours.json` as a map with numbered markers, an elevation profile and a walking mode, and assembles its GPX on demand. A feature rather than an app because a route has no domain and no tile: it hangs off whichever page has a reason to mention it. |
 | [`project-management`](project-management/) | feature | Project phases and milestones. Adds the `:::timeline` block, which draws bars and markers on a time axis — phases written in the block, or the consolidated planning of the pages below. A feature, not an app: a planning hangs off whichever page has a reason to carry one. |
+| [`web`](web/) | tool | A real browser for the pages plain fetching is refused: a headless Chrome launched on demand in the agent's pod, behind a relay that withholds the tools that run code or read local files. The first plugin with an npm dependency (`@playwright/mcp`, pinned exactly, about 19 MB of JavaScript, installed by the image rather than the server). Named in `extensions.tools`. |
 
 Collections — a body of pages entered by a facet, projects by trade or gifts
 by person — are not a plugin any more: the shell draws a page typed
@@ -120,7 +121,7 @@ manifest schema, the facets a plugin may contribute, and the import map it can
 rely on are all described by the `plugin-author` contract that ships with the
 product. Ask the agent for a plugin and it reads that contract first.
 
-Nothing here is privileged. These ten are ordinary plugins that happen to live
+Nothing here is privileged. These eleven are ordinary plugins that happen to live
 in the repository, and they load through exactly the same path as yours.
 
 ## From another repository
@@ -139,7 +140,7 @@ extensions:
 ```
 
 Each source becomes one more directory discovery reads, so a plugin from a
-repository is loaded by exactly the same path as the ten above — and
+repository is loaded by exactly the same path as the eleven above — and
 `apps:`/`features:`/`tools:` still decide what is on. The repository's root may
 BE the plugin (one plugin, one repo, `adestia-plugin.json` at the top) or hold
 a folder per plugin like this one does; Adestia looks rather than asking. A

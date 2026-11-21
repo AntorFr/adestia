@@ -37,6 +37,11 @@ fi
 
 # `ci`, never `install`: the lockfile is the version set that was tested.
 step install npm ci || { report; exit 1; }
+# The web plugin's one dependency and its browser (AD-web-2, AD-web-3): the browser of the
+# plugin's own `playwright-core`, in a folder of the run (no root needed), which the browser
+# tests below read through PLAYWRIGHT_BROWSERS_PATH. A failure here is red, never a skip.
+export PLAYWRIGHT_BROWSERS_PATH="$out/navigateur"
+step install-web sh -c 'cd plugins/web && npm ci --omit=dev --ignore-scripts && node node_modules/playwright-core/cli.js install chromium-headless-shell' || { report; exit 1; }
 step typecheck npm run typecheck
 step lint npm run lint
 # Proves the shipped artefact still builds (the tests read TypeScript sources). It comes
@@ -65,6 +70,8 @@ fi
 # shellcheck disable=SC2086
 step vitest env BENCH_FULL_SWEEP=1 ADESTIA_PATIENCE=4 npx vitest run --maxWorkers=$workers --testTimeout=30000 --hookTimeout=60000 --exclude '**/*.real.test.ts' --exclude '**/node_modules/**' $exclusions --reporter=junit --outputFile="$out/vitest.xml"
 step plugins npm run test:plugins -- --test-reporter=junit --test-reporter-destination="$out/plugins.xml"
+# The relay against the real @playwright/mcp and browser (outside plugins/*/test, so not in `npm test`).
+step web-navigateur npm run test:web-navigateur -- --test-reporter=junit --test-reporter-destination="$out/web-navigateur.xml"
 step guards node --test --test-reporter=junit --test-reporter-destination="$out/guards.xml" bench/tests/doc-besoin.test.mjs bench/tests/bench-once.test.mjs
 
 boot() {
