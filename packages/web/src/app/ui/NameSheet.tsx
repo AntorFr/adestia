@@ -66,6 +66,7 @@ export function NameSheet({ title, question, submitLabel, initial = '', accepts,
             className="adestia-input"
             value={name}
             autoComplete="off"
+            data-autofocus
             onChange={(event) => { setName(event.target.value); setRefusal(undefined) }}
           />
         </Field>

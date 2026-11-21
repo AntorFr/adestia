@@ -188,6 +188,10 @@ describe('NameSheet', () => {
     release()
     await waitFor(() => expect(create().disabled).toBe(false))
   })
+  it('opens with the focus in the field, so typing then Enter creates', () => {
+    open(vi.fn())
+    expect(document.activeElement).toBe(field())
+  })
   it('Cancel and Escape close without submitting', () => {
     const onCancel = vi.fn()
     const onSubmit = vi.fn()
