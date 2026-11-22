@@ -1150,3 +1150,10 @@ branch and that `test:plugins` is replayed after a red vitest run.
   another off, restarts the instance and checks the page afterwards now waits for the restart through a launcher
   that replays the binary's boot loop with the scripted engine. Tests and bench launcher only: nothing changes
   for users.
+
+## v0.98.15
+
+- **The phone data-form browser test waits for the block bar instead of assuming it** — the test that checks
+  the data form fits the 390×844 screen now re-taps the block and waits until the "Block settings" gear
+  receives the centre of its rectangle, and names the cause (the bar never rose) if it does not. Tests only:
+  nothing changes for users.
