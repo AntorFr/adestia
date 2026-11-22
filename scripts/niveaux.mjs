@@ -124,8 +124,9 @@ function tokens(src) {
       i = j + 1
       continue
     }
-    if (c === '`') { i++; skipTemplate(); out.push({ t: 'str', v: null }); continue }
+    if (c === '`') { const d = i; i++; skipTemplate(); out.push({ t: 'str', v: null, x: src.slice(d, i) }); continue }
     if (c === '/' && regexAfter()) {
+      const d = i
       let j = i + 1
       let cls = false
       while (j < n && src[j] !== '\n' && (cls || src[j] !== '/')) {
@@ -136,7 +137,7 @@ function tokens(src) {
       }
       i = j + 1
       while (/[a-z]/i.test(src[i] ?? '')) i++
-      out.push({ t: 'str', v: null })
+      out.push({ t: 'str', v: null, x: src.slice(d, i) })
       continue
     }
     if (/[A-Za-z_$]/.test(c)) {
@@ -146,7 +147,7 @@ function tokens(src) {
       i = j
       continue
     }
-    if (/\d/.test(c)) { let j = i + 1; while (/[\w.]/.test(src[j] ?? '')) j++; out.push({ t: 'num', v: '' }); i = j; continue }
+    if (/\d/.test(c)) { let j = i + 1; while (/[\w.]/.test(src[j] ?? '')) j++; out.push({ t: 'num', v: '', x: src.slice(i, j) }); i = j; continue }
     out.push({ t: 'p', v: c })
     i++
   }
@@ -444,7 +445,7 @@ function lireI18n(src) {
         if (tk[m + 1]?.v === 'FR') table = 'fr'
       }
     }
-    reste.push(t.t === 'str' ? `s${JSON.stringify(t.v)}` : `${t.t}${t.v}`)
+    reste.push(t.x !== undefined ? `x${JSON.stringify(t.x)}` : t.t === 'str' ? `s${JSON.stringify(t.v)}` : `${t.t}${t.v}`)
     if (!table) continue
     k++
     while (!(tk[k].t === 'p' && tk[k].v === '}')) {
