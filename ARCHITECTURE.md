@@ -1544,6 +1544,84 @@ the task declares it in `scripts/ecrans.json` (one entry; the selection rule is 
 the point is a cheap question after every commit); a scanner for the list only (drift); declaring the
 list by hand in `.sdlc.yaml` (it rots, the reason `ecrans.json` is read by the graph).
 
+## Decisions of adestia-ecrans-places
+
+Today a changed file that the import graph cannot place, and that no off-screen rule names, plays
+every screen (AD-niveaux-2 rule 3). Eight such paths cost the most in the chain's measure (sets of
+131 to 425 min against about 23 min for one « all »). This feature places each of them, in
+`scripts/niveaux.mjs` and `scripts/ecrans.json` only; it adds no screen and no screen test.
+
+### AD-ecrans-places-1 — Placed paths are decided before the import graph, and what is not understood plays all
+
+`calcul` (scripts/niveaux.mjs) tries, for a changed file, a **place** before the graph step of
+AD-niveaux-2. A place answers a set of screens (possibly empty) or `null` (not mine). A place that
+cannot read what it needs (a file absent at `<base>`, a parse that fails, a change outside the
+shapes below) answers **every screen**: in doubt, play. A path with no place behaves as today.
+Places that read the previous version of a file get it through an injected reader
+(`contexte.ancien(path)`, default `git show <base>:<path>`), so tests give both versions without git.
+
+### AD-ecrans-places-2 — Off-screen paths: no screen is touched
+
+Added to the off-screen rules (AD-niveaux-2 rule 1): `plugins/README.md`; `bench/**/*.md`;
+`bench/scenarios/**`, `bench/tests/**`, `bench/*.sh` (run by hand or by their own guard, cited by no
+screen test); `plugins/web/**` (a tool plugin with no web screen: `relais.mjs`, `adestia-plugin.json`,
+`package.json`, `package-lock.json`, its tests and skills; no screen test reads it, checked by grep
+at design); `Dockerfile` (the image is proved by server tests, not by a screen). The bench runtime
+(`bench/launch.mjs`, `fake-engine.mjs`, `oidc-stub.mjs`, `sweep.mjs`, `bench.mjs`, `bench/seed/**`,
+`bench/lib/**`) is cited by the harness of the screen tests: it **keeps playing every screen**, now
+by an explicit place and not by default. *Rejected:* deducing the screens from the tests that cite a
+bench file (cited through `join(root,'bench','launch.mjs')` as well as by literal: a scan would miss
+some, and a miss is a screen not played).
+
+### AD-ecrans-places-3 — `package.json` touches E-15 for its version, nothing for its metadata, every screen for the rest
+
+The root `package.json` is compared with its `<base>` version, field by field. Only `version` changed:
+**E-15** (the settings menu shows it; `version-hors-image-ecran-browser.test.ts` reads it). Only
+`scripts`, `description`, `repository`, `license`, `keywords`, `author`, `homepage`, `bugs`
+changed: none. Any other field (`dependencies`, `devDependencies`, `workspaces`, `overrides`,
+`engines`, `type`, `main`…) or a field unknown: every screen. A mix is the union.
+
+### AD-ecrans-places-4 — `scripts/ecrans.json` touches the screens whose entries or tests it changes
+
+The map is compared with its `<base>` version: a screen whose `entrees` or `dossiers` differ, an added
+or removed screen, a screen-test line whose screens differ (the union of the old and the new list),
+a test added or removed (its screens; `toujours` → every screen), and `_` ignored. An unparsable map,
+either side: every screen.
+
+### AD-ecrans-places-5 — `components.css` touches the screens whose sources cite a changed class block
+
+Both versions are stripped of comments and split into rules (`selector { body }`, `@media` and
+`@supports` one level deep, keyed by their condition). Identical after that: no screen. For every
+rule added, removed or whose body changed, the class names of its selector give **blocks** (`adestia-btn--danger`
+and `adestia-btn__icon` both give `adestia-btn`). A screen is touched when the text of any file its
+entries reach (the files of `closure`, plus the files under its `dossiers`) contains a block name.
+Plain text, not parsed: a class built as `` `adestia-btn--${kind}` `` still carries `adestia-btn`.
+A changed rule with no class in its selector (`:root`, `*`, an element), an `@font-face`, `@keyframes`
+or any other at-rule, or a rule that does not split: every screen. A block cited by no screen: every
+screen (a skin or a plugin may use it).
+
+### AD-ecrans-places-6 — `i18n.ts` touches the screens that cite a changed sentence
+
+`packages/web/src/app/i18n.ts` is compared with its `<base>` version as a table: the entries of `FR`
+(and of the `en` table) read with the file's own scanner (`key: value` pairs of string tokens); the
+rest of the file (code, comments aside) must be identical. An entry added, removed or whose value changed
+makes its **key** changed. A screen is touched when a file its entries (or dossiers) reach contains the key as a
+string literal (either quote, escapes read). A key no screen cites (a server or content message, a
+plugin sentence): every screen. A change outside the entries: every screen. Only comments changed: none.
+*Rejected:* touching by locale (every screen test plays both locales through the harness).
+
+### AD-ecrans-places-7 — The proof: one test per path, in the suite
+
+`packages/server/test/ecrans-places-besoin.test.ts` (a plain vitest, like `tests-ecran-besoin.test.ts`,
+off-screen) calls `calcul` with a `contexte` of two versions per case. One case at least for each of:
+`components.css` (a rule of one block → its screens only; a comment → none; `:root` → all; unknown block → all),
+`i18n.ts` (a key of one screen; a key cited nowhere → all; a code change → all), `plugins/web/` (each of
+`relais.mjs`, `adestia-plugin.json`, `package-lock.json`), `plugins/README.md`, `bench/README.md`,
+a bench scenario (none) and `bench/launch.mjs` (all), `scripts/ecrans.json`, `Dockerfile`, `package.json`
+(version → E-15; `dependencies` → all); and an unknown path (`unknown/x.bin` → all). `--lister` prints
+the places hit, `non placés` listing only what had none. `docs/ecrans.md`/README words on the levels
+and AD-niveaux-2 rule 1 and 3 are updated to cite this decision.
+
 ## Decisions of adestia-acces-refuse
 
 An OIDC account that is in no allowed group used to meet a bare JSON 403 at `/auth/callback`, and
