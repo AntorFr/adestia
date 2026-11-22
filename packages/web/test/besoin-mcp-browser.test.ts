@@ -218,7 +218,14 @@ describe.skipIf(!playwright)('B-20 et B-18 (E-10) · retirer un serveur MCP avec
   /** Opens an editable server and presses Remove; the sheet is up when this returns. */
   async function openSheet(page: P, locale: Locale) {
     await removeButton(page, locale).waitFor({ state: 'visible', timeout: T })
-    await removeButton(page, locale).click()
+    // A click can land before the sheet's handler is attached and open nothing: wait for the proof the
+    // action succeeded (the dialog), and press again only while no dialog exists, never on an open one.
+    const deadline = Date.now() + T
+    while ((await dialog(page).count()) === 0) {
+      if (Date.now() > deadline) break
+      await removeButton(page, locale).click({ timeout: T })
+      await dialog(page).waitFor({ state: 'attached', timeout: patience(1_500) }).catch(() => undefined)
+    }
     await dialog(page).waitFor({ state: 'visible', timeout: T })
   }
 

@@ -38,7 +38,7 @@ The server never imports `web`: `start.ts` › `findWebRoot` looks for
 Outside `packages/`:
 
 - `plugins/` — the bundled plugins (todo, journal, planif, atelier, parcours, meals,
-  voyages, scan, listening-post, project-management), plain ESM with an
+  voyages, scan, listening-post, project-management, web), plain ESM with an
   `adestia-plugin.json` manifest; tests under `plugins/*/test` and `plugins/test`.
 - `skins/` — four bodies (alfred, dobby, nestor, skippy): `adestia-skin.json`, `skin.css`,
   an optional `skin.js` module, icon, web manifest fragment.
@@ -1249,6 +1249,7 @@ What the user can create is a list of declarations (`docs/donnees.md`): the core
 *Reversed if* a plugin has a creation that neither a folder nor a template can make: then a new action is added by its own tranche, not here.
 
 ### AD-39 — A folder is renamed by one route that moves the directory and rewrites the path links
+*Built* (`adestia-decouverte-renommer`): the route (`routes/pages.ts`, links in `folder-links.ts`) and the **Rename** control (`app/RenameFolder.tsx`, notice `ui/Notice.tsx`).
 `POST /api/folders/rename` renames the last segment of a folder held by one writable store, then rewrites, page by page, the path links that led into it (`docs/donnees.md`, Renaming a folder). *Rejected*: leaving a redirect file or a stored alias under the old name (state the user did not ask for, which hides a stale link instead of mending it); resolving a dead path by searching for a folder of the same content (a guess, and wrong on two similar folders); renaming only in the client (lost on reload). A partial rewrite is told (`unrewritten`), never hidden; the directory rename is not undone, since a link left behind is a text the user can mend and a half-restored tree is not. Rights as AD-38, no role: whoever may write in the folder and in its parent (the name lives in the parent), both read from `writableFolders`.
 
 ### AD-38 — A folder is created by a route and listed with the page index
@@ -1457,8 +1458,9 @@ renamed files by both names), keeps the screens whose entry reaches one of them,
 `dossiers` (rule 2) touches those screens even if rule 1 would call it off-screen, then the
 vitest setup, then rules 1 and 3:
 1. **Declared off-screen**, touching no screen: `packages/server/src/**`, `packages/drivers/**`,
-   `docs/**`, `*.md` at the root, `plugins/*/*.md`, `.agent/**`, `CHANGELOG.md`, `CLAUDE.md`, and any
-   `**/test/**` file that is not a screen test (an off-screen test cannot change a screen). Files under
+   `docs/**`, `*.md` at the root, `plugins/*/*.md`, `plugins/README.md`, `.agent/**`, `CHANGELOG.md`, `CLAUDE.md`, and any
+   `**/test/**` file that is not a screen test (an off-screen test cannot change a screen), plus the
+   places of AD-ecrans-places-2 (`plugins/web/**`, `Dockerfile`, `bench/**/*.md`, bench scenarios, tests and `*.sh`). Files under
    `packages/web/src`, `packages/content` and `packages/schemas` are never listed here: the import
    graph (rule 2) decides.
 2. **Imported by an entry**: touches exactly those screens.
@@ -1467,7 +1469,10 @@ vitest setup, then rules 1 and 3:
    screen entry (`useRoute.ts`, the theme: the shell mounts every screen, though only `App.tsx`,
    the entry of E-32, reaches them in the graph), the skins, `bench/**`, `vite.config.ts`,
    `package.json` and the lockfile, the scripts, and a file the resolver cannot place: touches
-   **every** screen. In doubt, play.
+   **every** screen. In doubt, play. The paths that fell here only for lack of a place
+   (`components.css`, `i18n.ts`, `plugins/web/**`, `Dockerfile`, `package.json`, `bench/**`,
+   `scripts/ecrans.json`, `plugins/README.md`) are placed before the graph step by
+   AD-ecrans-places-1 to 6; the bench runtime and any unknown path still touch every screen.
 A changed screen-test file counts as touching the screens it declares (AD-niveaux-3).
 *Rejected:* a hand-kept list of file→screen (it rots); declaring screens in a header of each test
 file (the sibling feature `adestia-tests-hors-ecran` rewrites those files); treating the server
@@ -1546,6 +1551,82 @@ the task declares it in `scripts/ecrans.json` (one entry; the selection rule is 
 *Rejected:* keeping TypeScript and asking the chain to install (the Livre forbids the install, and
 the point is a cheap question after every commit); a scanner for the list only (drift); declaring the
 list by hand in `.sdlc.yaml` (it rots, the reason `ecrans.json` is read by the graph).
+
+## Decisions of adestia-ecrans-places
+
+Today a changed file that the import graph cannot place, and that no off-screen rule names, plays
+every screen (AD-niveaux-2 rule 3). Eight such paths cost the most in the chain's measure (sets of
+131 to 425 min against about 23 min for one « all »). This feature places each of them, in
+`scripts/niveaux.mjs` and `scripts/ecrans.json` only; it adds no screen and no screen test.
+
+### AD-ecrans-places-1 — Placed paths are decided before the import graph, and what is not understood plays all
+
+`calcul` (scripts/niveaux.mjs) tries, for a changed file, a **place** before the graph step of
+AD-niveaux-2. A place answers a set of screens (possibly empty) or `null` (not mine). A place that
+cannot read what it needs (a file absent at `<base>`, a parse that fails, a change outside the
+shapes below) answers **every screen**: in doubt, play. A path with no place behaves as today.
+Places that read the previous version of a file get it through an injected reader
+(`contexte.ancien(path)`, default `git show <base>:<path>`), so tests give both versions without git.
+
+### AD-ecrans-places-2 — Off-screen paths: no screen is touched
+
+Added to the off-screen rules (AD-niveaux-2 rule 1): `plugins/README.md`; `bench/**/*.md`;
+`bench/scenarios/**`, `bench/tests/**`, `bench/*.sh` (run by hand or by their own guard, cited by no
+screen test); `plugins/web/**` (a tool plugin with no web screen: `relais.mjs`, `adestia-plugin.json`,
+`package.json`, `package-lock.json`, its tests and skills; no screen test reads it, checked by grep
+at design); `Dockerfile` (the image is proved by server tests, not by a screen). The bench runtime
+(`bench/launch.mjs`, `fake-engine.mjs`, `oidc-stub.mjs`, `sweep.mjs`, `bench.mjs`, `bench/seed/**`,
+`bench/lib/**`) is cited by the harness of the screen tests: it **keeps playing every screen**, now
+by an explicit place and not by default. *Rejected:* deducing the screens from the tests that cite a
+bench file (cited through `join(root,'bench','launch.mjs')` as well as by literal: a scan would miss
+some, and a miss is a screen not played).
+
+### AD-ecrans-places-3 — `package.json` touches E-15 for its version, nothing for its metadata, every screen for the rest
+
+The root `package.json` is compared with its `<base>` version, field by field. Only `version` changed:
+**E-15** (the settings menu shows the version; the root `package.json` has no `version` field today, the menu reads `ADESTIA_VERSION` or the last `CHANGELOG.md` heading, so this rule is a guard for the day the field exists). Only
+`scripts`, `description`, `repository`, `license`, `keywords`, `author`, `homepage`, `bugs`
+changed: none. Any other field (`dependencies`, `devDependencies`, `workspaces`, `overrides`,
+`engines`, `type`, `main`…) or a field unknown: every screen. A mix is the union.
+
+### AD-ecrans-places-4 — `scripts/ecrans.json` touches the screens whose entries or tests it changes
+
+The map is compared with its `<base>` version: a screen whose `entrees` or `dossiers` differ, an added
+or removed screen, a screen-test line whose screens differ (the union of the old and the new list),
+a test added or removed (its screens; `toujours` → every screen), and `_` ignored. An unparsable map,
+either side: every screen.
+
+### AD-ecrans-places-5 — `components.css` touches the screens whose sources cite a changed class block
+
+Both versions are stripped of comments and split into rules (`selector { body }`, `@media` and
+`@supports` one level deep, keyed by their condition). Identical after that: no screen. For every
+rule added, removed or whose body changed, the class names of its selector give **blocks** (`adestia-btn--danger`
+and `adestia-btn__icon` both give `adestia-btn`). A screen is touched when the text of any file its
+entries reach (the files of `closure`, plus the files under its `dossiers`) contains a block name.
+Plain text, not parsed: a class built as `` `adestia-btn--${kind}` `` still carries `adestia-btn`.
+A changed rule with no class in its selector (`:root`, `*`, an element), an `@font-face`, `@keyframes`
+or any other at-rule, or a rule that does not split: every screen. A block cited by no screen: every
+screen (a skin or a plugin may use it).
+
+### AD-ecrans-places-6 — `i18n.ts` touches the screens that cite a changed sentence
+
+`packages/web/src/app/i18n.ts` is compared with its `<base>` version as a table: the entries of `FR`
+(and of the `en` table) read by a new reader written on the `tokens` scanner of `niveaux.mjs` (`key: value` pairs of string tokens, a value possibly on the next line, the `FR` and `en` tables); the
+rest of the file (code, comments aside) must be identical. An entry added, removed or whose value changed
+makes its **key** changed. A screen is touched when a file its entries (or dossiers) reach contains the key as a
+string literal (either quote, escapes read). A key no screen cites (a server or content message, a
+plugin sentence): every screen. A change outside the entries: every screen. Only comments changed: none.
+*Rejected:* touching by locale (every screen test plays both locales through the harness).
+
+### AD-ecrans-places-7 — The proof: one test per path, in the suite
+
+`packages/server/test/ecrans-places-besoin.test.ts` (a plain vitest, like `tests-ecran-besoin.test.ts`,
+off-screen) calls `calcul` with a `contexte` of two versions per case. One case at least for each of:
+`components.css` (a rule of one block → its screens only; a comment → none; `:root` → all; unknown block → all),
+`i18n.ts` (a key of one screen; a key cited nowhere → all; a code change → all), `plugins/web/` (each of
+`relais.mjs`, `adestia-plugin.json`, `package-lock.json`), `plugins/README.md`, `bench/README.md`,
+a bench scenario, `bench/tests/*` and a `bench/*.sh` (none), `bench/launch.mjs` and `scripts/suite-ecrans.sh` (all), `scripts/ecrans.json`, `Dockerfile`, `package.json`
+(version → E-15; `dependencies` → all); and an unknown path (`unknown/x.bin` → all). The test files are `packages/server/test/ecrans-places-besoin.test.ts` and `ecrans-places-i18n-besoin.test.ts`.
 
 ## Decisions of adestia-acces-refuse
 
@@ -1897,3 +1978,241 @@ since `64dee0f`; it remains so. The missing-attribute report is closed.
   nothing. A whitespace-only fill does the same. `Composer.tsx` already focuses
   before ignoring an empty fill (`4e6f16f`). E-30 is repaired separately by AD-24 c:
   `scan/web/scanner.js` focuses the composer field when its opener has disappeared or was the body.
+
+## Decisions of adestia-version-hors-image
+
+### AD-version-1 — An installation from the sources reads its version from the last release heading of `CHANGELOG.md`
+
+**Invariant.** The number shown on the last line of E-15 is the published one, the number of the
+git tag without its `v` (the image tag), whatever the installation; the one exception is the
+dev image, whose tag is `main` and which therefore shows `main`. `GET /api/instance` carries
+it as `version`, or omits it; the shell is unchanged.
+
+**Decision.** `buildVersion` in `routes/instance.ts` takes, in this order: (1) `ADESTIA_VERSION`
+when set and not blank (the image: unchanged, so the image shows what it showed); (2) the last
+`## vX.Y.Z` (or `## vX.Y.Z-serie.K`) heading of `CHANGELOG.md` at the repository root, found from
+the module's own location by walking up the parents until one holds a `CHANGELOG.md` (the
+source is four levels under the root, the compiled `dist/src/routes` five: no fixed relative path
+serves both), read once at boot; (3) nothing. Any read or parse failure is (3), silently.
+
+**Why this source.** `CHANGELOG.md` is already written at every release by the integrate step
+(`Version vX.Y.Z`), and `bench/tests/doc-version.test.mjs` already guarantees that its last title is
+the latest tag or the one the merge is about to lay: it cannot drift, and no new step is added to
+a release. No second place holds the number.
+
+**Rejected.**
+- *`version` in the root `package.json`, bumped at release.* A second number to keep in step, a step
+  the release does not have today, and a new guard to write; the five workspace manifests would
+  stay at `0.0.0` beside it.
+- *`git describe` at boot or build.* Needs `.git` and the tags, absent from a tarball or a shallow
+  clone; and it would give `v0.98.6-12-gabc` for a branch, a string that is no published number.
+- *A build-time stamp file.* More machinery (a build step, a file in `dist`) for what a read at boot
+  gives; it would also be missing for `tsx`/dev runs.
+- *`ADESTIA_VERSION` set by hand for source installs.* Is today's behaviour; it is what the
+  request reports.
+
+**A build that does not start from a published version.** A checkout on a branch shows the last
+release heading of its own `CHANGELOG.md`: the version it was cut from (or, in the window
+between the integrate step and the tag, the one about to be laid). No suffix, no `-dev`, no hash:
+nothing is invented, and it is the number a reader can look up. If the file is absent (an image
+built without `ADESTIA_VERSION`, which does not copy it), the line says "Adestia" alone, as today.
+
+**Dimensions.** Security: no input, a file of the repository read once, the string is matched by
+`^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$` before it is served. Cost: one read of ~65 KB at boot.
+Observability: the line of E-15 is the check. No data, no migration, no new setting.
+
+## Decisions of adestia-plugins-reglages
+
+### AD-plugins-1 — Plugins have their own route and writer; the settings catalogue stays scalar
+
+**Invariant.** The browser can change exactly one thing about extensions: whether a plugin the instance
+*already found* is named in the list of its kind. It cannot name a plugin the instance did not
+discover, add a source, or write any other key. `extensions.sources`, `driver.command` and the
+secrets keep their frontier (the file, edited from the machine), as `settings.ts` states.
+
+**Decision.** `GET /api/plugins` and `PUT /api/plugins/:id` (`routes/plugins.ts`), not a new
+`SETTINGS` entry (the catalogue is scalar keys: a list is not one, and adding it would let a "write
+any list" path in). The body is `{ active: boolean, revision?: string }`. The route looks `:id` up in
+the discovered plugins (`404` otherwise; `409` for `core`, always on), takes the list from its
+manifest kind (`apps`, `features`, `tools`) and calls a new `setActivation(file, list, id, active,
+revision)` in `settings-file.ts`: the same `readDocument` / revision / safe-write / `writability`
+round trip as `applyChanges` (comments, layout and file mode kept; `409 stale` on a changed revision;
+`503` read-only; `400` when `active` is not a boolean, `revision` not a string, or `extensions.<list>` is not a list), adding or removing that one entry of that one sequence (creating `extensions.<list>` when absent, and
+leaving the key as an empty list rather than deleting it when the last entry goes). Alternatives
+rejected: a catalogue `list` kind (opens generic list writes); a second state file for overrides
+(a second source of truth: `adestia.config.yaml` stays the only one, as for E-14's settings, see the E-14 section above).
+
+**Why this is not widening the frontier.** Turning on a plugin runs code the owner already put on the
+instance (image, plugins folder, or a source already in the file); installing stays out. An instance
+with `auth.mode: none` already lets any visitor rewrite settings and restart (E-14, `/api/restart`);
+this route has the same reach and the same absence of role (P-1 "Who it is for"), and is mounted only
+when the server has a `configPath`, like `registerSettings`.
+
+**Accepted risk (decided by the owner).** `PUT /api/plugins/:id` is open to whoever reaches the port
+(`auth.mode: none`) or to any OIDC account: no administrator role gates it, and the route is kept as
+is. Two reasons. Without authentication, anyone who reaches the machine can already get code run,
+directly or through the agent, so enabling a found plugin opens nothing more. With OIDC, Adestia has no
+notion of administrator at this stage, which amounts to assuming all its users are trusted. Reopen this if
+an administrator role arrives, or if an instance becomes reachable beyond people the owner trusts.
+
+### AD-plugins-2 — The payload says what is found, what is loaded and what the file wants
+
+**Decision.** `GET /api/plugins` returns `{ plugins: [...], refused: [...], file, writable,
+readOnlyReason?, revision, pluginsDir }`. Per found plugin: `id`, `kind`, `description`, `version?`,
+`origin` (`{ kind: 'folder' }` or `{ kind: 'source', name }`), `loaded` (the `active` of discovery, i.e. the
+boot-time answer), `wanted` (from the file: the id is in the list of its kind; `core` always true),
+`problems` (the degraded `DiscoveryProblem`s of that id). `refused`: every `DiscoveryProblem` with no
+`severity` or `refused` — id, reason, `code`/`params` — including the loser of a duplicate id, whose
+row is the problem, not a plugin. `DiscoveredPlugin` gains `origin` (set by `discoverPlugins` from the
+root it came from; `extensionFolders` already knows the root). The frontend payload of
+`/api/instance` (`frontendPayload`) is unchanged: it lists only active plugins, which is why a
+separate route exists. `wanted` is read from the file, not the loaded config, for the reason `routes/settings.ts`
+gives; a file that does not parse gives `wanted = loaded` and the read-only reason. Types in `packages/schemas`
+(`PluginsPayload`), the web reads them with the existing `request` helper.
+
+### AD-plugins-3 — Applying is the restart that exists
+
+**Decision.** Plugins are discovered, set up and mounted at boot (`start.ts`: `discoverExtensions`,
+`runSetups`, `mountPluginApis`, the manifest merge), and a plugin's vocabulary, MCP servers and skills
+are all registered there; no in-place reload exists and none is built (it would touch six
+modules for a rare action). A change therefore always *applies after a restart*, through
+`POST /api/restart` and the E-14 components (`RestartBar`, `useRestart`) reused unchanged: refused
+while turns run, `force`, "Coming back…". The criterion "after application the app appears" is proved
+through a real restart of a booted instance (the launcher loop), not a mocked one.
+
+**Dimensions.** Security: AD-plugins-1; `id` is matched against the discovered set, never interpolated;
+YAML written through the document API only. Failure: a plugin that fails at the next boot is refused and
+listed on E-19 and E-37, the instance still boots (existing behaviour); the owner switches it off from E-37.
+Concurrency: revision check; two tabs get `409 stale`. Observability: the page is the check; the restart
+log line of the launcher. Data: no migration, no new store. i18n: new strings in `i18n.ts`, English and French.
+
+## Decisions of adestia-web
+
+The `web` plugin (kind `tool`, `extensions.tools: [web]`) lets the agent read a page that plain fetching
+is refused: a headless Chrome launched on demand in the agent's pod, driven through `@playwright/mcp`.
+No screen, no page, no route, no stored data: the plugin is an MCP server, a skill and an image layer.
+Out of scope, and staying out: a search engine, signing in to accounts, persistent cookies, a browser
+shared across the cluster, enabling it in the agents' configurations (`k8s-home-lab`, a later step).
+
+### AD-web-1 — The plugin ships a filtering relay in front of `@playwright/mcp`, and removes three tools there
+
+**Invariant.** With the plugin on, the agent sees the browser tools minus `browser_run_code_unsafe`,
+`browser_evaluate` and `browser_file_upload`; with it off, no `web` tool exists at all (the existing
+rule: a plugin's MCP server is read only while active, `mcpServersFor`).
+
+**Decision.** The manifest's one `mcpServers` entry is `node ./mcp/relais.mjs`, not `playwright-mcp`
+itself. `relais.mjs` (one file, no dependency) spawns `@playwright/mcp` over stdio and forwards
+the newline-delimited JSON-RPC both ways, with exactly two edits: the `tools/list` result drops the
+withheld names, and a `tools/call` naming one is answered with a JSON-RPC error that says the tool is
+withheld by this instance (never forwarded). The list of withheld names is a constant of the relay, one
+line each with its reason: arbitrary code in the page or the server (`browser_run_code_unsafe`,
+`browser_evaluate`) and reading a local file into a page (`browser_file_upload`). The three work on any
+engine, because the relay sits below the driver.
+
+**Rejected.** *A refusal in Adestia's drivers*: three drivers (claude, codex, copilot) each name MCP tools
+their own way, and the day a fourth arrives the guard is silently missing. *The engine's own deny flag*:
+engine-specific and set in the operator's file, so a mis-typed name leaves the tool open without a word.
+*`--caps`*: it only adds capabilities (`vision`, `pdf`, `devtools`); the three tools are core, it cannot
+withhold them. *Letting the tools through*: `browser_evaluate` on a page the agent does not control is
+code the page's author can steer through prompt injection, and the first need (read a page) never wants
+it. The relay is the smallest thing that holds on every engine; it is a **denylist pinned to one version**
+of `@playwright/mcp`, which is why AD-web-2 pins it and a test (task 3) fails when the pinned package
+lists a tool the relay's table has never seen, so a bump is a decision rather than an accident.
+
+### AD-web-2 — Dependencies are pinned in the plugin and installed by the image, not by the server
+
+**Decision.** `plugins/web/package.json` declares `@playwright/mcp` at one exact version (`0.0.86` at
+design time; every release of the package depends on an alpha `playwright-core`, there is no stable pair
+to choose) with its own `package-lock.json`. The image's build stage runs `npm ci --omit=dev
+--ignore-scripts` in that folder and the runtime stage copies the resulting `node_modules` beside the
+plugin. The server's own production tree is untouched. No plugin installed npm dependencies before; this
+is the first, and `plugins/README.md` says what it costs (19 MB, pure JavaScript).
+
+**Constraint kept.** The build stage is pinned to the builder's architecture because the runtime tree is
+pure JavaScript (see the head of the `Dockerfile`). `@playwright/mcp` and `playwright-core` are; the
+browser is not and is installed in the runtime stage (AD-web-3). A task test fails if a `.node` binary
+appears in `plugins/web/node_modules`, so the day that stops being true the build says so.
+
+**Rejected.** Adding it to `packages/server` (it would load into every instance, active or not, and widen
+the server's audited tree); `npx` at run time (a network fetch at the first tool call, unpinned in effect).
+
+### AD-web-3 — The image carries the browser Playwright itself would install, on both architectures
+
+**Decision.** In the runtime stage, after `yt-dlp`, one `RUN` installs `chromium-headless-shell` with the
+`playwright-core` CLI that `plugins/web/node_modules` holds, into `PLAYWRIGHT_BROWSERS_PATH=/opt/browsers`
+(readable by the `node` user), then `install-deps chromium-headless-shell` for its system libraries,
+then clears the apt lists. Playwright publishes the amd64 and arm64 builds and records the exact revision
+in its own `browsers.json`, so the Chrome is aligned with `playwright-core` **by construction**, not by a
+number copied here. Chosen over downloading Chrome for Testing by URL: it has no linux-arm64 build.
+Build argument `WEB_BROWSER` (default `on`; `none` skips both the dependencies of AD-web-2 and the
+browser, as `YT_DLP_RELEASE=none` does for yt-dlp): an image built without it is the image of today,
+and the plugin, if named in `extensions.tools`, mounts and says it has no browser (AD-web-5). The size
+cost per architecture is measured at build and written in `CHANGELOG.md`.
+
+### AD-web-4 — Identity: one header, derived at boot, nothing else
+
+**Decision.** The relay runs `<executable> --version` once at startup (`Chrome Headless Shell
+159.0.8154.6`) and passes `--user-agent` built from it: the standard desktop Chrome string for that
+version, with `Chrome/<major>.0.0.0`, on Linux `X11; Linux x86_64`, without `HeadlessChrome`. The version is
+never written in the repository, so an image rebuilt on a newer Playwright keeps a truthful header. If
+the version cannot be read the relay does not start (AD-web-5): an invented header is a worse failure than
+none. Nothing more is done to look like a person: no stealth scripts, no captcha solving, no proxy, no
+fingerprint patching. A site that still refuses is reported as refused (the skill tells the agent to say
+so, and to say which page, rather than retry in other ways).
+
+**Arguments passed to `@playwright/mcp`**, all by the relay and none by the operator's config:
+`--headless`, `--isolated` (in-memory profile: no account, no cookie survives the process),
+`--executable-path <chrome-headless-shell>`, `--user-agent <derived>`, `--output-dir <dir>`,
+`--output-max-size 20971520`, `--idle-timeout 60000`, and `--no-sandbox` only under AD-web-6.
+`--allow-unrestricted-file-access` and `--init-script` are never passed.
+
+### AD-web-5 — Lifecycle: the browser belongs to the turn that asked for it
+
+**Decision.** The driver starts the MCP server for a turn and ends it with the turn; the relay exits when
+its stdin closes and kills its child's process group on exit, on `SIGTERM` and on `SIGINT`. `--idle-timeout`
+is 60 s: a browser left open between two reads of a long turn is closed and the next call relaunches it
+(cheap, and nothing is held while the agent thinks). Chrome is therefore absent at rest and after a turn;
+task 3's test counts the processes before and after a call, and after killing the relay's parent. A relay
+that cannot start (no executable, no readable version, no `node_modules`) exits non-zero with one line
+saying which, which the existing MCP health shows on the plugin (E-10); the agent then has no `web` tool and
+does not guess. Concurrency: each turn has its own relay and its own in-memory browser; the cap on
+concurrent turns (`maxConcurrentTurns`) already bounds how many Chromes exist, and the sizing note in the
+`Dockerfile` gains one figure (measured, task 2).
+
+### AD-web-6 — `--no-sandbox` only if measured necessary, and then written down
+
+**Decision.** The relay does not pass `--no-sandbox` by default. Task 2 starts the image's browser as the
+`node` user with the sandbox on. If it launches, nothing more is done. If it does not (no user namespaces
+in the container's runtime), the relay passes `--no-sandbox` **and this section is amended in the same
+commit** with the measurement (command, error) and the reason it is acceptable: the container is the
+isolation boundary (non-root user, no profile, no cookie, the agent already runs arbitrary shell commands in
+this pod, `--isolated`, the tools of AD-web-1 withheld). The flag is a relay constant, not a setting.
+
+**Measurement.** Not measured — to be measured on the image of the delivery tag. No Docker in the
+pods (decision of the owner, 2026-11-20), so the sandbox was never started as the `node` user and nothing
+is claimed either way. `SANS_SANDBOX` stays `false` in `plugins/web/mcp/relais.mjs`; if the measurement
+on the tag's image shows the sandbox cannot start, the flag is set and this section amended with the
+command, the error and the reason, in the same commit.
+
+### AD-web-7 — Output goes to a dotted folder of the workspace, bounded
+
+**Decision.** `--output-dir` is `<workspace>/.adestia-web/` (workspace: `ADESTIA_WORKSPACE`, else the
+relay's working directory). A segment starting with a dot is outside the workspace's content by rule
+(`files.ts`, `watch.ts`, `stores.ts`), so the pages screen, the file API and the watcher never list
+it, while the agent's own file tools read it. The folder is created by the relay, `--output-max-size`
+(20 MiB) evicts the oldest files, and the skill tells the agent to read the saved page file rather than ask
+for another snapshot. Rejected: a folder of the data directory (the agent's file tools do not reach it
+without extra grants); an undotted folder (it would show on the pages screen, E-3, as pages that are not
+pages).
+
+### AD-web-8 — The skill says when, not how
+
+**Decision.** `plugins/web/skills/web/SKILL.md`, delivered by the existing `deliverSkills`: use the
+browser when the ordinary read fails (403, a challenge page, a page built in JavaScript, something to
+click), not otherwise; read the file of the page rather than ask again; say plainly when a site refuses
+anyway, and stop; never try to bypass a challenge. It names no tool the relay withholds.
+
+**Dimensions.** *Security*: AD-web-1, -4 and -6; the agent can reach any URL its pod can, as it can with
+`curl` today; no secret is passed to the plugin. *Failure*: AD-web-5. *Observability*: MCP health on E-10,
+the relay's one-line start error, the withheld-tool error naming the tool. *Data*: the output folder only
+(AD-web-7); no migration. *i18n*: none, no screen. *Cost*: the image, measured per architecture.

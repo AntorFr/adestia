@@ -494,3 +494,31 @@ button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outli
 .adestia-action-row__icon { grid-row: 1 / span 3; width: 20px; height: 20px; color: var(--text-muted); }
 .adestia-action-row__label { font-size: var(--text-sm); font-weight: 500; color: var(--text); overflow-wrap: anywhere; }
 .adestia-action-row__line { grid-column: 2; font-size: var(--text-xs); color: var(--text-muted); overflow-wrap: anywhere; }
+
+/* B-35: the line a rename leaves when pages still point to the old name (charte § 4, Reference notice). */
+.adestia-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warning) 12%, var(--surface));
+  color: var(--text);
+}
+.adestia-notice__text { display: flex; align-items: center; gap: var(--space-2); flex: 1 1 auto; min-width: 0; margin: 0; font-size: var(--text-sm); }
+.adestia-notice__text .adestia-icon { flex: none; color: var(--warning-text); }
+.adestia-notice__actions { display: flex; align-items: center; gap: var(--space-2); flex: none; }
+.adestia-notice__list { flex: 1 0 100%; margin: 0; }
+.adestia-notice__list p { margin: 0; font-size: var(--text-sm); }
+.adestia-notice__list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.adestia-notice__list a { display: inline-flex; align-items: center; min-height: 24px; min-width: 24px; overflow-wrap: anywhere; color: var(--text); text-decoration: underline; }
+@media (max-width: 820px) {
+  .adestia-notice { flex-direction: column; align-items: flex-start; }
+}
+.adestia-nameprompt__context { margin: 0 0 var(--space-2); font-size: var(--text-sm); color: var(--text-muted); overflow-wrap: anywhere; }
+@media (max-width: 820px) {
+  .adestia-btn--rename .adestia-btn__word { display: none; }
+}

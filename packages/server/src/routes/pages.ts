@@ -13,7 +13,7 @@
  */
 
 import { createHash, randomUUID } from 'node:crypto'
-import { access, mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import { access, chmod, mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { basename, dirname, extname, join } from 'node:path'
 
@@ -26,11 +26,18 @@ import {
   serialize,
   validateDocument,
 } from '@antorfr/adestia-content'
-import type { CreateFolderRequest, CreateFolderResponse, PageIndexFolders } from '@antorfr/adestia-schemas'
+import type {
+  CreateFolderRequest,
+  CreateFolderResponse,
+  PageIndexFolders,
+  RenameFolderRequest,
+  RenameFolderResponse,
+} from '@antorfr/adestia-schemas'
 import type { FastifyInstance } from 'fastify'
 
 import { parseFrontmatter, splitFrontmatter } from '../frontmatter.js'
 import type { DiscoveredPlugin } from '../extensions.js'
+import { rewriteLinks } from '../folder-links.js'
 import { gated } from '../io.js'
 import { allFolders, creatableRoot, isAbsorbed, writableFolders } from '../writable-folders.js'
 import { revisionOf, safePagePath, titleOf, type PageContent, type PageInfo } from '../pages.js'
@@ -61,6 +68,8 @@ export interface PagesOptions {
   readonly locale?: string | undefined
   /** Plugins discovered; the ACTIVE ones' `absorbs` leave the writable folders. */
   readonly plugins?: readonly DiscoveredPlugin[] | undefined
+  /** Logical folders a configuration key names (`workspace.memory`, `workspace.planif`): not renamable. */
+  readonly configured?: readonly string[] | undefined
 }
 /**
  * The store a `?store=` qualifier names, or undefined.
@@ -274,6 +283,157 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
   })
 
   /**
+   * Taken: a directory or a page file of that logical name in ANY store, or a
+   * folder that is the mount point (or the logical parent) of one.
+   */
+  const nameTaken = async (asked: string): Promise<boolean> => {
+    const exists = async (store: Store, logical: string): Promise<boolean> => {
+      const there = logical === store.at ? store.dir : fileIn(store, logical)
+      if (!there) return false
+      return stat(there).then(
+        () => true,
+        () => false,
+      )
+    }
+    for (const store of stores) {
+      if (store.at === asked || store.at.startsWith(`${asked}/`)) return true
+      if ((await exists(store, asked)) || (await exists(store, `${asked}.md`))) return true
+    }
+    return false
+  }
+
+  const isWritable = (path: string): Promise<boolean> =>
+    access(path, constants.W_OK).then(
+      () => true,
+      () => false,
+    )
+
+  /**
+   * AD-39: rename the last segment of a folder, then mend the path links that
+   * led into it. The directory `rename` is the verdict and is never undone;
+   * a page that cannot be mended is counted in `unrewritten`.
+   */
+  app.post<{ Body: Partial<Record<keyof RenameFolderRequest, unknown>> }>(
+    '/api/folders/rename',
+    async (request, reply) => {
+      const asked = request.body?.path
+      const name = request.body?.name
+      if (typeof asked !== 'string' || asked === '' || asked.includes('\0')) {
+        return reply.code(400).send({ error: 'path is required' })
+      }
+      if (typeof name !== 'string' || !SLUG.test(name) || name.length > 80) {
+        return reply.code(400).send({ error: 'not a valid folder name' })
+      }
+      const segments = asked.split('/')
+      if (segments.some((part) => part === '' || part === '.' || part === '..')) {
+        return reply.code(400).send({ error: 'not a valid folder path' })
+      }
+      const renamed = [...segments.slice(0, -1), name].join('/')
+
+      // Mount points and the logical parents of mounts are held by no one.
+      const mounted = stores.some((store) => store.at === asked || store.at.startsWith(`${asked}/`))
+      const holders: { store: Store; dir: string }[] = []
+      for (const store of stores) {
+        const dir = fileIn(store, asked)
+        if (!dir) continue
+        const info = await stat(dir).catch(() => undefined)
+        if (info?.isDirectory()) holders.push({ store, dir })
+      }
+      if (!mounted && holders.length === 0) {
+        return reply.code(404).send({ error: 'no such folder' })
+      }
+
+      const absorbed = (options.plugins ?? [])
+        .filter((plugin) => plugin.active)
+        .flatMap((plugin) => plugin.manifest.absorbs ?? [])
+      if (isAbsorbed(absorbed, asked)) {
+        return reply.code(422).send({ error: 'this folder belongs to an app' })
+      }
+      if ((options.configured ?? []).some((one) => one === asked || one.startsWith(`${asked}/`))) {
+        return reply.code(422).send({ error: 'this folder is named in the configuration' })
+      }
+      if (mounted) return reply.code(422).send({ error: 'this folder is a mount point' })
+      if (holders.length > 1) {
+        return reply.code(422).send({ error: 'several stores hold this folder' })
+      }
+      const [held] = holders
+      if (!held) return reply.code(404).send({ error: 'no such folder' })
+
+      if (!(await isWritable(held.dir)) || !(await isWritable(dirname(held.dir)))) {
+        return reply.code(403).send({ error: 'write refused' })
+      }
+      if (await nameTaken(renamed)) {
+        return reply.code(409).send({ error: 'name already taken' })
+      }
+
+      const target = join(dirname(held.dir), name)
+      try {
+        await rename(held.dir, target)
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code
+        if (code === 'EEXIST' || code === 'ENOTEMPTY') {
+          return reply.code(409).send({ error: 'name already taken' })
+        }
+        if (code === 'EACCES' || code === 'EPERM' || code === 'EROFS') {
+          return reply.code(403).send({ error: 'write refused' })
+        }
+        if (code === 'ENOENT') return reply.code(404).send({ error: 'no such folder' })
+        throw error
+      }
+
+      let unrewritten = 0
+      const writableStore = new Map<string, boolean>()
+      const { entries } = await listAll(stores, { keep: (file) => file.endsWith('.md') })
+      for (const entry of entries) {
+        // A page of the renamed folder is read where it lives now, its
+        // relative links resolved from where it was written.
+        const inside = entry.path === renamed || entry.path.startsWith(`${renamed}/`)
+        const was = inside ? `${asked}${entry.path.slice(renamed.length)}` : entry.path
+        let text: string
+        try {
+          text = await readFile(entry.file, 'utf8')
+        } catch {
+          continue
+        }
+        if (!text.includes(segments[segments.length - 1] ?? '')) continue
+        let rewritten: string | undefined
+        try {
+          rewritten = rewriteLinks(text, {
+            from: asked,
+            name,
+            pageDir: was.includes('/') ? was.slice(0, was.lastIndexOf('/')) : '',
+          })
+        } catch (error) {
+          request.log.warn({ err: error, page: entry.path }, 'a page could not be read for its links')
+          continue
+        }
+        if (rewritten === undefined) continue
+        let open = writableStore.get(entry.store.id)
+        if (open === undefined) {
+          open = await isWritable(entry.store.dir)
+          writableStore.set(entry.store.id, open)
+        }
+        if (!open) {
+          unrewritten += 1
+          continue
+        }
+        const temporary = join(dirname(entry.file), `.${basename(entry.file)}.${randomUUID()}.tmp`)
+        try {
+          await writeFile(temporary, rewritten, 'utf8')
+          await chmod(temporary, (await stat(entry.file)).mode & 0o7777).catch(() => undefined)
+          await rename(temporary, entry.file)
+        } catch (error) {
+          await unlink(temporary).catch(() => undefined)
+          request.log.warn({ err: error, page: entry.path }, 'a page could not be rewritten')
+          unrewritten += 1
+        }
+      }
+      const done: RenameFolderResponse = { path: renamed, unrewritten }
+      return reply.code(200).send(done)
+    },
+  )
+
+  /**
    * AD-38: make an empty folder. The client sends the path already reduced to
    * slugs (E-36); the server never slugs, it refuses a last segment that is
    * not one. The folder goes in the first store that holds the parent and
@@ -295,23 +455,8 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
     }
     const parent = parents.join('/')
 
-    // Taken: a directory or a page file of that name in ANY store, or a
-    // folder that is the mount point (or the logical parent) of one.
-    const taken = async (store: Store, logical: string): Promise<boolean> => {
-      const there = logical === store.at ? store.dir : fileIn(store, logical)
-      if (!there) return false
-      return stat(there).then(
-        () => true,
-        () => false,
-      )
-    }
-    for (const store of stores) {
-      if (store.at === asked || store.at.startsWith(`${asked}/`)) {
-        return reply.code(409).send({ error: 'name already taken' })
-      }
-      if ((await taken(store, asked)) || (await taken(store, `${asked}.md`))) {
-        return reply.code(409).send({ error: 'name already taken' })
-      }
+    if (await nameTaken(asked)) {
+      return reply.code(409).send({ error: 'name already taken' })
     }
 
     const absorbed = (options.plugins ?? [])

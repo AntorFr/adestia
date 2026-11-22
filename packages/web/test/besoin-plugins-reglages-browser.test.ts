@@ -1,7 +1,7 @@
 /**
  * Feature `adestia-plugins-reglages` seen from its need only (B-plugins-1 to B-plugins-4, P-plugins-1, E-9 tile, E-37),
- * through a driven browser on the bench instance (`bench/launch.mjs --restart --seed besoin-plugins-reglages`: the plain
- * binary's boot loop, so `/api/restart` really restarts it; scripted engine, two turns running). Every expectation is
+ * through a driven browser on the bench instance (`bench/launch.mjs --restart --seed besoin-plugins-reglages`: the
+ * binary's boot loop replayed by bench/restart-loop.mjs, so `/api/restart` really restarts it; scripted engine, two turns running). Every expectation is
  * written by hand from docs/parcours.md and docs/ecrans.md, never read back from the code. Needs `npm run build`.
  * The effects themselves (the file, the 404, the 409) are proved at the server door in
  * packages/server/test/besoin-plugins-reglages.test.ts; here is the nominal of each gesture and what the screen shows.
@@ -175,8 +175,13 @@ describe.skipIf(!hasBrowser)('Plugins settings page (B-plugins-1 to B-plugins-4,
       await page.getByRole('button', { name: 'Restart anyway' }).waitFor({ timeout: WAIT })
       expect(await page.locator('body').innerText()).toMatch(/[1-9]\d* turn\(s\) running/)
       await shot(page, 'e37-refused-turns')
-      await page.getByRole('button', { name: 'Restart anyway' }).click()
-      await page.waitForSelector('text=Coming back', { timeout: WAIT })
+      // the signal is the server's answer to the forced restart, not the bar's "Coming back" label: that state lasts
+      // one health poll (250 ms) and a loaded machine can miss it entirely
+      const [restartAnswer] = await Promise.all([
+        page.waitForResponse((r: any) => r.url().endsWith('/api/restart') && r.request().method() === 'POST', { timeout: WAIT }),
+        page.getByRole('button', { name: 'Restart anyway' }).click(),
+      ])
+      expect(restartAnswer.status()).toBe(202)
 
       // the instance answers again, with the file's wish now the loaded state
       const deadline = Date.now() + WAIT
