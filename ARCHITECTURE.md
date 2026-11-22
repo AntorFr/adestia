@@ -1603,7 +1603,7 @@ screen (a skin or a plugin may use it).
 ### AD-ecrans-places-6 — `i18n.ts` touches the screens that cite a changed sentence
 
 `packages/web/src/app/i18n.ts` is compared with its `<base>` version as a table: the entries of `FR`
-(and of the `en` table) read with the file's own scanner (`key: value` pairs of string tokens); the
+(and of the `en` table) read by a new reader written on the `tokens` scanner of `niveaux.mjs` (`key: value` pairs of string tokens, a value possibly on the next line, the `FR` and `en` tables); the
 rest of the file (code, comments aside) must be identical. An entry added, removed or whose value changed
 makes its **key** changed. A screen is touched when a file its entries (or dossiers) reach contains the key as a
 string literal (either quote, escapes read). A key no screen cites (a server or content message, a
@@ -1617,10 +1617,8 @@ off-screen) calls `calcul` with a `contexte` of two versions per case. One case 
 `components.css` (a rule of one block → its screens only; a comment → none; `:root` → all; unknown block → all),
 `i18n.ts` (a key of one screen; a key cited nowhere → all; a code change → all), `plugins/web/` (each of
 `relais.mjs`, `adestia-plugin.json`, `package-lock.json`), `plugins/README.md`, `bench/README.md`,
-a bench scenario (none) and `bench/launch.mjs` (all), `scripts/ecrans.json`, `Dockerfile`, `package.json`
-(version → E-15; `dependencies` → all); and an unknown path (`unknown/x.bin` → all). `--lister` prints
-the places hit, `non placés` listing only what had none. `docs/ecrans.md`/README words on the levels
-and AD-niveaux-2 rule 1 and 3 are updated to cite this decision.
+a bench scenario, `bench/tests/*` and a `bench/*.sh` (none), `bench/launch.mjs` and `scripts/suite-ecrans.sh` (all), `scripts/ecrans.json`, `Dockerfile`, `package.json`
+(version → E-15; `dependencies` → all); and an unknown path (`unknown/x.bin` → all). The common docs (AD-niveaux-2 rules 1 and 3, the README on the levels) are written by the feature's assembly.
 
 ## Decisions of adestia-acces-refuse
 
