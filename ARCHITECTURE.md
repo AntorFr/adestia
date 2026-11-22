@@ -1452,8 +1452,9 @@ renamed files by both names), keeps the screens whose entry reaches one of them,
 `dossiers` (rule 2) touches those screens even if rule 1 would call it off-screen, then the
 vitest setup, then rules 1 and 3:
 1. **Declared off-screen**, touching no screen: `packages/server/src/**`, `packages/drivers/**`,
-   `docs/**`, `*.md` at the root, `plugins/*/*.md`, `.agent/**`, `CHANGELOG.md`, `CLAUDE.md`, and any
-   `**/test/**` file that is not a screen test (an off-screen test cannot change a screen). Files under
+   `docs/**`, `*.md` at the root, `plugins/*/*.md`, `plugins/README.md`, `.agent/**`, `CHANGELOG.md`, `CLAUDE.md`, and any
+   `**/test/**` file that is not a screen test (an off-screen test cannot change a screen), plus the
+   places of AD-ecrans-places-2 (`plugins/web/**`, `Dockerfile`, `bench/**/*.md`, bench scenarios, tests and `*.sh`). Files under
    `packages/web/src`, `packages/content` and `packages/schemas` are never listed here: the import
    graph (rule 2) decides.
 2. **Imported by an entry**: touches exactly those screens.
@@ -1462,7 +1463,10 @@ vitest setup, then rules 1 and 3:
    screen entry (`useRoute.ts`, the theme: the shell mounts every screen, though only `App.tsx`,
    the entry of E-32, reaches them in the graph), the skins, `bench/**`, `vite.config.ts`,
    `package.json` and the lockfile, the scripts, and a file the resolver cannot place: touches
-   **every** screen. In doubt, play.
+   **every** screen. In doubt, play. The paths that fell here only for lack of a place
+   (`components.css`, `i18n.ts`, `plugins/web/**`, `Dockerfile`, `package.json`, `bench/**`,
+   `scripts/ecrans.json`, `plugins/README.md`) are placed before the graph step by
+   AD-ecrans-places-1 to 6; the bench runtime and any unknown path still touch every screen.
 A changed screen-test file counts as touching the screens it declares (AD-niveaux-3).
 *Rejected:* a hand-kept list of file→screen (it rots); declaring screens in a header of each test
 file (the sibling feature `adestia-tests-hors-ecran` rewrites those files); treating the server
@@ -1618,7 +1622,7 @@ off-screen) calls `calcul` with a `contexte` of two versions per case. One case 
 `i18n.ts` (a key of one screen; a key cited nowhere → all; a code change → all), `plugins/web/` (each of
 `relais.mjs`, `adestia-plugin.json`, `package-lock.json`), `plugins/README.md`, `bench/README.md`,
 a bench scenario, `bench/tests/*` and a `bench/*.sh` (none), `bench/launch.mjs` and `scripts/suite-ecrans.sh` (all), `scripts/ecrans.json`, `Dockerfile`, `package.json`
-(version → E-15; `dependencies` → all); and an unknown path (`unknown/x.bin` → all). The common docs (AD-niveaux-2 rules 1 and 3, the README on the levels) are written by the feature's assembly.
+(version → E-15; `dependencies` → all); and an unknown path (`unknown/x.bin` → all). The test files are `packages/server/test/ecrans-places-besoin.test.ts` and `ecrans-places-i18n-besoin.test.ts`.
 
 ## Decisions of adestia-acces-refuse
 

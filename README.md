@@ -310,6 +310,8 @@ on a throwaway clone with its install done (`ecrans` figures: the pod that built
 | a shared file (`packages/web/src/app/useRoute.ts`) | all 33 | 20m34s | 21m22s\* |
 | server only (`packages/server/src/app.ts`) | none | 0m01s (under a second: nothing installed, built or played) | 9m30s |
 
+Some paths that the import graph cannot place are placed by name (AD-ecrans-places-1 to 6), so that they no longer play every screen: `plugins/web/**`, `plugins/README.md`, `Dockerfile`, `bench/**/*.md` and the bench scenarios, tests and shell scripts touch none; the root `package.json` touches E-15 when only its `version` changed, none for its metadata fields, every screen otherwise; `scripts/ecrans.json` touches the screens whose entries, folders or tests it changes; `components.css` touches the screens whose sources cite the class block of a changed rule; `packages/web/src/app/i18n.ts` touches the screens citing a changed key. What a place does not understand (an unparsable file, a change in the code of `i18n.ts`, a rule or a key cited by no screen) plays every screen, as does the bench runtime. `node scripts/niveaux.mjs --lister ecrans <base>` shows the result.
+
 `ecrans_liste` (`node scripts/niveaux.mjs --liste ecrans <base>`, no install, no `node_modules`) answers in about 0.5 s on that machine whatever the change (one `git diff`, one walk of the import graph).
 
 The first row was measured before `Canvas.tsx` (E-20) and `App.tsx` (E-32) were declared as entries, so it did not count the screen tests of those two screens; a change to `McpServers.tsx` now plays them too, and the figure is a little higher.
