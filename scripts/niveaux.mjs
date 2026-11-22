@@ -390,6 +390,7 @@ function textesAtteints(map, id) {
     else fichiers.add(d)
   }
   fichiers.delete(CSS)
+  fichiers.delete(I18N) // it holds every key as a literal: it would make every screen cite every key
   return [...fichiers].map((f) => { try { return readFileSync(join(root, f), 'utf8') } catch { return '' } })
 }
 
@@ -422,11 +423,79 @@ function placeComponentsCss(f, { tous, ancien, actuel, carte: map, textes }) {
   return touches
 }
 
+// i18n.ts (AD-ecrans-places-6): the entries of the FR and en tables, read on the `tokens` scanner, are
+// compared as a table; what is outside them must be the same tokens (comments are not tokens).
+const I18N = 'packages/web/src/app/i18n.ts'
+// → { entrees: Map('table\u0000key' → [values]), reste: string }; throws on an entry that is not `key: 'value',`.
+function lireI18n(src) {
+  const tk = tokens(src)
+  const entrees = new Map()
+  const reste = []
+  for (let k = 0; k < tk.length; k++) {
+    const t = tk[k]
+    const a = tk[k - 1]
+    const b = tk[k - 2]
+    let table = null
+    if (t.t === 'p' && t.v === '{' && a) {
+      if (a.v === ':' && b && b.v === 'en') table = 'en'
+      else if (a.v === '=') { // `const FR: Readonly<…> = {`: the name sits right after `const`
+        let m = k - 2
+        while (m > 0 && !(tk[m].t === 'id' && tk[m].v === 'const')) m--
+        if (tk[m + 1]?.v === 'FR') table = 'fr'
+      }
+    }
+    reste.push(t.t === 'str' ? `s${JSON.stringify(t.v)}` : `${t.t}${t.v}`)
+    if (!table) continue
+    k++
+    while (!(tk[k].t === 'p' && tk[k].v === '}')) {
+      const [c, d, e, f] = [tk[k], tk[k + 1], tk[k + 2], tk[k + 3]]
+      const cleOk = (c.t === 'str' && c.v !== null) || c.t === 'id'
+      if (!cleOk || d.t !== 'p' || d.v !== ':' || e.t !== 'str' || e.v === null) throw new Error('entry not understood')
+      const id = `${table}\u0000${c.v}`
+      entrees.set(id, [...(entrees.get(id) ?? []), e.v])
+      k += 3
+      if (f.t === 'p' && f.v === ',') k++
+      else if (!(f.t === 'p' && f.v === '}')) throw new Error('entry not understood')
+    }
+    reste.push('{}')
+  }
+  return { entrees, reste: reste.join(' ') }
+}
+const citeCles = (texte, cles) => {
+  const lits = new Set(tokens(texte).filter((t) => t.t === 'str' && t.v !== null).map((t) => t.v))
+  return cles.filter((c) => lits.has(c))
+}
+
+function placeI18n(f, { tous, ancien, actuel, carte: map, textes }) {
+  if (f !== I18N) return null
+  const a = ancien(f)
+  const n = actuel(f)
+  if (typeof a !== 'string' || typeof n !== 'string') return new Set(tous)
+  const x = lireI18n(a)
+  const y = lireI18n(n)
+  if (x.reste !== y.reste) return new Set(tous) // a change outside the entries
+  const cles = new Set()
+  for (const id of new Set([...x.entrees.keys(), ...y.entrees.keys()])) {
+    if (JSON.stringify(x.entrees.get(id) ?? null) !== JSON.stringify(y.entrees.get(id) ?? null)) cles.add(id.split('\u0000')[1])
+  }
+  if (!cles.size) return new Set()
+  const liste = [...cles]
+  const lus = new Map(tous.map((id) => [id, textes(id, map.ecrans[id]).flatMap((t) => citeCles(t, liste))]))
+  const touches = new Set()
+  for (const c of liste) {
+    const citants = tous.filter((id) => lus.get(id).includes(c))
+    if (!citants.length) return new Set(tous) // a server or content message, a plugin sentence
+    citants.forEach((id) => touches.add(id))
+  }
+  return touches
+}
+
 const PLACES = [
   ...PLACES_FIXES.map((p) => (f, c) => (p.test(f) ? { nom: p.nom, ecrans: p.ecrans(c.tous) } : null)),
   (f, c) => { const r = placePackageJson(f, c); return r && { nom: 'package.json', ecrans: r } },
   (f, c) => { const r = placeCarte(f, c); return r && { nom: 'scripts/ecrans.json', ecrans: r } },
   (f, c) => { const r = placeComponentsCss(f, c); return r && { nom: 'components.css', ecrans: r } },
+  (f, c) => { const r = placeI18n(f, c); return r && { nom: 'i18n.ts', ecrans: r } },
 ]
 
 function placer(f, contexte) {
@@ -463,9 +532,9 @@ export function calcul(changes, map = carte(), contexte = {}) {
   for (const f of changes) {
     if (declares[f] === 'toujours') { tous.forEach((e) => touches.add(e)); continue }
     if (Array.isArray(declares[f])) { declares[f].forEach((e) => touches.add(e)); continue }
-    if (coque.has(f) && !entrees.has(f)) { tous.forEach((e) => touches.add(e)); continue }
     const place = placer(f, lecture)
     if (place) { place.ecrans.forEach((e) => touches.add(e)); places.push(`${f} (${place.nom})`); continue }
+    if (coque.has(f) && !entrees.has(f)) { tous.forEach((e) => touches.add(e)); continue }
     let placed = false
     for (const [id, e] of Object.entries(map.ecrans)) {
       if (e.dossiers?.some((d) => f.startsWith(d))) { touches.add(id); placed = true }
