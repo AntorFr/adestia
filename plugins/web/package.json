@@ -1,0 +1,9 @@
+{
+  "name": "adestia-plugin-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The web plugin's one dependency, pinned exactly (AD-web-2).",
+  "dependencies": {
+    "@playwright/mcp": "0.0.86"
+  }
+}

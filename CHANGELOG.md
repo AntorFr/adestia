@@ -1139,6 +1139,69 @@ branch and that `test:plugins` is replayed after a red vitest run.
   reading them, instead of reading as soon as the first one appears. Tests only: nothing changes
   for users.
 
+## v0.98.13
+
+- **The agent can read a page that plain fetching is refused — the `web` plugin** — a new `tool` plugin
+  (`extensions.tools: [web]`, off until named) starts a headless Chrome on demand in the agent's pod, through
+  the pinned `@playwright/mcp` behind a relay (`plugins/web/mcp/relais.mjs`) that withholds
+  `browser_run_code_unsafe`, `browser_evaluate` and `browser_file_upload` on every engine. The browser's
+  `User-Agent` is derived from the binary's own `--version`, nothing is kept between turns (in-memory profile),
+  pages are saved under `.adestia-web/` of the workspace (20 MiB bound, never listed by the pages screen), and no
+  Chrome survives a turn. A skill tells the agent when to use it, and to say so when a site refuses anyway.
+  Proved in the attested suite against a real browser and a locally served page (`npm run test:web-navigateur`).
+- **The image carries the headless Chrome of the web plugin** — the `Dockerfile` installs the
+  plugin's dependencies in a build stage and, in the runtime stage, `chromium-headless-shell` and its
+  libraries through the plugin's own `playwright-core`, into `/opt/browsers`, for amd64 and arm64. No
+  Chrome version is written in the `Dockerfile`. `--build-arg WEB_BROWSER=none` skips both, for an
+  image without the web tool. Image overhead (amd64, arm64), build duration and the sandbox
+  measurement: non mesuré — à mesurer sur l'image du tag de livraison (the pods have no Docker).
+- **A script plays the web plugin on a real turn** — `bench/web-reel.sh <image>` boots the named image with
+  `extensions.tools: [web]` then `[]`, runs a real claude turn asking the price of a protected shop page, and
+  prints the rendered text, the page file written under `.adestia-web/` and the tool names seen, then checks that no
+  Chrome process survives. **Not played yet**: the real run (plugin on and off, then from `homenode`) remains to be
+  played on the image published at the delivery tag.
+
+## v0.98.14
+
+- **The Plugins settings restart browser test no longer fails under load** — the test that turns one app on and
+  another off, restarts the instance and checks the page afterwards now waits for the restart through a launcher
+  that replays the binary's boot loop with the scripted engine. Tests and bench launcher only: nothing changes
+  for users.
+
+## v0.98.15
+
+- **The phone data-form browser test waits for the block bar instead of assuming it** — the test that checks
+  the data form fits the 390×844 screen now re-taps the block and waits until the "Block settings" gear
+  receives the centre of its rectangle, and names the cause (the bar never rose) if it does not. Tests only:
+  nothing changes for users.
+
+## v0.98.16
+
+- **A change to a style, a plugin, the bench or a translation replays only the screens it touches** — the
+  screen selection (`scripts/niveaux.mjs`) now places `components.css`, `i18n.ts`, `plugins/web/**`, the
+  plugin and bench documentation, `Dockerfile`, `package.json` and `scripts/ecrans.json` before the import
+  graph: a comment or a documentation file replays no screen, a changed rule or translation key replays the
+  screens that cite it, and a path it does not know replays them all. Selection tooling only: nothing
+  changes for users.
+
+## v0.98.17
+
+- **The browser-test launcher retries when its port is taken** — `launch()` in the shared browser-test
+  helper now starts the launcher again, with a new port, up to three tries in all, when it exits with
+  an "address in use" error; any other failure is rejected at once. This removes the flaky collision seen
+  in the "New from template" browser test. Tests only: nothing changes for users.
+
+## v0.98.18
+
+- **The simultaneous turns browser test no longer fails when a port is taken** — the test that saves 5 turns,
+  announces the restart and checks the restarted limiter now retries the launcher and the restarted binary
+  (up to three tries, a fresh port each time) when one of its two port takes collides with another test file
+  (`EADDRINUSE`); any other failure is still rejected at once. Tests only: nothing changes for users.
+
+## v0.98.19
+
+- **The "Remove server?" browser test no longer fails by timeout** — the helper that opens the server sheet in the B-20 browser test now waits for the dialog to be visible instead of assuming it is already open. Tests only: nothing changes for users.
+
 ## v0.99.0-adestia-decouverte.1
 
 - **The + creates a folder** — the pre-release of the `adestia-decouverte` epic so far: a **+**

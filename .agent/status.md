@@ -1,8 +1,8 @@
 # Status — Adestia
-> MàJ : 2026-11-21
+> MàJ : 2026-11-22
 
 ## Version courante
-Version courante : **`v0.99.0-adestia-decouverte.1`**, préversion de l'epic `adestia-decouverte` (branche `epic/adestia-decouverte`) ; dernier tag stable de `main` : `v0.98.12`. L'histoire des versions et ses raisons sont dans [CHANGELOG.md](../CHANGELOG.md), pas ici.
+Version courante : **`v0.99.0-adestia-decouverte.1`**, préversion de l'epic `adestia-decouverte` (branche `epic/adestia-decouverte`) ; dernier tag stable de `main` : **`v0.98.19`** (correctif de test seul, `rouge-adestia-22` ; avant lui `v0.98.18`, `v0.98.17`, `v0.98.16` (`adestia-ecrans-places`), `v0.98.15`, `v0.98.14`, `v0.98.13` (`adestia-web`)). L'histoire des versions et ses raisons sont dans [CHANGELOG.md](../CHANGELOG.md), pas ici.
 
 - Branche de travail : `feature/rouge-adestia-decouverte-1` (correctif de doc ; dernière feature de l'epic livrée : `feature/adestia-decouverte-creer-dossier`, E-38 : le + et New folder ; `POST /api/folders`, champ `folders` de l'index).
 
@@ -11,8 +11,11 @@ Déploiement des instances Alfred, Skippy et Nestor : **non attesté ici** (dern
 ## Reste à faire, par chantier livré
 - `adestia-decouverte-creer-dossier` (E-38, AD-37 côté cœur, AD-38) : **Reste** : créations des plugins, `template`, modèles, champ Folder d'E-36 (tranche 2) ; la ligne d'état vide pointe encore vers `adestia.config.yaml` (la page Plugins E-37 existe, la ligne ne la vise pas encore). **Piège** : le type de création admet `template`, seul `{folder: true}` est joué.
 - `adestia-plugins-reglages` (E-37, AD-plugins-1 à 3) : **Piège** : `loaded` (démarrage) ≠ `wanted` (fichier) tant qu'on n'a pas redémarré ; les écritures de la page sont chaînées pour porter chacune la révision de la précédente ; pas de rechargement à chaud. `PUT /api/plugins/:id` reste sans rôle administrateur (risque accepté par le propriétaire, inscrit dans AD-plugins-1).
+- `adestia-web` (AD-web-1 à 8, livrée en `v0.98.13`) : plugin `tool` `web` (`plugins/web/`), Chrome sans fenêtre à la demande par `@playwright/mcp` épinglé (`0.0.86`) derrière `mcp/relais.mjs`. **Reste, à jouer par Monsieur après le tag** (pas de Docker dans les pods) : construire l'image (amd64, arm64, `WEB_BROWSER=none`), mesurer son surcoût et si le sandbox démarre en utilisateur `node` (sinon `SANS_SANDBOX = true` dans le relais et AD-web-6 amendé), jouer `bench/web-reel.sh <image>`, activer le plugin dans `k8s-home-lab`. **Pièges** : monter la version de `@playwright/mcp` est une décision (la liste de refus : `npm run test:web-navigateur`, suite attestée seule) ; le plugin porte `node_modules`, aucun `.node` n'y est toléré.
+- `adestia-ecrans-places` (AD-ecrans-places-1 à 7, livrée en `v0.98.16`) : `scripts/niveaux.mjs` place `components.css`, `i18n.ts`, `plugins/web/**`, `plugins/README.md`, `bench/**`, `scripts/ecrans.json`, `Dockerfile`, `package.json` avant le graphe d'imports. **Pièges** : `scripts/niveaux.mjs` est lu sur `main` (`outillage:`) ; le runtime du banc (`bench/launch.mjs`…) joue toujours tout ; une clé de `i18n.ts` citée par aucun écran joue tout.
+- Correctifs de test seul `rouge-adestia-16` à `-22` (`v0.98.11` à `v0.98.19`) : attendre un signal, jamais un délai fixe ni le premier élément d'un bloc. **Pièges** : `launch()` de `packages/web/test/charte-browser.ts` relance le lanceur sur `EADDRINUSE` seulement (3 essais ; `bench/launch.mjs` tire son port avant que le serveur le rouvre) ; `bench/restart-loop.mjs` reproduit la boucle de `bin/adestia.js`, une évolution de celle-ci s'y reporte ; `bootBench` et `restartedMax` de `besoin-tours.test.ts` capturent la sortie d'erreur pour lire `EADDRINUSE` ; sur téléphone, sonder la barre du bloc avant de retaper ; `openSheet` attend le dialogue au lieu de le supposer ouvert.
 - `adestia-ecrans-sans-local` et `adestia-niveau-fiche` : **Pièges** : un script de sélection ou de jeu nouveau entre dans `outillage:` ; un fichier de test d'écran ajouté, déplacé ou renommé entre dans `scripts/ecrans.json` (`node scripts/niveaux.mjs --verifier`, aucune suite ne le joue) ; les clés `local:`/`ecrans:`/`fiche:`/`rejouer:`/`outillage:` ne se lisent que sur `main`.
-- `adestia-ecrans-liste` : **Reste** : `--verifier` sort 1 sur `main` (`besoin-coller-tableau`, `besoin-copie-bords`, `besoin-copie` en `-browser.test.ts` absents de `scripts/ecrans.json`). **Pièges** : un test d'écran absent de la carte est joué à tout niveau ; seuls les spécificateurs d'import littéraux sont suivis.
+- `adestia-ecrans-liste` : **Reste** : `--verifier` sort 1 sur `main` (`besoin-coller-tableau`, `besoin-copie-bords`, `besoin-copie` en `-browser.test.ts`, puis `besoin-lanceur-port` et `charte-browser-lanceur` en `.test.ts`, absents de `scripts/ecrans.json`). **Pièges** : un test d'écran absent de la carte est joué à tout niveau ; seuls les spécificateurs d'import littéraux sont suivis.
 - `adestia-tests-hors-ecran` : **Reste** : l'allègement des tests d'écran eux-mêmes (colonne « À l'écran » `gardé` partout). **Pièges** : un nouveau fichier qui nomme `chromium|playwright` entre dans une grappe de `docs/tests-ecran/README.md`, sinon `tests-ecran-garde` rougit ; un test retiré garde sa ligne d'inventaire.
 - `adestia-acces-refuse` : **Reste côté déploiement, hors dépôt** : le client OIDC doit lister l'URI de retour de déconnexion (`auth.oidc.postLogoutRedirectUri`). **Piège** : le cookie `adestia_refused` porte l'id_token ; au-delà de 4000 caractères (`COOKIE_LIMIT`) l'indice est abandonné et la déconnexion retombe sur le repli.
 - `adestia-mcp-cle-par-serveur` : **Piège** : `McpTokens` ne distingue les serveurs que par `tokenUrl|clientId`, d'où un minteur `McpSignIn` par entrée de `mcp-signin.json`.
@@ -26,14 +29,11 @@ Déploiement des instances Alfred, Skippy et Nestor : **non attesté ici** (dern
 - `adestia-decouverte-renommer` (AD-39, B-35, E-3/E-37) : `POST /api/folders/rename` `{path,name}` → 200 `{path, unrewritten}` / 404 / 409 / 403 / 400 / 422 (`routes/pages.ts`, `folder-links.ts`) ; bouton Rename (`app/RenameFolder.tsx`) et notice « n pages pointent encore… ». **Reste** : supprimer ou déplacer un dossier, alias de l'ancien nom (hors tranche). **Piège** : un dossier d'app, configuré ou multi-store répond 422 ; le droit exige l'écriture dans le dossier ET son parent ; un store en lecture seule garde ses liens et compte dans `unrewritten`.
 
 ## Défauts connus
-
-La liste de référence est dans [ARCHITECTURE.md](../ARCHITECTURE.md), section
-« Known defects ». Les défauts catalogues d'options git et de liens symboliques sont corrigés par `main` et n'y figurent plus.
+La liste de référence est dans [ARCHITECTURE.md](../ARCHITECTURE.md), section « Known defects ». Les défauts catalogues d'options git et de liens symboliques sont corrigés par `main` et n'y figurent plus.
 
 Compléments encore visibles dans le code :
 - Copilot : le refus d'authentification non reconnu cite la fin de la sortie d'erreur de la CLI (400 caractères, jetons `gh*_` masqués) ; l'armement lit `authTokens` (CLI 1.0.98) avant `copilotTokens`. Corrigé en `v0.97.3`, plus un défaut ; `authTokens` est le format de la CLI 1.0.98, les chaînes de `auth.ts` restent épinglées à la 1.0.80.
-- Le sélecteur de modèle du chat reste un `<select>` natif (`chat/ModelPicker.tsx`) : une liste
-  personnalisée serait un composant neuf (AD-18).
+- Le sélecteur de modèle du chat reste un `<select>` natif (`chat/ModelPicker.tsx`) : une liste personnalisée serait un composant neuf (AD-18).
 - Une délégation n'affiche pas les cartes de signature (`{ signatures: false }` dans
   `app/Delegations.tsx`) : vue en lecture seule sans gestionnaire de signature (P-13 étape 7).
 - `no-floating-promises` reste éteinte : 644 constats (22 en production, 622 dans les tests),

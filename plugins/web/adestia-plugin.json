@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "web",
+  "kind": "tool",
+  "description": "Lets the agent read a page that plain fetching is refused: a headless Chrome launched on demand in the agent's pod, driven through @playwright/mcp behind a relay that withholds the tools that run code or read local files.",
+  "contract": 1,
+  "skills": ["./skills/web/SKILL.md"],
+  "mcpServers": [
+    {
+      "name": "web",
+      "command": "node",
+      "args": ["./mcp/relais.mjs"]
+    }
+  ]
+}
