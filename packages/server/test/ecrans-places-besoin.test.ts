@@ -93,3 +93,56 @@ describe('scripts/ecrans.json (AD-ecrans-places-4)', () => {
   it('une base illisible touche tous', () =>
     expect(touches(['scripts/ecrans.json'], { 'scripts/ecrans.json': { avant: '[', apres: j(MAP) } })).toEqual(TOUS))
 })
+
+describe('components.css (AD-ecrans-places-5)', () => {
+  const CSS = 'packages/web/src/app/styles/components.css'
+  // what each screen's sources say, as plain text
+  const TEXTES: Record<string, string[]> = {
+    'E-1': ['<div className="adestia-btn adestia-btn--danger">'],
+    'E-2': ["`adestia-card ${x}`", 'adestia-btn'],
+    'E-15': ['adestia-menu__item'],
+  }
+  const BASE = '/* c */\n:root { --a: 1; }\n.adestia-card { color: red; }\n.adestia-menu__item { margin: 0; }\n@media (min-width: 600px) { .adestia-card { color: blue; } }\n'
+  const cas = (apres: string, avant = BASE, textes = TEXTES) => {
+    const { touches: t } = calcul([CSS], MAP, {
+      ancien: () => avant,
+      actuel: () => apres,
+      textes: (id: string) => textes[id] ?? [],
+    })
+    return [...t].sort()
+  }
+
+  it('une règle d’un bloc cité par un seul écran ne touche que lui', () =>
+    expect(cas(BASE.replace('margin: 0', 'margin: 1px'))).toEqual(['E-15']))
+  it('une règle d’un bloc cité par un autre écran seul ne touche que lui', () =>
+    expect(cas(BASE.replace('color: red', 'color: green'))).toEqual(['E-2']))
+  it('un modificateur BEM ramène au bloc', () =>
+    expect(cas(BASE + '.adestia-btn--danger:hover { color: red; }\n')).toEqual(['E-1', 'E-2']))
+  it('un commentaire ne touche rien', () =>
+    expect(cas(BASE.replace('/* c */', '/* autre { x: y } */ ').replace('.adestia-card {', '.adestia-card { /* z */'))).toEqual([]))
+  it('une espace changée ne touche rien', () => expect(cas(BASE.replace('color: red;', 'color:  red;'))).toEqual([]))
+  it('un changement de :root touche tous', () => expect(cas(BASE.replace('--a: 1', '--a: 2'))).toEqual(TOUS))
+  it('un bloc inconnu touche tous', () => expect(cas(BASE + '.adestia-ghost { x: y; }\n')).toEqual(TOUS))
+  it('une règle dans @media suit son bloc', () =>
+    expect(cas(BASE.replace('color: blue', 'color: pink'))).toEqual(['E-2']))
+  it('un at-rule autre que media/supports touche tous', () =>
+    expect(cas(BASE + '@keyframes k { from { a: b } to { a: c } }\n')).toEqual(TOUS))
+  it('@font-face touche tous', () => expect(cas(BASE + '@font-face { font-family: x; }\n')).toEqual(TOUS))
+  it('une règle sans classe (élément) touche tous', () => expect(cas(BASE + 'body { margin: 0; }\n')).toEqual(TOUS))
+  it('une liste dont une partie n’a pas de classe touche tous', () =>
+    expect(cas(BASE + '.adestia-card, body { margin: 0; }\n')).toEqual(TOUS))
+  it('un ordre changé touche tous', () =>
+    expect(cas('.adestia-menu__item { margin: 0; }\n.adestia-card { color: red; }\n:root { --a: 1; }\n@media (min-width: 600px) { .adestia-card { color: blue; } }\n')).toEqual(TOUS))
+  it('un @media imbriqué touche tous', () =>
+    expect(cas(BASE + '@media (a) { @media (b) { .adestia-card { x: y; } } }\n')).toEqual(TOUS))
+  it('un CSS illisible (accolade jamais fermée) touche tous', () => expect(cas(BASE + '.adestia-card { x: y;\n')).toEqual(TOUS))
+  it('un commentaire jamais fermé touche tous', () => expect(cas(BASE + '/* oops\n')).toEqual(TOUS))
+  it('une version de base absente touche tous', () => {
+    const { touches: t } = calcul([CSS], MAP, { ancien: () => null, actuel: () => BASE, textes: () => [] })
+    expect([...t].sort()).toEqual(TOUS)
+  })
+  it('un commentaire dans une chaîne n’est pas un commentaire', () =>
+    expect(cas('.adestia-card { content: "/* x"; }\n.adestia-menu__item { margin: 9px; }\n/* */', '.adestia-card { content: "/* x"; }\n.adestia-menu__item { margin: 0; }\n/* */')).toEqual(['E-15']))
+  it('un sélecteur de classe dans un attribut ou une pseudo-classe lit les classes', () =>
+    expect(cas(BASE + '.adestia-menu__item:not(.adestia-card) { x: y; }\n')).toEqual(['E-15', 'E-2']))
+})
