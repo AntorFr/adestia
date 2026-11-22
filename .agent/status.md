@@ -35,7 +35,6 @@ lecteur ; `CORPUS_WRITE=1` ne les régénère que si une page doit changer, et l
 `adestia-section`/`adestia-fold` existent déjà, d'où `adestia-block-section` ; à 1280 px la raison d'un refus est tronquée à droite (la zone live
 la dit en entier) ; ni `fr`, ni sombre, ni téléphone regardés pour l'édition.
 ## Défauts connus
-
 La liste de référence est dans [ARCHITECTURE.md](../ARCHITECTURE.md), section « Known defects ». Les défauts catalogues d'options git et de liens symboliques sont corrigés par `main` et n'y figurent plus.
 
 Compléments encore visibles dans le code :
