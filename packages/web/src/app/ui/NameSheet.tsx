@@ -1,11 +1,15 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useEffect, useState, type FormEvent } from 'react'
 
 import { Button } from './Button.js'
 import { Field } from './Field.js'
 import { Sheet } from './Sheet.js'
 
 /** Why a name was refused: already used, or the write itself failed. */
-export type NameRefusal = 'taken' | 'failed'
+export type NameRefusal =
+  | 'taken'
+  | 'failed'
+  /** A refusal said in words under the field; `retry` re-labels the button, `close` swaps it for Close (it cannot succeed). */
+  | { readonly message: string; readonly then?: 'retry' | 'close' }
 
 export interface NameSheetProps {
   readonly title: string
@@ -13,6 +17,10 @@ export interface NameSheetProps {
   /** The verb on the confirming button: Create, Rename. */
   readonly submitLabel: string
   readonly initial?: string
+  /** Plain text above the field (rename: where the folder stays). */
+  readonly context?: string
+  /** Rename mode: the field takes focus on open with its text selected, the button wears the pencil. */
+  readonly selectOnOpen?: boolean
   /** Whether the typed name can be sent; absent means any non-empty one. */
   readonly accepts?: (name: string) => boolean
   /** Does the work (the sheet makes no network call itself); a refusal keeps the sheet open under the field. */
@@ -26,10 +34,13 @@ export interface NameSheetProps {
  * for a non-empty name, Enter confirms, Escape and Cancel close. A refusal shows under
  * the field with the alert icon; the typed name stays.
  */
-export function NameSheet({ title, question, submitLabel, initial = '', accepts, onSubmit, onCancel, t }: NameSheetProps) {
+export function NameSheet({ title, question, submitLabel, initial = '', context, selectOnOpen, accepts, onSubmit, onCancel, t }: NameSheetProps) {
   const [name, setName] = useState(initial)
   const [refusal, setRefusal] = useState<NameRefusal | undefined>()
   const [busy, setBusy] = useState(false)
+  const field = useRef<HTMLInputElement>(null)
+  // The sheet's focus scope runs first and lands on the field (`data-autofocus`); the selection follows.
+  useEffect(() => { if (selectOnOpen) field.current?.select() }, [selectOnOpen])
   const sendable = name.trim() !== '' && (accepts ? accepts(name) : true)
   const submit = async (event: FormEvent) => {
     event.preventDefault()
@@ -43,7 +54,13 @@ export function NameSheet({ title, question, submitLabel, initial = '', accepts,
       setBusy(false)
     }
   }
-  const error = refusal === 'taken' ? t('name already taken') : refusal === 'failed' ? t('Could not write the name. Try again.') : undefined
+  const error =
+    refusal === 'taken'
+      ? t('name already taken')
+      : refusal === 'failed'
+        ? t('Could not write the name. Try again.')
+        : refusal?.message
+  const then = typeof refusal === 'object' ? refusal.then : undefined
   return (
     <Sheet
       open
@@ -54,17 +71,32 @@ export function NameSheet({ title, question, submitLabel, initial = '', accepts,
       footer={
         <>
           <Button onClick={onCancel}>{t('Cancel')}</Button>
-          <Button variant="accent" icon="plus" type="submit" form="adestia-nameprompt" disabled={!sendable || busy}>
-            {submitLabel}
-          </Button>
+          {then === 'close' ? (
+            <Button variant="accent" onClick={onCancel}>{t('Close')}</Button>
+          ) : (
+            <Button
+              variant="accent"
+              icon={selectOnOpen ? 'pencil' : 'plus'}
+              type="submit"
+              form="adestia-nameprompt"
+              disabled={!sendable || busy}
+              busy={busy}
+            >
+              {then === 'retry' ? t('Retry') : submitLabel}
+            </Button>
+          )}
         </>
       }
     >
       <form id="adestia-nameprompt" onSubmit={(event) => void submit(event)}>
+        {context ? <p className="adestia-nameprompt__context">{context}</p> : null}
         <Field label={question} {...(error ? { error } : {})}>
           <input
             className="adestia-input"
+            ref={field}
             value={name}
+            readOnly={busy}
+            {...(selectOnOpen ? { 'data-autofocus': '' } : {})}
             autoComplete="off"
             onChange={(event) => { setName(event.target.value); setRefusal(undefined) }}
           />

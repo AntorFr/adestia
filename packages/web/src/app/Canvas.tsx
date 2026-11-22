@@ -23,6 +23,7 @@ import { MissingPage } from './MissingPage.js'
 import { Preferences, prefsTitle, type PrefsPage } from './Preferences.js'
 import { NewFromTemplate } from './NewFromTemplate.js'
 import { CreateEntry } from './CreateEntry.js'
+import { canRename, RenameFolder, RenameNotice } from './RenameFolder.js'
 import { creationsFor } from './creations.js'
 import { Section } from './Section.js'
 import { templateSources } from './templates.js'
@@ -197,6 +198,12 @@ export function Canvas(props: CanvasProps) {
           t={t}
         />
       )
+    const renamable =
+      props.indexed !== false && canRename(section, props.writableFolders ?? [], folders, ownerOf(loaded, section, pages) !== undefined)
+    const renamed = async (path: string) => {
+      await props.refreshIndex?.()
+      openSection(path)
+    }
     const offer =
       props.indexed !== false && (props.writableFolders ?? []).includes(section) && sources.length > 0
     return (
@@ -212,7 +219,8 @@ export function Canvas(props: CanvasProps) {
         openPage={openPage}
         {...(props.ready === undefined ? {} : { ready: props.ready && props.indexed !== false })}
         t={t}
-        {...(creatable || offer
+        notice={<RenameNotice section={section} pages={pages} fetchImpl={props.fetchImpl} t={t} />}
+        {...(creatable || offer || renamable
           ? { headerAction: (
           <>
             {create('plus')}
@@ -228,6 +236,7 @@ export function Canvas(props: CanvasProps) {
                   t={t}
                 />
             ) : null}
+            {renamable ? <RenameFolder section={section} fetchImpl={props.fetchImpl} onRenamed={renamed} t={t} /> : null}
           </>
         ) }
           : {})}
