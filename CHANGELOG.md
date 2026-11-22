@@ -1208,3 +1208,10 @@ branch and that `test:plugins` is replayed after a red vitest run.
   beside Ask on the home and in a folder's header lists what can be created, and **New folder**
   makes an empty folder (`POST /api/folders`) that shows as a tile at once. A fresh instance can
   create its first folder. Rename, plugin creations and templates come in later features of the epic.
+
+- **Journal, Task list and Project status on the +** — three official plugins now declare what they
+  create, with no change to the core: **Project status** (`project-management`), **Journal**
+  (`journal`: the cover page `type: journal`, beside the folder the plugin reads as the journal; no
+  folder is made) and **Liste de tâches** / *Task list* (`todo`: a page carrying the plugin's
+  `:::checklist` block, which adds a task in the page's folder). Each is also a card in E-36 with its
+  picture. Turning a plugin off removes its line; the eight other plugins add none.
