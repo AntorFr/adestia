@@ -1580,7 +1580,7 @@ some, and a miss is a screen not played).
 ### AD-ecrans-places-3 — `package.json` touches E-15 for its version, nothing for its metadata, every screen for the rest
 
 The root `package.json` is compared with its `<base>` version, field by field. Only `version` changed:
-**E-15** (the settings menu shows it; `version-hors-image-ecran-browser.test.ts` reads it). Only
+**E-15** (the settings menu shows the version; the root `package.json` has no `version` field today, the menu reads `ADESTIA_VERSION` or the last `CHANGELOG.md` heading, so this rule is a guard for the day the field exists). Only
 `scripts`, `description`, `repository`, `license`, `keywords`, `author`, `homepage`, `bugs`
 changed: none. Any other field (`dependencies`, `devDependencies`, `workspaces`, `overrides`,
 `engines`, `type`, `main`…) or a field unknown: every screen. A mix is the union.
