@@ -89,7 +89,13 @@ afterAll(() => {
   for (const child of running) child.kill('SIGTERM')
 })
 
-export function launch(seed: string, skin: string, locale: string): Promise<Instance> {
+/** One try: spawns the launcher, resolves on its `listening on` line, rejects when it exits first. */
+export type Attempt = (seed: string, skin: string, locale: string) => Promise<Instance>
+
+/** The launcher draws its port, then binds it: two of them can draw the same one. */
+export const LAUNCH_ATTEMPTS = 3
+
+function spawnLauncher(seed: string, skin: string, locale: string): Promise<Instance> {
   const child = spawn(
     execPath,
     [join(repo, 'bench', 'launch.mjs'), '--engine', 'fake', '--seed', seed, ...(skin ? ['--skin', skin] : []), '--locale', locale],
@@ -114,8 +120,23 @@ export function launch(seed: string, skin: string, locale: string): Promise<Inst
             }),
         })
     })
-    child.once('exit', (code) => reject(new Error(`launcher exited (${code}): ${stderr.slice(-300)}`)))
+    child.once('exit', (code) => {
+      running.delete(child) // a failed try is not followed any more
+      reject(new Error(`launcher exited (${code}): ${stderr.slice(-300)}`))
+    })
   })
+}
+
+/** Retries, with a new port each time, only when the launcher failed on EADDRINUSE; any other error is rejected at once. */
+export async function launch(seed: string, skin: string, locale: string, attempt: Attempt = spawnLauncher): Promise<Instance> {
+  for (let n = 1; ; n++) {
+    try {
+      return await attempt(seed, skin, locale)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      if (n >= LAUNCH_ATTEMPTS || !message.includes('EADDRINUSE')) throw error
+    }
+  }
 }
 
 export async function newBrowser(): Promise<Browser> {
