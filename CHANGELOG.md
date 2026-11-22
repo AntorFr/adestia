@@ -1157,3 +1157,12 @@ branch and that `test:plugins` is replayed after a red vitest run.
   the data form fits the 390×844 screen now re-taps the block and waits until the "Block settings" gear
   receives the centre of its rectangle, and names the cause (the bar never rose) if it does not. Tests only:
   nothing changes for users.
+
+## v0.98.16
+
+- **A change to a style, a plugin, the bench or a translation replays only the screens it touches** — the
+  screen selection (`scripts/niveaux.mjs`) now places `components.css`, `i18n.ts`, `plugins/web/**`, the
+  plugin and bench documentation, `Dockerfile`, `package.json` and `scripts/ecrans.json` before the import
+  graph: a comment or a documentation file replays no screen, a changed rule or translation key replays the
+  screens that cite it, and a path it does not know replays them all. Selection tooling only: nothing
+  changes for users.
