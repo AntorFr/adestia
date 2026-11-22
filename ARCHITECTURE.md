@@ -38,7 +38,7 @@ The server never imports `web`: `start.ts` › `findWebRoot` looks for
 Outside `packages/`:
 
 - `plugins/` — the bundled plugins (todo, journal, planif, atelier, parcours, meals,
-  voyages, scan, listening-post, project-management), plain ESM with an
+  voyages, scan, listening-post, project-management, web), plain ESM with an
   `adestia-plugin.json` manifest; tests under `plugins/*/test` and `plugins/test`.
 - `skins/` — four bodies (alfred, dobby, nestor, skippy): `adestia-skin.json`, `skin.css`,
   an optional `skin.js` module, icon, web manifest fragment.
