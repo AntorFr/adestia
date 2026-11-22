@@ -1166,3 +1166,17 @@ branch and that `test:plugins` is replayed after a red vitest run.
   graph: a comment or a documentation file replays no screen, a changed rule or translation key replays the
   screens that cite it, and a path it does not know replays them all. Selection tooling only: nothing
   changes for users.
+
+## v0.98.17
+
+- **The browser-test launcher retries when its port is taken** — `launch()` in the shared browser-test
+  helper now starts the launcher again, with a new port, up to three tries in all, when it exits with
+  an "address in use" error; any other failure is rejected at once. This removes the flaky collision seen
+  in the "New from template" browser test. Tests only: nothing changes for users.
+
+## v0.98.18
+
+- **The simultaneous turns browser test no longer fails when a port is taken** — the test that saves 5 turns,
+  announces the restart and checks the restarted limiter now retries the launcher and the restarted binary
+  (up to three tries, a fresh port each time) when one of its two port takes collides with another test file
+  (`EADDRINUSE`); any other failure is still rejected at once. Tests only: nothing changes for users.
