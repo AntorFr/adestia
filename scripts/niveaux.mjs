@@ -292,10 +292,141 @@ function placeCarte(f, { tous, ancien, actuel }) {
   return touches
 }
 
+// components.css (AD-ecrans-places-5): the two versions are cut into rules, the class blocks of the
+// changed rules are looked for, as plain text, in the sources each screen reaches.
+const CSS = 'packages/web/src/app/styles/components.css'
+const sansCommentaires = (css) => {
+  let out = ''
+  for (let i = 0; i < css.length;) {
+    const c = css[i]
+    if (c === '"' || c === "'") { // a string may hold a slash-star
+      let j = i + 1
+      while (j < css.length && css[j] !== c && css[j] !== '\n') j += css[j] === '\\' ? 2 : 1
+      out += css.slice(i, j + 1)
+      i = j + 1
+    } else if (c === '/' && css[i + 1] === '*') {
+      const e = css.indexOf('*/', i + 2)
+      if (e < 0) throw new Error('comment never closed')
+      out += ' '
+      i = e + 2
+    } else { out += c; i++ }
+  }
+  return out
+}
+const blanc = (t) => t.replace(/\s+/g, ' ').trim()
+// The end of the block opened at `open` (the index of its `{`), strings skipped.
+function fermant(css, open) {
+  let depth = 0
+  for (let i = open; i < css.length; i++) {
+    const c = css[i]
+    if (c === '"' || c === "'") { i++; while (i < css.length && css[i] !== c) i += css[i] === '\\' ? 2 : 1 }
+    else if (c === '{') depth++
+    else if (c === '}' && --depth === 0) return i
+  }
+  throw new Error('block never closed')
+}
+// → [{ cle, corps, selecteur }] in file order; `selecteur` is null for what has no class to read.
+// Throws on what is not understood (the place then answers every screen).
+function regles(css, condition = '') {
+  const out = []
+  let i = 0
+  const n = css.length
+  while (i < n) {
+    const o = css.indexOf('{', i)
+    const pv = css.indexOf(';', i)
+    if (o < 0) { if (blanc(css.slice(i))) throw new Error('stray text'); break }
+    if (pv >= 0 && pv < o) { // a statement (@import, @charset…)
+      if (blanc(css.slice(i, pv))) out.push({ cle: `${condition}${blanc(css.slice(i, pv))};`, corps: '', selecteur: null })
+      i = pv + 1
+      continue
+    }
+    const tete = blanc(css.slice(i, o))
+    const f = fermant(css, o)
+    const corps = css.slice(o + 1, f)
+    i = f + 1
+    if (!tete) throw new Error('rule without selector')
+    if (/^@(media|supports)\b/i.test(tete)) {
+      if (condition) throw new Error('nested at-rule')
+      out.push(...regles(corps, `${tete} > `))
+    } else if (tete.startsWith('@')) out.push({ cle: `${condition}${tete}`, corps: blanc(corps), selecteur: null })
+    else out.push({ cle: `${condition}${tete}`, corps: blanc(corps), selecteur: tete })
+  }
+  return out
+}
+// The class blocks of a selector: `adestia-btn--danger` and `adestia-btn__icon` give `adestia-btn`.
+// null when a part of the list has no class at all (`:root`, `*`, `body`).
+function blocsDe(selecteur) {
+  const parts = []
+  let depth = 0
+  let cur = ''
+  for (const c of selecteur) {
+    if (c === '(' || c === '[') depth++
+    else if (c === ')' || c === ']') depth--
+    if (c === ',' && depth === 0) { parts.push(cur); cur = '' } else cur += c
+  }
+  parts.push(cur)
+  const blocs = new Set()
+  for (const part of parts) {
+    const classes = [...part.replace(/\[[^\]]*\]/g, '').matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)].map((m) => m[1])
+    if (!classes.length) return null
+    for (const k of classes) blocs.add(k.split(/--|__/)[0])
+  }
+  return blocs
+}
+const empreinte = (r) => `${r.cle}\u0000${r.corps}`
+const compte = (liste) => {
+  const m = new Map()
+  for (const r of liste) m.set(empreinte(r), (m.get(empreinte(r)) ?? 0) + 1)
+  return m
+}
+
+function textesAtteints(map, id) {
+  const e = map.ecrans[id]
+  const fichiers = closure(e.entrees ?? [])
+  for (const d of e.dossiers ?? []) {
+    const abs = join(root, d)
+    if (!existsSync(abs)) continue
+    if (statSync(abs).isDirectory()) for (const f of walk(abs)) fichiers.add(relative(root, f).split('\\').join('/'))
+    else fichiers.add(d)
+  }
+  fichiers.delete(CSS)
+  return [...fichiers].map((f) => { try { return readFileSync(join(root, f), 'utf8') } catch { return '' } })
+}
+
+function placeComponentsCss(f, { tous, ancien, actuel, carte: map, textes }) {
+  if (f !== CSS) return null
+  const a = ancien(f)
+  const n = actuel(f)
+  if (typeof a !== 'string' || typeof n !== 'string') return new Set(tous)
+  const avant = regles(sansCommentaires(a))
+  const apres = regles(sansCommentaires(n))
+  const ca = compte(avant)
+  const cn = compte(apres)
+  const changees = [...avant.filter((r) => cn.get(empreinte(r)) !== ca.get(empreinte(r))), ...apres.filter((r) => cn.get(empreinte(r)) !== ca.get(empreinte(r)))]
+  if (!changees.length) { // same rules: a reordering moves the cascade, in doubt every screen
+    return avant.map(empreinte).join('\n') === apres.map(empreinte).join('\n') ? new Set() : new Set(tous)
+  }
+  const blocs = new Set()
+  for (const r of changees) {
+    const b = r.selecteur === null ? null : blocsDe(r.selecteur)
+    if (!b) return new Set(tous)
+    b.forEach((x) => blocs.add(x))
+  }
+  const lus = new Map(tous.map((id) => [id, textes(id, map.ecrans[id])]))
+  const touches = new Set()
+  for (const b of blocs) {
+    const citants = tous.filter((id) => lus.get(id).some((t) => t.includes(b)))
+    if (!citants.length) return new Set(tous) // a skin or a plugin may use it
+    citants.forEach((id) => touches.add(id))
+  }
+  return touches
+}
+
 const PLACES = [
   ...PLACES_FIXES.map((p) => (f, c) => (p.test(f) ? { nom: p.nom, ecrans: p.ecrans(c.tous) } : null)),
   (f, c) => { const r = placePackageJson(f, c); return r && { nom: 'package.json', ecrans: r } },
   (f, c) => { const r = placeCarte(f, c); return r && { nom: 'scripts/ecrans.json', ecrans: r } },
+  (f, c) => { const r = placeComponentsCss(f, c); return r && { nom: 'components.css', ecrans: r } },
 ]
 
 function placer(f, contexte) {
@@ -307,11 +438,12 @@ function placer(f, contexte) {
   return null
 }
 
-// `contexte`: { base, ancien(path), actuel(path) } — the two versions of a file read by the places;
-// tests inject them, the default reads `git show <base>:<path>` and the working tree.
+// `contexte`: { base, ancien(path), actuel(path), textes(id, entry) } — the two versions of a file read by the
+// places and the texts a screen reaches; tests inject them, the default reads `git show <base>:<path>` and the working tree.
 export function calcul(changes, map = carte(), contexte = {}) {
   const tous = Object.keys(map.ecrans)
-  const lecture = { tous, ancien: contexte.ancien ?? ((p) => gitShow(contexte.base, p)), actuel: contexte.actuel ?? lireActuel }
+  const lecture = { tous, ancien: contexte.ancien ?? ((p) => gitShow(contexte.base, p)), actuel: contexte.actuel ?? lireActuel,
+    carte: map, textes: contexte.textes ?? ((id) => textesAtteints(map, id)) }
   const places = []
   const declares = map.tests
   // Roots: a screen's entries, and each declared screen-test file; a test reaches only into test/
