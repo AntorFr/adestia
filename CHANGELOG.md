@@ -1180,3 +1180,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
   announces the restart and checks the restarted limiter now retries the launcher and the restarted binary
   (up to three tries, a fresh port each time) when one of its two port takes collides with another test file
   (`EADDRINUSE`); any other failure is still rejected at once. Tests only: nothing changes for users.
+
+## v0.98.19
+
+- **The "Remove server?" browser test no longer fails by timeout** — the helper that opens the server sheet in the B-20 browser test now waits for the dialog to be visible instead of assuming it is already open. Tests only: nothing changes for users.
