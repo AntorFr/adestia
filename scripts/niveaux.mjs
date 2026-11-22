@@ -224,8 +224,95 @@ const partage = (f) => f === 'packages/web/test/setup.ts'
 // theme, the split) serves all of them, though only its own entry (E-32) reaches it in the graph.
 const COQUE = 'packages/web/src/app/App.tsx'
 
-export function calcul(changes, map = carte()) {
+// --- places (AD-ecrans-places-1): a changed file decided before the import graph --------------
+// A place answers a Set of screens (possibly empty) or null (not mine). One that cannot read what it
+// needs answers every screen: in doubt, play.
+const gitShow = (base, path) => {
+  if (!base) return null
+  try {
+    return execFileSync('git', ['show', `${base}:${path}`], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+  } catch { return null }
+}
+const lireActuel = (path) => (isFile(path) ? readFileSync(join(root, path), 'utf8') : null)
+const lireJson = (texte) => {
+  if (texte === null || texte === undefined) return undefined
+  try {
+    const v = JSON.parse(texte)
+    return v && typeof v === 'object' && !Array.isArray(v) ? v : undefined
+  } catch { return undefined }
+}
+const sameJson = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+
+// Metadata of the root package.json that no screen shows (AD-ecrans-places-3).
+const METADONNEES = new Set(['scripts', 'description', 'repository', 'license', 'keywords', 'author', 'homepage', 'bugs'])
+
+// Off-screen paths (AD-ecrans-places-2) and the bench runtime that keeps playing every screen.
+const PLACES_FIXES = [
+  { nom: 'hors écran', test: (f) => /^plugins\/README\.md$/.test(f) || /^bench\/.*\.md$/.test(f) || /^bench\/(scenarios|tests)\//.test(f) ||
+    /^bench\/[^/]+\.sh$/.test(f) || /^plugins\/web\//.test(f) || f === 'Dockerfile', ecrans: () => new Set() },
+  { nom: 'banc (tous)', test: (f) => /^bench\/(launch|fake-engine|oidc-stub|sweep|bench)\.mjs$/.test(f) || /^bench\/(seed|lib)\//.test(f) ||
+    f === 'scripts/suite-ecrans.sh', ecrans: (tous) => new Set(tous) },
+]
+
+function placePackageJson(f, { tous, ancien, actuel }) {
+  if (f !== 'package.json') return null
+  const a = lireJson(ancien(f))
+  const n = lireJson(actuel(f))
+  if (!a || !n) return new Set(tous)
+  const touches = new Set()
+  for (const k of new Set([...Object.keys(a), ...Object.keys(n)])) {
+    if (sameJson(a[k], n[k])) continue
+    if (METADONNEES.has(k)) continue
+    if (k === 'version') { if (tous.includes('E-15')) touches.add('E-15'); else return new Set(tous); continue }
+    return new Set(tous)
+  }
+  return touches
+}
+
+function placeCarte(f, { tous, ancien, actuel }) {
+  if (f !== 'scripts/ecrans.json') return null
+  const a = lireJson(ancien(f))
+  const n = lireJson(actuel(f))
+  if (!a || !n || typeof a.ecrans !== 'object' || typeof n.ecrans !== 'object' || typeof a.tests !== 'object' || typeof n.tests !== 'object') return new Set(tous)
+  const touches = new Set()
+  const ids = new Set([...Object.keys(a.ecrans), ...Object.keys(n.ecrans)])
+  for (const id of ids) {
+    const x = a.ecrans[id]
+    const y = n.ecrans[id]
+    if (!x || !y || !sameJson(x.entrees, y.entrees) || !sameJson(x.dossiers, y.dossiers)) touches.add(id)
+  }
+  for (const t of new Set([...Object.keys(a.tests), ...Object.keys(n.tests)])) {
+    const x = a.tests[t]
+    const y = n.tests[t]
+    const tri = (v) => (Array.isArray(v) ? [...v].sort() : v)
+    if (sameJson(tri(x), tri(y))) continue
+    if (x === 'toujours' || y === 'toujours') return new Set(tous)
+    for (const e of [...(x ?? []), ...(y ?? [])]) touches.add(e)
+  }
+  return touches
+}
+
+const PLACES = [
+  ...PLACES_FIXES.map((p) => (f, c) => (p.test(f) ? { nom: p.nom, ecrans: p.ecrans(c.tous) } : null)),
+  (f, c) => { const r = placePackageJson(f, c); return r && { nom: 'package.json', ecrans: r } },
+  (f, c) => { const r = placeCarte(f, c); return r && { nom: 'scripts/ecrans.json', ecrans: r } },
+]
+
+function placer(f, contexte) {
+  for (const place of PLACES) {
+    let r
+    try { r = place(f, contexte) } catch { r = { nom: 'illisible', ecrans: new Set(contexte.tous) } }
+    if (r) return r
+  }
+  return null
+}
+
+// `contexte`: { base, ancien(path), actuel(path) } — the two versions of a file read by the places;
+// tests inject them, the default reads `git show <base>:<path>` and the working tree.
+export function calcul(changes, map = carte(), contexte = {}) {
   const tous = Object.keys(map.ecrans)
+  const lecture = { tous, ancien: contexte.ancien ?? ((p) => gitShow(contexte.base, p)), actuel: contexte.actuel ?? lireActuel }
+  const places = []
   const declares = map.tests
   // Roots: a screen's entries, and each declared screen-test file; a test reaches only into test/
   // directories (its harness), never into the sources a screen is made of.
@@ -245,6 +332,8 @@ export function calcul(changes, map = carte()) {
     if (declares[f] === 'toujours') { tous.forEach((e) => touches.add(e)); continue }
     if (Array.isArray(declares[f])) { declares[f].forEach((e) => touches.add(e)); continue }
     if (coque.has(f) && !entrees.has(f)) { tous.forEach((e) => touches.add(e)); continue }
+    const place = placer(f, lecture)
+    if (place) { place.ecrans.forEach((e) => touches.add(e)); places.push(`${f} (${place.nom})`); continue }
     let placed = false
     for (const [id, e] of Object.entries(map.ecrans)) {
       if (e.dossiers?.some((d) => f.startsWith(d))) { touches.add(id); placed = true }
@@ -259,7 +348,7 @@ export function calcul(changes, map = carte()) {
     tous.forEach((e) => touches.add(e))
     note.push(f)
   }
-  return { touches, partout: note }
+  return { touches, partout: note, places }
 }
 
 export function niveau(mode, touches, map = carte(), tests = fichiersDEcran()) {
@@ -305,13 +394,14 @@ export function verifier(map = carte(), tests = fichiersDEcran()) {
 
 function lister(mode, base) {
   const ch = changes(base)
-  const { touches, partout } = calcul(ch)
+  const { touches, partout, places } = calcul(ch, carte(), { base })
   const { joues, laisses } = niveau(mode, touches)
   const lines = [
     `niveau: ${mode}`,
     `base: ${base}`,
     `fichiers changés: ${ch.length}`,
     `écrans touchés: ${touches.size ? [...touches].sort(num).join(' ') : 'aucun'}`,
+    ...(places.length ? [`places: ${places.join(' ')}`] : []),
     ...(partout.length ? [`non placés (tous les écrans): ${partout.join(' ')}`] : []),
     'fichiers d\'écran joués:',
     ...(joues.length ? joues.map((f) => `  ${f}`) : ['  aucun']),
