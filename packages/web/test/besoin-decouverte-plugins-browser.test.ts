@@ -208,6 +208,8 @@ describe.skipIf(!playwright)('creating from a plugin line (P-21 step 4, E-36)', 
     await page.getByRole('dialog').getByRole('button', { name: /^Task list/ }).click()
     const sheet = page.getByRole('dialog')
     await sheet.getByRole('combobox').waitFor({ timeout: T(15_000) })
+    const seeded = await fetch(`${inst.url}/api/pages/projets/premier.md`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ markdown: '---\ntitle: Premier\n---\n\nUn.\n' }) })
+    expect(seeded.status).toBe(200)
     await sheet.getByRole('combobox').selectOption({ label: 'projets' })
     await sheet.getByRole('textbox').fill('Premier')
     await sheet.getByRole('button', { name: 'Create', exact: true }).click()
