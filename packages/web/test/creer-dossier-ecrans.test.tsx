@@ -152,7 +152,7 @@ describe('the + with tiles, the empty home, read-only folders', () => {
 
   it.each([
     ['en', 'Nothing to show yet.', 'New folder', 'New…', 'or turn a plugin on in', 'Settings'],
-    ['fr', 'Rien à afficher pour l’instant.', 'Nouveau dossier', 'Nouveau…', 'ou activez un plugin dans', 'Réglages'],
+    ['fr', 'Rien à afficher pour l’instant.', 'Nouveau dossier', 'Nouveau…', 'ou activez un plugin dans les', 'Réglages'],
   ])('%s: the empty home keeps its text, shows New folder as a button and links Settings to the Plugins page', async (locale, nothing, label, plusName, hint, settings) => {
     const w = world()
     const { container } = render(<App fetchImpl={api(locale, w)} />)
