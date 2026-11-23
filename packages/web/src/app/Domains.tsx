@@ -277,7 +277,7 @@ export function Domains({
           {emptyAction}
           {emptyAction ? (
             <p className="adestia-empty__hint">
-              {t('or turn a plugin on in')} <a href="#/settings/plugins">{t('Settings')}</a>
+              {t('or turn a plugin on in')} <a className="adestia-empty__link" href="#/settings/plugins">{t('Settings')}</a>
             </p>
           ) : (
             <p className="adestia-empty__hint">
