@@ -5,7 +5,7 @@
  * order lives here: the home composes it and knows none of it.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import type { LoadedPlugin } from '../plugins/loader.js'
 import { wordsFor } from '../plugins/words.js'
@@ -95,6 +95,8 @@ export function Domains({
   plugins,
   entries,
   stores,
+  folders = [],
+  emptyAction,
   openPlugin,
   openSection,
   t,
@@ -103,6 +105,10 @@ export function Domains({
   readonly entries: readonly IndexEntry[]
   /** The stores this instance composes. Empty when there is only one. */
   readonly stores: readonly StoreInfo[]
+  /** Every folder the stores hold, empty ones included (AD-38). */
+  readonly folders?: readonly string[]
+  /** The creation entries as buttons, for an instance with nothing yet. */
+  readonly emptyAction?: ReactNode
   readonly openPlugin: (plugin: LoadedPlugin) => void
   readonly openSection: (path: string) => void
   readonly t: (key: string) => string
@@ -137,7 +143,7 @@ export function Domains({
     // would offer to open what the reader is already looking at.
     'home',
   ]
-  const sections: readonly SectionTile[] = sectionsOf(entries, absorbed)
+  const sections: readonly SectionTile[] = sectionsOf(entries, absorbed, folders)
 
   /**
    * Every door on this instance, in one list.
@@ -267,10 +273,18 @@ export function Domains({
       </ul>
 
       {tiled.length === 0 && sections.length === 0 && (
-        <EmptyState icon="folder-open" text={t('Nothing to show yet.')} action={<p className="adestia-empty__hint">
-            {t('Turn a plugin on in')} <code>adestia.config.yaml</code>,{' '}
-            {t('or write a page — a folder holding one becomes a section on its own.')}
-          </p>} />
+        <EmptyState icon="folder-open" text={t('Nothing to show yet.')} action={<>
+          {emptyAction}
+          {emptyAction ? (
+            <p className="adestia-empty__hint">
+              {t('or turn a plugin on in')} <a className="adestia-empty__link" href="#/settings/plugins">{t('Settings')}</a>
+            </p>
+          ) : (
+            <p className="adestia-empty__hint">
+              {t('Turn a plugin on in')} <code>adestia.config.yaml</code>,{' '}
+              {t('or write a page — a folder holding one becomes a section on its own.')}
+            </p>
+          )}</>} />
       )}
     </>
   )

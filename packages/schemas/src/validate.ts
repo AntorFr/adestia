@@ -350,6 +350,56 @@ export function parsePluginManifest(input: unknown, folderName: string): PluginM
     }
   }
 
+  const creations = input['creations']
+  if (creations !== undefined) {
+    if (!Array.isArray(creations)) {
+      issues.push({ field: 'creations', message: 'must be an array of creation entries' })
+    } else {
+      for (const [index, entry] of creations.entries()) {
+        const field = `creations[${index}]`
+        if (!isObject(entry)) {
+          issues.push({ field, message: 'must be an object' })
+          continue
+        }
+        const named = typeof entry['id'] === 'string' && entry['id'].length > 0 ? ` (entry "${entry['id']}")` : ''
+        const sub: ValidationIssue[] = []
+        checkString(entry, 'id', sub, true)
+        for (const key of ['label', 'line'] as const) {
+          const texts: ValidationIssue[] = []
+          checkGalleryText(entry, key, '', texts)
+          for (const t of texts) sub.push({ field: t.field.replace(/^\./, ''), message: t.message })
+        }
+        checkString(entry, 'icon', sub, false)
+        const where = entry['where']
+        if (where !== undefined && (!Array.isArray(where) || where.some((w) => w !== 'home' && w !== 'folder'))) {
+          sub.push({ field: 'where', message: 'must be an array of "home" and "folder"' })
+        }
+        const action = entry['action']
+        if (action === undefined) {
+          sub.push({ field: 'action', message: 'is required' })
+        } else if (!isObject(action)) {
+          sub.push({ field: 'action', message: 'must be an object' })
+        } else if ('folder' in action) {
+          sub.push({ field: 'action', message: 'must not be { folder: true }: that action belongs to the core' })
+        } else if (
+          typeof action['template'] !== 'string' ||
+          !/^templates\/[^/\\]+\.md$/.test(action['template']) ||
+          action['template'].startsWith('templates/.')
+        ) {
+          sub.push({ field: 'action', message: 'must be { template: "templates/<name>.md" }' })
+        }
+        for (const i of sub) issues.push({ field: `${field}.${i.field}`, message: `${i.message}${named}` })
+      }
+      const seen = new Set<string>()
+      for (const [index, entry] of creations.entries()) {
+        const id = isObject(entry) ? entry['id'] : undefined
+        if (typeof id !== 'string' || id.length === 0) continue
+        if (seen.has(id)) issues.push({ field: `creations[${index}].id`, message: `is used twice (entry "${id}")` })
+        seen.add(id)
+      }
+    }
+  }
+
   const fields = input['fields']
   if (fields !== undefined) {
     if (!isObject(fields)) {

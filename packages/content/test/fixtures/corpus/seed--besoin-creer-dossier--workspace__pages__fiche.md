@@ -1,0 +1,5 @@
+---
+title: Fiche
+---
+
+Texte.

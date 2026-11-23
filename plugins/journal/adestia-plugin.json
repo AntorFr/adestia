@@ -22,5 +22,25 @@
   },
   "absorbs": [
     "journal"
+  ],
+  "creations": [
+    {
+      "id": "journal",
+      "label": {
+        "en": "Journal",
+        "fr": "Journal"
+      },
+      "line": {
+        "en": "The cover of a journal, beside the folder that holds its entries.",
+        "fr": "La couverture d'un journal, à côté du dossier qui en garde les entrées."
+      },
+      "icon": "book-open",
+      "action": {
+        "template": "templates/journal.md"
+      }
+    }
+  ],
+  "templates": [
+    "templates/journal.md"
   ]
 }
