@@ -203,6 +203,8 @@
 
 .adestia-empty { color: var(--text-muted); }
 .adestia-empty__hint { font-size: var(--text-sm); color: var(--text-faint); }
+.adestia-empty__hint .adestia-empty__link { color: var(--accent-text); text-decoration: underline; }
+.adestia-empty__hint .adestia-empty__link:hover { text-decoration-thickness: 2px; }
 
 .adestia-problems {
   margin-bottom: var(--space-5);

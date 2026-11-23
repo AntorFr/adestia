@@ -20,16 +20,33 @@ type Ev = { on(e: string, f: (r: unknown) => void): void }
  */
 function trackInFlight(page: Page) {
   const pending = new Set<unknown>()
+  /** Every /api/ answer heard back, in order: the diagnostic when the banner does not come. */
+  const answers: string[] = []
   const done = (r: unknown) => pending.delete(r)
   const ev = page as unknown as Ev
   ev.on('request', (r) => { if (/\/api\//.test((r as { url(): string }).url())) pending.add(r) })
-  ev.on('response', (r) => done((r as { request(): unknown }).request()))
+  ev.on('response', (r) => {
+    const res = r as { request(): { url(): string }; status(): number }
+    if (/\/api\//.test(res.request().url())) answers.push(`${res.status()} ${res.request().url()}`)
+    done(res.request())
+  })
   ev.on('requestfailed', done)
   return {
-    /** Resolves when every call pending right now has been answered or has failed. */
+    answers,
+    /** What is still open, for the diagnostic. */
+    open: () => [...pending].map((r) => (r as { url(): string }).url()),
+    /**
+     * Resolves when every call pending right now (the event feed included: its headers are an answer)
+     * has been answered or has failed, then once more after the page has run what those answers
+     * triggered: Node hears a response before the page's own handlers (the feed's `onLink(true)`,
+     * which clears the banner and retires the probe loop) have run.
+     */
     async drain(): Promise<void> {
       const seen = [...pending]
       while (seen.some((r) => pending.has(r))) await new Promise((r) => setTimeout(r, 50))
+      for (let i = 0; i < 3; i += 1) {
+        await page.evaluate(() => new Promise<void>((res) => setTimeout(res, 0)))
+      }
     },
   }
 }
@@ -72,7 +89,7 @@ describe.skipIf(!playwright)('B-19 · bords du bandeau « le serveur ne répond 
   let flight: ReturnType<typeof trackInFlight>
   it.each([502, 503, 504])('un %i sur un appel /api/ alors que la sonde échoue : le bandeau apparaît ; la sonde repasse : il part seul', async (status) => {
     const { context, page } = await open(browser, inst.url, { theme: 'light', size: 'desk', locale: 'en', route: '/', before: async (p) => { flight = trackInFlight(p) } })
-    await page.waitForSelector('.adestia-canvas__body', { timeout: 20_000 })
+    await page.waitForSelector('.adestia-canvas__body', { timeout: patience(20_000) })
     try {
       // The link is down for the whole page but the one call under test: no other /api/ call may
       // answer in between (an answer clears the banner and retires the probe loop).
@@ -97,17 +114,23 @@ describe.skipIf(!playwright)('B-19 · bords du bandeau « le serveur ne répond 
       // A call sent before the route existed is not caught by it: if it answers late it clears the
       // banner and retires the probe loop. Wait for those to be heard back, then provoke the 502.
       await flight.drain()
+      const answeredBefore = flight.answers.length
       await page.evaluate(() => (location.hash = '/settings/instructions'))
       // Signals, not seconds: the simulated request went out, and the probe it started failed.
       await gatewayAnswered
       await probeFailed
       expect(failedProbes).toBeGreaterThan(0)
-      await waitFor(
-        page,
-        (w: string) => [...document.querySelectorAll('[role="status"]')].filter((e) => (e.textContent ?? '').includes(w)).length === 1,
-        WORDS,
-        patience(60_000),
-      )
+      try {
+        await waitFor(
+          page,
+          (w: string) => [...document.querySelectorAll('[role="status"]')].filter((e) => (e.textContent ?? '').includes(w)).length === 1,
+          WORDS,
+          patience(60_000),
+        )
+      } catch (error) {
+        throw new Error(`no banner after the ${status}: shown=${await shown(page)}, failedProbes=${failedProbes}, open=${JSON.stringify(flight.open())}, answered since the route=${JSON.stringify(flight.answers.slice(answeredBefore))}`, { cause: error })
+      }
+      expect(flight.answers.slice(answeredBefore).filter((a) => !a.endsWith('/api/instructions'))).toEqual([])
       expect(await shown(page)).toBe(1)
       await unroute(page, '**/api/**')
       await waitFor(

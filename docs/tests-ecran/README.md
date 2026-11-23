@@ -132,6 +132,11 @@ Tests d'écran nés dans `epic/adestia-pages`, après l'inventaire par grappe : 
 
 - `packages/web/test/besoin-pages-structure-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/besoin-coller-tableau-browser.test.ts` — écran de la feature `adestia-coller-tableau` (B-paste-1), classement à faire
+- `packages/web/test/besoin-creer-dossier-browser.test.ts` — écran de la feature `adestia-decouverte-creer-dossier` (B-32, B-33 ; E-2, E-3, E-38), classement à faire
+- `packages/web/test/besoin-creer-dossier-complement-browser.test.ts` — écran de la feature `adestia-decouverte-creer-dossier`, seconde passe (B-32, B-33 ; E-2, E-3, E-38), classement à faire
+- `packages/web/test/besoin-decouverte-plugins-browser.test.ts` — écran de la feature `adestia-decouverte-plugins` (B-34, P-21 étape 4 ; E-3, E-36, E-38), classement à faire
+- `packages/web/test/besoin-renommer-browser.test.ts` — écran de la feature `adestia-decouverte-renommer` (B-35 ; E-3, E-38), classement à faire
+- `packages/web/test/besoin-etat-projet-browser.test.ts` — écran de l'epic `adestia-pages` (E-3, E-4, E-31, E-36), classement à faire
 - `packages/web/test/besoin-popover-bandeau-tardif-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/besoin-rouge-23-spinner-config.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/besoin-rouge-25-menu-rouage-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
@@ -148,3 +153,4 @@ Tests d'écran nés dans `epic/adestia-pages`, après l'inventaire par grappe : 
 - `packages/web/test/recette-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/reglages-undo-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/verify-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
+- `packages/web/test/version-hors-image-ecran-browser.test.ts` — écran E-15 de la feature `adestia-version-hors-image` (ligne de version du menu ⚙), classement à faire

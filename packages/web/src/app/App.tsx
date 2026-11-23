@@ -79,7 +79,7 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
     [],
   )
 
-  const { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, writableFolders, skin, skinScheme, loaded, ready, indexed, pageChanges } =
+  const { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, writableFolders, folders, refreshIndex, skin, skinScheme, loaded, ready, indexed, pageChanges } =
     useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, blocksRef, onTrail })
 
   /**
@@ -269,6 +269,8 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
           pages={pages}
           stores={stores}
           writableFolders={writableFolders}
+          folders={folders}
+          refreshIndex={refreshIndex}
           openApp={openApp}
           settings={settings}
           settingsPage={settingsPage}

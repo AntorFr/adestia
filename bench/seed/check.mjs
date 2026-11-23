@@ -15,7 +15,7 @@ import { launch } from '../lib/instance.mjs'
 
 import { SESSION_SECRET, CONVERSATIONS } from './_base.mjs'
 
-const SEEDS = ['base', 'empty', 'config-writable', 'config-readonly', 'oidc', 'plugins']
+const SEEDS = ['base', 'empty', 'config-writable', 'config-readonly', 'oidc', 'plugins', 'plugins-reglages']
 
 class Failure extends Error {}
 const expect = (condition, message) => {
@@ -347,6 +347,17 @@ const MEASURES = {
   },
   'config-writable': { ...common, ...populated, ...credential('armed'), ...exposes(true) },
   'config-readonly': { ...common, ...populated, ...credential('invalid'), ...exposes(false) },
+  'plugins-reglages': {
+    ...common, ...populated, ...credential('armed'), ...exposes(true),
+    'the page lists an active app, a found one and two refused': async (base) => {
+      const { status, body } = await get(base, '/api/plugins')
+      expect(status === 200, `/api/plugins answered ${status}`)
+      const row = (id) => body.plugins.find((plugin) => plugin.id === id)
+      expect(row('bench-actif')?.loaded === true && row('bench-actif')?.wanted === true, 'bench-actif is not on')
+      expect(row('bench-inactif')?.loaded === false && row('bench-inactif')?.wanted === false, 'bench-inactif is not off')
+      expect(body.refused.length >= 2, `${body.refused.length} refused`)
+    },
+  },
   oidc: { ...common, ...oidcMeasures },
   plugins: { ...common, ...pluginMeasures },
 }

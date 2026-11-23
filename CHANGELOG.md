@@ -1072,3 +1072,143 @@ branch and that `test:plugins` is replayed after a red vitest run.
   without the fence or a trailing line break, and the button shows « Copied » for two seconds
   (or « Copy failed »). The button is a 44 px target on a phone. Other code blocks get no
   button, and nothing is drawn while the reply is still streaming.
+
+## v0.98.7
+
+- **The ⚙ menu shows the version on any install** — the last line of the menu used to show the
+  version only inside the Docker image. It now also shows it for an install from the sources,
+  read from the latest release heading of `CHANGELOG.md`. When no version can be found, nothing
+  is shown rather than an invented number. A development branch shows the latest version of its
+  own changelog, without suffix or hash.
+
+## v0.98.8
+
+- **Browser tests that reach the shell through the helper are recognised as screen tests** — the
+  local test level and the replay script treated `besoin-etat-projet-browser.test.ts` as a test
+  without a browser, because it reaches Chromium through `charte-browser` instead of naming it, so
+  it ran without the built shell and failed with "shell not built". One rule now decides, in
+  `scripts/niveaux.mjs`, and the file is listed in the screen map. Tests and tooling only: nothing
+  changes for users.
+
+## v0.98.9
+
+- **The screen check plays only screens** — the `ecrans:` level of the test chain no longer runs the
+  local level before the screen tests: when a branch touches no screen it installs nothing, builds
+  nothing and plays nothing (an empty report, exit 0), and otherwise it builds the shell and plays
+  only the screen tests of the touched screens. The local level has its own script, and the install
+  step (`npm ci`) and the files that decide the levels are declared in `.sdlc.yaml`, read from
+  `main`. Tests and tooling only: nothing changes for users.
+
+## v0.98.10
+
+- **Settings lists the instance's plugins and switches them on or off** — a new Plugins tile in
+  Settings opens a page that groups the plugins found as active, found but not active, and refused
+  (with the reason). Each plugin can be switched on or off; the change is saved to the instance's
+  configuration file and shown as "active/off after restart" with a bar offering **Restart now**.
+  When turns are running, the restart is refused with their count until you choose **Restart
+  anyway**. Core plugins stay locked, and a read-only or missing configuration file leaves the
+  switches inert with the reason shown.
+
+## v0.98.11
+
+- **The pages browser tests no longer fail under load** — the six `nestor / en` pages tests now
+  wait on signals from the page within a per-test budget, so a loaded host reports what the page
+  did instead of timing out. Tests only: nothing changes for users.
+
+## v0.98.12
+
+- **The projet blocks browser test no longer fails under load** — the test that checks the progress,
+  milestones and risks states now waits until all seven state words and both bars are drawn before
+  reading them, instead of reading as soon as the first one appears. Tests only: nothing changes
+  for users.
+
+## v0.98.13
+
+- **The agent can read a page that plain fetching is refused — the `web` plugin** — a new `tool` plugin
+  (`extensions.tools: [web]`, off until named) starts a headless Chrome on demand in the agent's pod, through
+  the pinned `@playwright/mcp` behind a relay (`plugins/web/mcp/relais.mjs`) that withholds
+  `browser_run_code_unsafe`, `browser_evaluate` and `browser_file_upload` on every engine. The browser's
+  `User-Agent` is derived from the binary's own `--version`, nothing is kept between turns (in-memory profile),
+  pages are saved under `.adestia-web/` of the workspace (20 MiB bound, never listed by the pages screen), and no
+  Chrome survives a turn. A skill tells the agent when to use it, and to say so when a site refuses anyway.
+  Proved in the attested suite against a real browser and a locally served page (`npm run test:web-navigateur`).
+- **The image carries the headless Chrome of the web plugin** — the `Dockerfile` installs the
+  plugin's dependencies in a build stage and, in the runtime stage, `chromium-headless-shell` and its
+  libraries through the plugin's own `playwright-core`, into `/opt/browsers`, for amd64 and arm64. No
+  Chrome version is written in the `Dockerfile`. `--build-arg WEB_BROWSER=none` skips both, for an
+  image without the web tool. Image overhead (amd64, arm64), build duration and the sandbox
+  measurement: non mesuré — à mesurer sur l'image du tag de livraison (the pods have no Docker).
+- **A script plays the web plugin on a real turn** — `bench/web-reel.sh <image>` boots the named image with
+  `extensions.tools: [web]` then `[]`, runs a real claude turn asking the price of a protected shop page, and
+  prints the rendered text, the page file written under `.adestia-web/` and the tool names seen, then checks that no
+  Chrome process survives. **Not played yet**: the real run (plugin on and off, then from `homenode`) remains to be
+  played on the image published at the delivery tag.
+
+## v0.98.14
+
+- **The Plugins settings restart browser test no longer fails under load** — the test that turns one app on and
+  another off, restarts the instance and checks the page afterwards now waits for the restart through a launcher
+  that replays the binary's boot loop with the scripted engine. Tests and bench launcher only: nothing changes
+  for users.
+
+## v0.98.15
+
+- **The phone data-form browser test waits for the block bar instead of assuming it** — the test that checks
+  the data form fits the 390×844 screen now re-taps the block and waits until the "Block settings" gear
+  receives the centre of its rectangle, and names the cause (the bar never rose) if it does not. Tests only:
+  nothing changes for users.
+
+## v0.98.16
+
+- **A change to a style, a plugin, the bench or a translation replays only the screens it touches** — the
+  screen selection (`scripts/niveaux.mjs`) now places `components.css`, `i18n.ts`, `plugins/web/**`, the
+  plugin and bench documentation, `Dockerfile`, `package.json` and `scripts/ecrans.json` before the import
+  graph: a comment or a documentation file replays no screen, a changed rule or translation key replays the
+  screens that cite it, and a path it does not know replays them all. Selection tooling only: nothing
+  changes for users.
+
+## v0.98.17
+
+- **The browser-test launcher retries when its port is taken** — `launch()` in the shared browser-test
+  helper now starts the launcher again, with a new port, up to three tries in all, when it exits with
+  an "address in use" error; any other failure is rejected at once. This removes the flaky collision seen
+  in the "New from template" browser test. Tests only: nothing changes for users.
+
+## v0.98.18
+
+- **The simultaneous turns browser test no longer fails when a port is taken** — the test that saves 5 turns,
+  announces the restart and checks the restarted limiter now retries the launcher and the restarted binary
+  (up to three tries, a fresh port each time) when one of its two port takes collides with another test file
+  (`EADDRINUSE`); any other failure is still rejected at once. Tests only: nothing changes for users.
+
+## v0.98.19
+
+- **The "Remove server?" browser test no longer fails by timeout** — the helper that opens the server sheet in the B-20 browser test now waits for the dialog to be visible instead of assuming it is already open. Tests only: nothing changes for users.
+
+## v0.99.0
+
+- **The + creates a folder** — a **+** beside Ask on the home (kept under a livery that replaces the
+  hero) and in the header of a folder opens the list of what can be created here; **New folder** asks
+  for a name, sends its slug to `POST /api/folders`, and opens the new, empty folder, which has its own
+  +. A folder the stores hold appears as a tile on the home even before it holds a page; a name already
+  taken is refused under the field. An empty home or folder offers the same entries as buttons, and a
+  read-only folder offers none.
+
+- **A folder can be renamed from its header** — a **Rename** button (pencil) sits after **+** and
+  **New from template** in a folder's header, only where the folder and its parent can be written,
+  and never on a folder an app owns. It opens the folder-name sheet preset to the current name
+  (the parent shown above it); an empty or unchanged name leaves Rename disabled, a name already
+  taken or a folder that cannot be renamed is explained under the field, and the sheet stays. When
+  it succeeds the folder opens at its new address. If some pages (in a read-only store) still point
+  to the old name, a line says how many, and **Details** lists them. Behind it, `POST /api/folders/rename` renames the directory and mends, page by page, the `[[old/…]]` and markdown links that led into it in every writable store; a read-only store keeps its links and is counted. English and French.
+
+- **Journal, Task list and Project status on the +** — three official plugins now declare what they
+  create, with no change to the core: **Project status** (`project-management`), **Journal**
+  (`journal`: the cover page `type: journal`, beside the folder the plugin reads as the journal; no
+  folder is made) and **Liste de tâches** / *Task list* (`todo`: a page carrying the plugin's
+  `:::checklist` block, which adds a task in the page's folder). Each is also a card in E-36 with its
+  picture. Turning a plugin off removes its line; the eight other plugins add none.
+
+## v0.99.1
+
+- **The "server not responding" banner browser test no longer fails under load** — the B-19 test that checks the banner appears on a 502 while the probe fails now lets the page run the handlers triggered by the drained answers before waiting for the banner, and names what answered since the route was armed if it still fails. Tests only: nothing changes for users.

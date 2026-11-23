@@ -40,6 +40,7 @@ import { registerTurns, type ShellToolsPort, type UserTokens } from './routes/tu
 import { registerUpload } from './routes/upload.js'
 import { foreignRoots, pagesService, resolveStores } from './stores.js'
 import { registerRestart } from './routes/restart.js'
+import { registerPlugins } from './routes/plugins.js'
 import { registerSettings } from './routes/settings.js'
 import { registerEvents } from './routes/watch.js'
 import { mountPluginApis } from './routes/plugin-host.js'
@@ -64,10 +65,14 @@ declare module 'fastify' {
 }
 
 export interface AppDependencies {
+  /** Test seam: the changelog `/api/instance` reads its version from. */
+  readonly changelogPath?: string | undefined
   readonly config: AdestiaConfig
   readonly driver: Driver
   readonly plugins: readonly DiscoveredPlugin[]
   readonly pluginProblems: readonly DiscoveryProblem[]
+  /** The plugins folder, resolved; named on the Plugins screen. */
+  readonly pluginsDir?: string | undefined
   /**
    * Per-user tokens, when the instance keeps them.
    *
@@ -289,6 +294,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     problems: () => [...pluginProblems, ...apiProblems],
     background: () => backgroundReach.trouble(),
     running: () => limiter.running,
+    changelogPath: deps.changelogPath,
   })
   const instructionCatalogues =
     deps.instructionCatalogues ?? new InstructionCataloguesStore(config.dataDir)
@@ -329,11 +335,24 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     agentRoots,
   })
 
-  registerPages(app, { stores, locale: config.locale, plugins })
+  registerPages(app, {
+    stores,
+    locale: config.locale,
+    plugins,
+    configured: [config.workspace.memory, config.workspace.planif],
+  })
   // The agent writes these files with its own tools, past every route above;
   // the feed is how a shell already on screen learns they changed.
   registerEvents(app, { stores, watch: config.workspace.watch })
-  if (deps.configPath) registerSettings(app, { configPath: deps.configPath })
+  if (deps.configPath) {
+    registerSettings(app, { configPath: deps.configPath })
+    registerPlugins(app, {
+      configPath: deps.configPath,
+      plugins,
+      problems: pluginProblems,
+      pluginsDir: deps.pluginsDir ?? config.extensions.pluginsDir,
+    })
+  }
   if (deps.restart) registerRestart(app, { running: () => limiter.running, restart: deps.restart })
   // The same stores: an attachment is a file sitting next to a page, and a
   // second configurable place would be a second thing to explain.

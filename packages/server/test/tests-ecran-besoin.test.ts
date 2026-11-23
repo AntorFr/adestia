@@ -99,8 +99,12 @@ describe('tests d\'écran hors écran — inventaire (docs/tests-ecran)', () => 
       'bench/tests/niveaux-besoin.test.mjs',
       'bench/tests/niveaux-ensemble.test.mjs',
       'packages/web/test/besoin-coller-tableau-browser.test.ts',
+      'packages/web/test/besoin-creer-dossier-browser.test.ts',
+      'packages/web/test/besoin-creer-dossier-complement-browser.test.ts',
+      'packages/web/test/besoin-decouverte-plugins-browser.test.ts',
       'packages/web/test/besoin-pages-structure-browser.test.ts',
       'packages/web/test/besoin-popover-bandeau-tardif-browser.test.ts',
+      'packages/web/test/besoin-renommer-browser.test.ts',
       'packages/web/test/besoin-rouge-23-spinner-config.test.ts',
       'packages/web/test/besoin-rouge-25-menu-rouage-browser.test.ts',
       'packages/web/test/blocs-projet-browser.test.ts',
@@ -116,6 +120,7 @@ describe('tests d\'écran hors écran — inventaire (docs/tests-ecran)', () => 
       'packages/web/test/recette-formulaires-browser.test.ts',
       'packages/web/test/reglages-undo-browser.test.ts',
       'packages/web/test/verify-formulaires-browser.test.ts',
+      'packages/web/test/version-hors-image-ecran-browser.test.ts',
     ])
   })
 

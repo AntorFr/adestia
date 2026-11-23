@@ -22,6 +22,9 @@ import { Home } from './Home.js'
 import { MissingPage } from './MissingPage.js'
 import { Preferences, prefsTitle, type PrefsPage } from './Preferences.js'
 import { NewFromTemplate } from './NewFromTemplate.js'
+import { CreateEntry } from './CreateEntry.js'
+import { canRename, RenameFolder, RenameNotice } from './RenameFolder.js'
+import { creationsFor, pluginCreations } from './creations.js'
 import { Section } from './Section.js'
 import { templateSources } from './templates.js'
 import { Loading } from './ui/Loading.js'
@@ -50,6 +53,10 @@ export interface CanvasProps {
   readonly stores: readonly StoreInfo[]
   /** Folders where a page can be written, as the index last said (a hint). */
   readonly writableFolders?: readonly string[]
+  /** Every folder the stores hold, empty ones included (AD-38). */
+  readonly folders?: readonly string[]
+  /** Re-reads the index now (after a creation). */
+  readonly refreshIndex?: () => Promise<void>
   readonly openApp: string | undefined
   readonly settings: { page: PrefsPage; item?: string } | undefined
   readonly settingsPage: PrefsPage | undefined
@@ -173,22 +180,56 @@ export function Canvas(props: CanvasProps) {
     // E-3's button: drawn only once the index has answered, for a folder it lists as writable,
     // and only when some active plugin (or the core) ships a seed. Never a disabled one.
     const sources = templateSources(loaded)
+    const created = async (path: string) => {
+      await props.refreshIndex?.()
+      openSection(path)
+    }
+    const folders = props.folders ?? []
+    const creatable =
+      props.indexed !== false && creationsFor({ at: 'folder', folder: section }, props.writableFolders ?? [], pluginCreations(loaded, props.locale)).length > 0
+    const create = (variant: 'plus' | 'buttons') =>
+      !creatable ? null : (
+        <CreateEntry
+          place={{ at: 'folder', folder: section }}
+          writableFolders={props.writableFolders ?? []}
+          variant={variant}
+          fetchImpl={props.fetchImpl}
+          onCreated={created}
+          plugins={loaded}
+          pages={pages}
+          stores={stores}
+          locale={props.locale}
+          openPage={openPage}
+          t={t}
+        />
+      )
+    const renamable =
+      props.indexed !== false && canRename(section, props.writableFolders ?? [], folders, ownerOf(loaded, section, pages) !== undefined)
+    const renamed = async (path: string) => {
+      await props.refreshIndex?.()
+      openSection(path)
+    }
     const offer =
       props.indexed !== false && (props.writableFolders ?? []).includes(section) && sources.length > 0
     return (
       <Section
         path={section}
-        title={sectionAt(pages, section)?.title ?? section}
-        {...(sectionAt(pages, section) ? { tile: sectionAt(pages, section)! } : {})}
+        title={sectionAt(pages, section, folders)?.title ?? section}
+        {...(sectionAt(pages, section, folders) ? { tile: sectionAt(pages, section, folders)! } : {})}
         entries={pages}
+        folders={folders}
+        {...(creatable ? { emptyAction: create('buttons') } : {})}
         stores={stores}
         openSection={openSection}
         openPage={openPage}
         {...(props.ready === undefined ? {} : { ready: props.ready && props.indexed !== false })}
         t={t}
-        {...(offer
-          ? {
-              headerAction: (
+        notice={<RenameNotice section={section} pages={pages} fetchImpl={props.fetchImpl} t={t} />}
+        {...(creatable || offer || renamable
+          ? { headerAction: (
+          <>
+            {create('plus')}
+            {offer ? (
                 <NewFromTemplate
                   folder={section}
                   sources={sources}
@@ -199,8 +240,10 @@ export function Canvas(props: CanvasProps) {
                   openPage={openPage}
                   t={t}
                 />
-              ),
-            }
+            ) : null}
+            {renamable ? <RenameFolder section={section} fetchImpl={props.fetchImpl} onRenamed={renamed} t={t} /> : null}
+          </>
+        ) }
           : {})}
       />
     )
@@ -270,6 +313,10 @@ function LandingScreen({
   openPlugin,
   fetchImpl,
   locale,
+  writableFolders,
+  folders,
+  refreshIndex,
+  indexed,
   t,
 }: CanvasProps) {
   const slotUser = skinUser(instance)
@@ -302,6 +349,16 @@ function LandingScreen({
       plugins={loaded}
       entries={pages}
       stores={stores}
+      {...(folders ? { folders } : {})}
+      {...(indexed === false || !writableFolders
+        ? {}
+        : {
+            writableFolders,
+            onFolderCreated: async (path: string) => {
+              await refreshIndex?.()
+              openSection(path)
+            },
+          })}
       openPlugin={openPlugin}
       openSection={openSection}
       openPage={openPage}
