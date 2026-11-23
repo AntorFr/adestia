@@ -3,7 +3,7 @@
  * and the page index kept live after that.
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { BlockComponents } from '../editor/Reader.js'
 import { browserEnvironment, loadPlugins, type LoadedPlugin, type PluginDescriptor } from '../plugins/loader.js'
@@ -79,6 +79,7 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
   const [pages, setPages] = useState<readonly IndexEntry[]>([])
   // A hint for drawing, not a permission: the write stays the verdict.
   const [writableFolders, setWritableFolders] = useState<readonly string[]>([])
+  const [folders, setFolders] = useState<readonly string[]>([])
   /**
    * The stores this instance composes — empty when it has only one, which is
    * how the shell knows there is no provenance to draw.
@@ -223,7 +224,7 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
 
         // The INDEX rather than the plain list: sections are dressed by their
         // index page's frontmatter, and only this endpoint carries it.
-        const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[] }>(
+        const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[]; folders?: string[] }>(
           fetchImpl,
           '/api/pages/index',
         )
@@ -236,6 +237,7 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
           setPages(Array.isArray(body?.entries) ? body.entries : [])
           setStores(Array.isArray(body?.stores) ? body.stores : [])
           setWritableFolders(Array.isArray(body?.writableFolders) ? body.writableFolders : [])
+          setFolders(Array.isArray(body?.folders) ? body.folders : [])
           setIndexed(true)
         }
         if (!cancelled) setReady(true)
@@ -278,7 +280,7 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
       onChange: (paths) => {
         setPageChanges((current) => ({ seq: current.seq + 1, paths }))
         void (async () => {
-          const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[] }>(
+          const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[]; folders?: string[] }>(
             fetchImpl,
             '/api/pages/index',
           )
@@ -287,11 +289,26 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
           setPages(Array.isArray(body?.entries) ? body.entries : [])
           setStores(Array.isArray(body?.stores) ? body.stores : [])
           setWritableFolders(Array.isArray(body?.writableFolders) ? body.writableFolders : [])
+          setFolders(Array.isArray(body?.folders) ? body.folders : [])
         })()
       },
     })
     return () => controller.abort()
   }, [instance, fetchImpl, onLink])
 
-  return { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, writableFolders, skin, skinScheme, loaded, ready, indexed, pageChanges }
+  /** Re-reads the index now: a folder made here does not wait for the change feed to appear. */
+  const refreshIndex = useCallback(async () => {
+    const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[]; folders?: string[] }>(
+      fetchImpl,
+      '/api/pages/index',
+    )
+    if (!list.ok) return
+    const body = list.data
+    setPages(Array.isArray(body?.entries) ? body.entries : [])
+    setStores(Array.isArray(body?.stores) ? body.stores : [])
+    setWritableFolders(Array.isArray(body?.writableFolders) ? body.writableFolders : [])
+    setFolders(Array.isArray(body?.folders) ? body.folders : [])
+  }, [fetchImpl])
+
+  return { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, writableFolders, folders, refreshIndex, skin, skinScheme, loaded, ready, indexed, pageChanges }
 }

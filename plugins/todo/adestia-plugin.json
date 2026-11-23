@@ -19,16 +19,49 @@
   ],
   "fields": {
     "tache": {
-      "due": { "kind": "date", "label": "Due", "help": "Drives Late / Today / Next 7 days, all computed live." },
-      "start": { "kind": "date", "label": "Not before", "help": "The day it becomes doable \u2014 never \u201cI have begun\u201d." },
-      "pri": { "kind": "number", "label": "Priority", "help": "Lower is more urgent." },
-      "assignee": { "kind": "choice", "label": "Carried by", "help": "One handle. Empty means up for grabs." },
-      "dom": { "kind": "choice", "label": "Domain", "help": "Groups the \u201ceverything\u201d view \u2014 atelier, maison, admin\u2026" },
-      "projet": { "kind": "reference", "label": "Project", "of": "projet", "help": "This task is one step of that project." },
-      "done": { "kind": "date", "label": "Closed on", "help": "Empty means open. This is the line the checkbox writes." }
+      "due": {
+        "kind": "date",
+        "label": "Due",
+        "help": "Drives Late / Today / Next 7 days, all computed live."
+      },
+      "start": {
+        "kind": "date",
+        "label": "Not before",
+        "help": "The day it becomes doable — never “I have begun”."
+      },
+      "pri": {
+        "kind": "number",
+        "label": "Priority",
+        "help": "Lower is more urgent."
+      },
+      "assignee": {
+        "kind": "choice",
+        "label": "Carried by",
+        "help": "One handle. Empty means up for grabs."
+      },
+      "dom": {
+        "kind": "choice",
+        "label": "Domain",
+        "help": "Groups the “everything” view — atelier, maison, admin…"
+      },
+      "projet": {
+        "kind": "reference",
+        "label": "Project",
+        "of": "projet",
+        "help": "This task is one step of that project."
+      },
+      "done": {
+        "kind": "date",
+        "label": "Closed on",
+        "help": "Empty means open. This is the line the checkbox writes."
+      }
     },
     "liste": {
-      "dom": { "kind": "choice", "label": "Domain", "help": "Which domain this list gathers." }
+      "dom": {
+        "kind": "choice",
+        "label": "Domain",
+        "help": "Which domain this list gathers."
+      }
     }
   },
   "vocabulary": {
@@ -38,11 +71,21 @@
       "attributes": {
         "page": {},
         "depth": {
-          "values": ["self", "children", "subtree"],
+          "values": [
+            "self",
+            "children",
+            "subtree"
+          ],
           "default": "subtree"
         },
         "show": {
-          "values": ["open", "late", "today", "later", "all"],
+          "values": [
+            "open",
+            "late",
+            "today",
+            "later",
+            "all"
+          ],
           "default": "open"
         },
         "assignee": {},
@@ -60,5 +103,25 @@
   "absorbs": [
     "todo",
     "taches"
+  ],
+  "creations": [
+    {
+      "id": "task-list",
+      "label": {
+        "en": "Task list",
+        "fr": "Liste de tâches"
+      },
+      "line": {
+        "en": "A page that lists the tasks of its folder and adds one.",
+        "fr": "Une page qui liste les tâches de son dossier et en ajoute."
+      },
+      "icon": "check",
+      "action": {
+        "template": "templates/task-list.md"
+      }
+    }
+  ],
+  "templates": [
+    "templates/task-list.md"
   ]
 }

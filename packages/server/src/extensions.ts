@@ -468,6 +468,8 @@ export interface PluginPayload {
   readonly gallery?: Readonly<Record<string, PluginGalleryEntry>>
   /** The page seeds it ships, as paths under its folder (AD-36). */
   readonly templates?: readonly string[]
+  /** What it offers to create (AD-37). */
+  readonly creations?: PluginManifest['creations']
   readonly chrome?: string
   /** Whole-page layouts module, for the frontmatter types below. */
   readonly layouts?: string
@@ -501,6 +503,7 @@ export function frontendPayload(plugins: readonly DiscoveredPlugin[]): readonly 
         ...(manifest.vocabulary ? { vocabulary: manifest.vocabulary } : {}),
         ...(manifest.gallery ? { gallery: manifest.gallery } : {}),
         ...(manifest.templates ? { templates: manifest.templates } : {}),
+        ...(manifest.creations ? { creations: manifest.creations } : {}),
         ...(manifest.chrome ? { chrome: manifest.chrome } : {}),
         ...(manifest.layouts ? { layouts: manifest.layouts } : {}),
         // Sent because the shell matches a page's `type` against the CLAIM,

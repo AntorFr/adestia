@@ -99,3 +99,37 @@ export interface McpServerView {
    */
   readonly shadowed?: boolean
 }
+
+/**
+ * The folder fields of `GET /api/pages/index` (AD-38). `folders` lists every
+ * folder that exists as a directory in some store, empty ones included, so a
+ * folder with no page yet still shows; `writableFolders` is the subset where
+ * a page or a folder may be written.
+ */
+export interface PageIndexFolders {
+  readonly writableFolders: readonly string[]
+  readonly folders: readonly string[]
+}
+
+/** `POST /api/folders` `{path}` → 201 with the logical path made. */
+export interface CreateFolderRequest {
+  readonly path: string
+}
+export interface CreateFolderResponse {
+  readonly path: string
+}
+
+/**
+ * `POST /api/folders/rename` `{path, name}` → 200 (AD-39). `name` is the new
+ * last segment; the folder keeps its parent.
+ */
+export interface RenameFolderRequest {
+  readonly path: string
+  readonly name: string
+}
+export interface RenameFolderResponse {
+  /** The folder's new logical path. */
+  readonly path: string
+  /** Pages still holding a link to the old path (read-only store, failed write); the rename stands. */
+  readonly unrewritten: number
+}

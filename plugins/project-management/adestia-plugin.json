@@ -325,5 +325,22 @@
   },
   "templates": [
     "templates/project-status.md"
+  ],
+  "creations": [
+    {
+      "id": "project-status",
+      "label": {
+        "en": "Project status",
+        "fr": "État du projet"
+      },
+      "line": {
+        "en": "Summary, progress, milestones, risks and a timeline.",
+        "fr": "Synthèse, avancement, jalons, risques et frise."
+      },
+      "icon": "chart-column",
+      "action": {
+        "template": "templates/project-status.md"
+      }
+    }
   ]
 }
