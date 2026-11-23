@@ -1208,3 +1208,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
   folder is made) and **Liste de tâches** / *Task list* (`todo`: a page carrying the plugin's
   `:::checklist` block, which adds a task in the page's folder). Each is also a card in E-36 with its
   picture. Turning a plugin off removes its line; the eight other plugins add none.
+
+## v0.99.1
+
+- **The "server not responding" banner browser test no longer fails under load** — the B-19 test that checks the banner appears on a 502 while the probe fails now lets the page run the handlers triggered by the drained answers before waiting for the banner, and names what answered since the route was armed if it still fails. Tests only: nothing changes for users.
