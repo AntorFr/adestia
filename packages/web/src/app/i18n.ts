@@ -79,6 +79,7 @@ const FR: Readonly<Record<string, string>> = {
   'Move earlier': 'Déplacer avant',
   'Move later': 'Déplacer après',
   'Turn a plugin on in': 'Activez un plugin dans',
+  'or turn a plugin on in': 'ou activez un plugin dans les',
   'or write a page — a folder holding one becomes a section on its own.':
     'ou écrivez une fiche — un dossier qui en contient devient un domaine tout seul.',
   'Good morning.': 'Bonjour.',

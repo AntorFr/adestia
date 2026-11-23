@@ -275,10 +275,16 @@ export function Domains({
       {tiled.length === 0 && sections.length === 0 && (
         <EmptyState icon="folder-open" text={t('Nothing to show yet.')} action={<>
           {emptyAction}
-          <p className="adestia-empty__hint">
-            {t('Turn a plugin on in')} <code>adestia.config.yaml</code>,{' '}
-            {t('or write a page — a folder holding one becomes a section on its own.')}
-          </p></>} />
+          {emptyAction ? (
+            <p className="adestia-empty__hint">
+              {t('or turn a plugin on in')} <a className="adestia-empty__link" href="#/settings/plugins">{t('Settings')}</a>
+            </p>
+          ) : (
+            <p className="adestia-empty__hint">
+              {t('Turn a plugin on in')} <code>adestia.config.yaml</code>,{' '}
+              {t('or write a page — a folder holding one becomes a section on its own.')}
+            </p>
+          )}</>} />
       )}
     </>
   )

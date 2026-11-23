@@ -191,7 +191,7 @@ export function Home({
             entries={entries}
             stores={stores}
             folders={folders}
-            emptyAction={entry('buttons')}
+            {...(canCreate ? { emptyAction: entry('buttons') } : {})}
             openPlugin={openPlugin}
             openSection={openSection}
             t={t}

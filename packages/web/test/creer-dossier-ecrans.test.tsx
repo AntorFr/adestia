@@ -5,6 +5,8 @@
  * its own +), the empty home and empty folder with entries as buttons, read-only folders.
  */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { App } from '../src/app/App.js'
@@ -149,9 +151,9 @@ describe('the + with tiles, the empty home, read-only folders', () => {
   })
 
   it.each([
-    ['en', 'Nothing to show yet.', 'New folder', 'New…'],
-    ['fr', 'Rien à afficher pour l’instant.', 'Nouveau dossier', 'Nouveau…'],
-  ])('%s: the empty home keeps its text, shows New folder as a button and names adestia.config.yaml', async (locale, nothing, label, plusName) => {
+    ['en', 'Nothing to show yet.', 'New folder', 'New…', 'or turn a plugin on in', 'Settings'],
+    ['fr', 'Rien à afficher pour l’instant.', 'Nouveau dossier', 'Nouveau…', 'ou activez un plugin dans les', 'Réglages'],
+  ])('%s: the empty home keeps its text, shows New folder as a button and links Settings to the Plugins page', async (locale, nothing, label, plusName, hint, settings) => {
     const w = world()
     const { container } = render(<App fetchImpl={api(locale, w)} />)
     await screen.findAllByRole('button', { name: plusName })
@@ -159,7 +161,24 @@ describe('the + with tiles, the empty home, read-only folders', () => {
     const empty = container.querySelector('.adestia-empty') as HTMLElement
     expect(empty.textContent).toContain(nothing)
     expect(within(empty).getByRole('button', { name: new RegExp(label) })).toBeTruthy()
-    expect(empty.querySelector('code')?.textContent).toBe('adestia.config.yaml')
+    expect(empty.textContent).toContain(hint)
+    const link = within(empty).getByRole('link', { name: settings })
+    expect(link.getAttribute('href')).toBe('#/settings/plugins')
+    // Charter: no browser-default blue; the link carries the class the stylesheet colours.
+    expect(link.classList.contains('adestia-empty__link')).toBe(true)
+    const css = readFileSync(resolve(__dirname, '../src/app/styles/tiles.css'), 'utf8')
+    expect(css).toMatch(/\.adestia-empty__link\s*\{[^}]*color:\s*var\(--accent-text\)/)
+    expect(empty.querySelector('code')).toBeNull()
+    expect(empty.textContent).not.toContain('adestia.config.yaml')
+  })
+
+  it('a read-only root keeps the configuration hint, with no button and no Settings line', async () => {
+    const w = world({ writable: [] })
+    const { container } = render(<App fetchImpl={api('en', w)} />)
+    await waitFor(() => expect(container.querySelector('.adestia-empty code')?.textContent).toBe('adestia.config.yaml'))
+    const empty = container.querySelector('.adestia-empty') as HTMLElement
+    expect(within(empty).queryByRole('button', { name: /New folder/ })).toBeNull()
+    expect(empty.textContent).not.toContain('or turn a plugin on in')
   })
 
   it('a read-only folder draws neither the + nor New folder, empty or not', async () => {
