@@ -5,6 +5,8 @@
  * its own +), the empty home and empty folder with entries as buttons, read-only folders.
  */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { App } from '../src/app/App.js'
@@ -162,6 +164,10 @@ describe('the + with tiles, the empty home, read-only folders', () => {
     expect(empty.textContent).toContain(hint)
     const link = within(empty).getByRole('link', { name: settings })
     expect(link.getAttribute('href')).toBe('#/settings/plugins')
+    // Charter: no browser-default blue; the link carries the class the stylesheet colours.
+    expect(link.classList.contains('adestia-empty__link')).toBe(true)
+    const css = readFileSync(resolve(__dirname, '../src/app/styles/tiles.css'), 'utf8')
+    expect(css).toMatch(/\.adestia-empty__link\s*\{[^}]*color:\s*var\(--accent-text\)/)
     expect(empty.querySelector('code')).toBeNull()
     expect(empty.textContent).not.toContain('adestia.config.yaml')
   })
