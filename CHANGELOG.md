@@ -1184,3 +1184,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
 ## v0.98.19
 
 - **The "Remove server?" browser test no longer fails by timeout** — the helper that opens the server sheet in the B-20 browser test now waits for the dialog to be visible instead of assuming it is already open. Tests only: nothing changes for users.
+
+## v0.98.20
+
+- **The "server not responding" banner browser test no longer fails under load** — the B-19 test that checks the banner appears on a 502 while the probe fails now lets the page run the handlers triggered by the drained answers before waiting for the banner, and names what answered since the route was armed if it still fails. Tests only: nothing changes for users.
