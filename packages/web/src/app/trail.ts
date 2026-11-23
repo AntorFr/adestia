@@ -13,8 +13,8 @@ import { folderOf, prettify } from './paths.js'
 import { prefsTitle, type PrefsPage } from './Preferences.js'
 import {
   holdsPages,
-  indexOf,
   sectionAt,
+  type FolderSettingsMap,
   type IndexEntry,
   type StoreInfo,
 } from './sections.js'
@@ -99,6 +99,7 @@ export function trailOf({
   page,
   section,
   pages,
+  folderSettings = {},
   stores,
   t,
   say,
@@ -116,6 +117,8 @@ export function trailOf({
   readonly page: Pick<PageDocument, 'path' | 'title' | 'store'> | undefined
   readonly section: string | undefined
   readonly pages: readonly IndexEntry[]
+  /** The `.folder.md` of each folder: it names the folder's crumb (AD-40). */
+  readonly folderSettings?: FolderSettingsMap
   readonly stores: readonly StoreInfo[]
   readonly t: (key: string) => string
   /**
@@ -188,29 +191,19 @@ export function trailOf({
         // a crumb trail that cannot say where you are is worse than a long one.
         folder === section ||
         holdsPages(pages, folder) ||
-        routeForPath(loaded, folder) !== undefined,
+        routeForPath(loaded, folder, folderSettings) !== undefined,
     )
     .map((folder) => ({
       folder,
       /**
-       * The workspace's own word for the folder first — an index page's title
+       * The workspace's own word for the folder first — its `.folder.md` title
        * is what the reader sees everywhere else. The owning app's tile is the
-       * fallback for a folder that carries no page at all.
-       *
-       * EXCEPT when the open page IS that index. Its title is about to be
-       * written at the end of the trail, and borrowing it here said one name
-       * twice — "Chantiers / Rénovation de la cuisine / Rénovation de la
-       * cuisine", from a reader who had opened the folder's own overview. The
-       * two crumbs are not the same screen (this one opens the shelf, the
-       * files filed beside the overview), so dropping it would cost a way in;
-       * what it costs to keep is a name, and the folder has one of its own.
+       * fallback for a folder that declares none.
        */
       label:
-        (page !== undefined && indexOf(pages, folder)?.path === page.path
-          ? undefined
-          : sectionAt(pages, folder)?.title) ??
+        sectionAt(pages, folder, [], folderSettings)?.title ??
         (() => {
-          const owner = ownerOf(loaded, folder)
+          const owner = ownerOf(loaded, folder, folderSettings)
           return owner?.tile?.label ? name(owner.id, owner.tile.label) : undefined
         })() ??
         prettify(folder.split('/').at(-1) as string),
@@ -235,7 +228,7 @@ export function trailOf({
    * is lost: the page's crumb names that place, with its own title and its
    * circle, and every folder ABOVE it stays a way back.
    */
-  const above = crumbs.filter((crumb) => !opensOn(loaded, crumb.folder, page.path, pages))
+  const above = crumbs.filter((crumb) => !opensOn(loaded, crumb.folder, page.path, pages, folderSettings))
   const from = stores.find((store) => store.id === page.store)
   const twin =
     from !== undefined &&
