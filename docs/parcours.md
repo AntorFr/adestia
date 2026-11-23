@@ -173,7 +173,7 @@ The folder model: settings apart from content. Six needs, from Monsieur's brief 
 - **B-36** — The settings of a folder (icon, colour, name shown, the plugin app it declares, whether its attachments are shown, its replacement page) live in one file, `<folder>/.folder.md`, whose front matter is the whole of it: it never carries content (a body written there is refused, a body found there is ignored). It is excluded everywhere a page or a file is counted or listed: card lists, counters, attachments, search, the files route. *(P-22, P-23)*
 - **B-37** — `INDEX.md` and the homonymous page `x/x.md` are ordinary pages: listed, counted, searchable, opened like any page; they dress nothing and own nothing. Nothing reads the old settings in them any more (no legacy support). *(P-22, P-24)*
 - **B-38** — The view of a folder (E-3) gains an **Attachments** brick beside the sub-folders and the pages: the files of the folder, except `.folder.md` and the data files that plugins declare in their manifest (`voyage.json`, `workbook.json`, `*.parcours.json`…). Each file opens or downloads as an attachment does on a page (E-4). The brick is absent when the folder holds no such file or when its settings hide it. *(P-22, P-23)*
-- **B-39** — A folder-settings screen (E-38), opened from the header of E-3, sets without editing a file: the name shown, the icon, the colour, and whether the Attachments brick is shown. A folder owned by a plugin's screen reaches it through the **Folder** link the shell draws on that screen (to E-3 with `?classic`). *(P-23)*
+- **B-39** — A folder-settings screen (E-39), opened from the header of E-3, sets without editing a file: the name shown, the icon, the colour, and whether the Attachments brick is shown. A folder owned by a plugin's screen reaches it through the **Folder** link the shell draws on that screen (to E-3 with `?classic`). *(P-23)*
 - **B-40** — The same screen designates one page of the folder as its **replacement page**: opening the folder then shows that page instead of the classic view (E-3); the classic view stays one gesture away and the setting can be cleared. Opening order, unchanged: the active plugin's screen, then the replacement page, then the classic view. *(P-23)*
 - **B-41** — An agent that follows the instructions makes the folder right, and an old instance is brought to the new format by its own agent. The page-author skill states the rule (« a folder with its attachments »: pages and files in the folder, settings in `.folder.md`, text in an ordinary page); the product ships the migration instructions that agent follows once the version is in production (settings of every index out to `.folder.md`, the text stays a page, nothing visible lost). The server never migrates by itself. *(P-22, P-24)*
 
@@ -460,7 +460,7 @@ Needs: B-36, B-37, B-38, B-41
 ### P-23 — Set up a folder from the interface
 The user wants the dossier's icon changed, the attachments out of the way, and one page shown as the folder's face.
 
-1. In E-3 the user presses **Folder settings** (E-38).
+1. In E-3 the user presses **Folder settings** (E-39).
 2. They pick an icon and a colour, switch the Attachments brick off (B-39), and choose the summary page as replacement page (B-40). **Save** writes `.folder.md`; the sheet closes.
 3. Opening the folder now shows that page (E-4) with a **Folder** link to the classic view; clearing the choice in the settings (reached from that link) restores the classic view.
 
@@ -477,7 +477,7 @@ Needs: B-36, B-37, B-41
 
 ## Out of scope
 
-- **`adestia-dossiers` does not build**: any support of the old formats (`INDEX.md` and the homonymous page are never read as settings again, not even as a fallback); deleting a folder; editing the declared `app:` from the screen (E-38 shows it, the agent or the owner changes it in `.folder.md`); a server-side migration at boot; per-file settings of an attachment; sorting or filtering the Attachments brick; a body or free text in `.folder.md`.
+- **`adestia-dossiers` does not build**: any support of the old formats (`INDEX.md` and the homonymous page are never read as settings again, not even as a fallback); deleting a folder; editing the declared `app:` from the screen (E-39 shows it, the agent or the owner changes it in `.folder.md`); a server-side migration at boot; per-file settings of an attachment; sorting or filtering the Attachments brick; a body or free text in `.folder.md`.
 - **A guided tour, a tutorial, a checklist of first steps** (`adestia-decouverte`): discovery is the + button of B-32 and the buttons of the empty screens only. Plugins carried elsewhere than this repository, the cockpit included (visible by default once enabled), may follow the manifest contract later (B-34). Creating a chat, a project entity, user-defined creations, deleting a folder.
 - **Any functional change, except the six of `adestia-ajouts` (B-17 to B-22), the nine of `adestia-pages` (B-23 to B-31) B-paste-1 of `adestia-coller-tableau`, and B-32 to B-35 of `adestia-decouverte`, and B-36 to B-41 of `adestia-dossiers`** (B-copie-1, from `adestia-qualite`, is added the same way) (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
   route or file, a changed data format, a changed MCP tool. A defect found on the way is
