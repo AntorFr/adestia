@@ -1244,7 +1244,8 @@ The gallery is a sheet (`.adestia-sheet*`, bottom sheet on a phone) like the oth
 *Reversed if* (AD-34 to AD-36): AD-34 and AD-35 not expected; AD-36 only if Monsieur's choice on the mockup `etat-projet` (blocks A, B, C, B-29) needs a seed shape the frontmatter cannot carry — settled in the design of tranche 4.
 
 ### AD-37 — Creations are declared, by the core and by each plugin's manifest
-What the user can create is a list of declarations (`docs/donnees.md`): the core's in a table of the web package, each plugin's in a `creations` key of its manifest, validated in `packages/schemas`, read by the shell from the manifests of **enabled** plugins only, as `templates` and `gallery` are (AD-36, AD-deplacer-2). `app/creations.ts` merges and scopes them; E-37 draws them from that one list: behind the always-present **+** button of the home and of a folder (the main way to discover, Monsieur 2026-11-19) and as buttons in the empty states, so a plugin appears everywhere by declaring once and the core changes nowhere. A button creates the page itself, never by a sentence for the agent (Monsieur, 2026-11-19): it can only open E-36 on a template or (core) make a folder; no plugin code runs at the click, and a plugin lists only what it knows how to create. The official plugins of the repository are reviewed one by one (B-34): a plugin with no useful template adds nothing; plugins carried elsewhere, the cockpit included, are not touched.
+What the user can create is a list of declarations (`docs/donnees.md`): the core's in a table of the web package, each plugin's in a `creations` key of its manifest, validated in `packages/schemas`, read by the shell from the manifests of **enabled** plugins only, as `templates` and `gallery` are (AD-36, AD-deplacer-2). `app/creations.ts` merges and scopes them; E-38 draws them from that one list: behind the always-present **+** button of the home and of a folder (the main way to discover, Monsieur 2026-11-19) and as buttons in the empty states, so a plugin appears everywhere by declaring once and the core changes nowhere. A button creates the page itself, never by a sentence for the agent (Monsieur, 2026-11-19): it can only open E-36 on a template or (core) make a folder; no plugin code runs at the click, and a plugin lists only what it knows how to create. The official plugins of the repository are reviewed one by one (B-34): a plugin with no useful template adds nothing; plugins carried elsewhere, the cockpit included, are not touched.
+*Built*: `adestia-decouverte-creer-dossier` — the core's side: `app/creations.ts` merges and scopes by place and `writableFolders`, `app/CreateEntry.tsx` draws the **+** and the empty-state buttons, `app/ui/NameSheet.tsx` is the shared name sheet. `adestia-decouverte-plugins` — the plugin side: the `creations` key of the manifest is validated by `parsePluginManifest` (a malformed list, or `{folder: true}`, refuses the plugin), copied by `extensions.ts` and `plugins/loader.ts` for enabled plugins only, and the `template` action opens E-36 on the creation's own template (from the home with the **Folder** field). `project-management`, `journal` and `todo` declare theirs; the eight other plugins declare none (`docs/donnees.md`).
 *Rejected*: a hard-coded list in the home (a plugin would need a core change); a plugin-supplied component per button (runtime code on the home, no design-system check); an action that fills the composer with a sentence for the agent (Monsieur removed it: a line creates, it does not ask); deriving the buttons from `gallery` alone.
 *Reversed if* a plugin has a creation that neither a folder nor a template can make: then a new action is added by its own tranche, not here.
 
@@ -1253,7 +1254,8 @@ What the user can create is a list of declarations (`docs/donnees.md`): the core
 `POST /api/folders/rename` renames the last segment of a folder held by one writable store, then rewrites, page by page, the path links that led into it (`docs/donnees.md`, Renaming a folder). *Rejected*: leaving a redirect file or a stored alias under the old name (state the user did not ask for, which hides a stale link instead of mending it); resolving a dead path by searching for a folder of the same content (a guess, and wrong on two similar folders); renaming only in the client (lost on reload). A partial rewrite is told (`unrewritten`), never hidden; the directory rename is not undone, since a link left behind is a text the user can mend and a half-restored tree is not. Rights as AD-38, no role: whoever may write in the folder and in its parent (the name lives in the parent), both read from `writableFolders`.
 
 ### AD-38 — A folder is created by a route and listed with the page index
-`POST /api/folders` makes the directory (E-36's store choice and write check, atomic `mkdir`, 409 on a taken path judged across the union of stores); the page index gains `folders` so an empty folder is a section. *Rejected*: writing a placeholder page (a file the user did not ask for, to hide); creating the folder only in the client until its first page (lost on reload). Who may create: anyone who may write in the store, as for a page (E-36); there is no other role. Checked against the code: no store code removes an empty directory, and `sections.ts` derives sections from pages only (« a folder holding pages IS a section »), so it cannot take a folder without a page. *Decided*: E-2 adds a tile for each entry of `folders` that no section covers, and E-3 opens on it as an empty folder; B-33 holds either way.
+`POST /api/folders` makes the directory (E-36's store choice and write check, atomic `mkdir`, 409 on a taken path judged across the union of stores); the page index gains `folders` so an empty folder is a section. *Built*: `POST /api/folders` (the client sends the path already reduced to slugs; the server only refuses a last segment that is not one, 400) and `folders` in `GET /api/pages/index` (every directory of every store, read-only ones too, `allFolders` in `writable-folders.ts`). A folder under an active app's `absorbs` gets 403.
+*Rejected*: writing a placeholder page (a file the user did not ask for, to hide); creating the folder only in the client until its first page (lost on reload). Who may create: anyone who may write in the store, as for a page (E-36); there is no other role. Checked against the code: no store code removes an empty directory, and `sections.ts` derives sections from pages only (« a folder holding pages IS a section »), so it cannot take a folder without a page. *Decided*: E-2 adds a tile for each entry of `folders` that no section covers, and E-3 opens on it as an empty folder; B-33 holds either way.
 *Reversed if* the tranche finds a store whose mount cannot hold an empty directory (object storage): then that store is skipped like a read-only one.
 
 ### AD-structure-1 — How a block moves into, out of and between containers
@@ -1386,8 +1388,9 @@ P-15 step 2 and the Tests line of *Cross-cutting* follow.
 `.sdlc.yaml` also declares `tests.local` (`scripts/suite-locale.sh`) and `tests.rejouer`
 (`scripts/rejouer.sh {tests}`), under the unchanged `commande:`. The local level plays install,
 typecheck, lint, vitest without the test files that drive a browser or `bench/launch.mjs`
-(found by grep for `playwright|chromium|launch.mjs` under `packages/*/test`, so a new browser test
-leaves the level by itself) and the plugins' tests; no build, guards or boot. It writes the same
+(found by `node scripts/niveaux.mjs --fichiers-ecran`, the rule `estTestDEcran` that also picks the screen tests of the levels: a test file citing
+`playwright|chromium|launch.mjs`, or importing `./charte-browser` and using `launch`, `open` or `newBrowser`;
+a new browser test leaves the level by itself) and the plugins' tests; no build, guards or boot. It writes the same
 `resultats.xml` through `scripts/suite-rapport.mjs`, so a test keeps its name in both levels (the
 `build` and `boot` cases are dropped from its report, not reported red). Measured in the same pod:
 local ~10 min (2846 tests), whole suite ~35 min (3491 tests). `rejouer.sh` takes JUnit names as
@@ -1422,11 +1425,17 @@ Since rule R27 of the SDLC chain, a pod's work plays the local level plus the sc
 screens it touches, a feature's proof plays the *fiche* level (the suite minus the screen tests of
 untouched screens), and only an epic's end plays everything. Without the declarations below the
 chain plays the whole suite as proof and only the local level at work. Nothing in the product
-changes. A *screen test* is a test that drives a browser (the files `scripts/suite-locale.sh`
-already finds by grep: `playwright|chromium|launch.mjs` under `packages/*/test`); every other test
-is off-screen, whether it starts the server or not.
+changes. A *screen test* is a test that drives a browser (the files `scripts/niveaux.mjs`'s
+`estTestDEcran` finds under `packages/*/test`, which `scripts/suite-locale.sh` asks for: they cite
+`playwright|chromium|launch.mjs`, or reach the browser through the shared `charte-browser` helper); every other test
+is off-screen, whether it starts the server or not. There are two rules, for two jobs: `estTestDEcran` decides what
+the levels play and exclude; the inventory guard `scripts/tests-ecran.mjs` keeps its narrower `MOTIF_ECRAN`
+(`chromium|playwright`), so a helper-only browser test such as `besoin-etat-projet-browser.test.ts` is a screen test for the
+levels but not yet seen by the guard (it is listed under « Hors inventaire » of `docs/tests-ecran/README.md` until its cluster is classified).
 
 ### AD-niveaux-1 — One script computes the levels; `.sdlc.yaml` declares three more keys
+
+*Amended by AD-ecrans-sans-local-1 and -2: `ecrans` no longer plays the local level (it plays the screen tests alone, `scripts/suite-ecrans.sh`), and `ecrans:` and `rejouer:` no longer start with `npm ci &&` (`tests.installation` plays it once). The text below is the original decision.*
 
 `.sdlc.yaml` `tests:` gains `ecrans: npm ci && node scripts/niveaux.mjs ecrans {base}`,
 `fiche: npm ci && node scripts/niveaux.mjs fiche {base}` and
@@ -1494,6 +1503,8 @@ a file drives screens through a shared harness (`charte-browser.ts`), the harnes
 it follows the graph like any file, imported by the tests, which are declared.
 
 ### AD-niveaux-4 — `rejouer:` is self-contained, and replays a whole file
+
+*Amended by AD-ecrans-sans-local-2: the install moved to `tests.installation`; `rejouer:` is now `scripts/rejouer.sh {tests}` and assumes it is done.*
 
 `rejouer: npm ci && scripts/rejouer.sh {tests}` installs in a fresh extraction. Two changes to
 `scripts/rejouer.sh` and `scripts/rejouer-plan.mjs`: (1) a named test is replayed **with its whole
@@ -1670,6 +1681,71 @@ of the provider too: the same mechanism, not a second one. `OidcClient` gains
 provider's client lists the post-logout redirect URI; this tranche changes no provider
 configuration. *Rejected:* clearing the session only and relying on `prompt=login` always (a
 provider that ignores `prompt` reconnects the same account silently).
+
+## Decisions of adestia-ecrans-sans-local
+
+Since rule R30 of the chain, the runner checks, at the end of dev, review and assembly, that the
+screens a branch touches were played by `jouer-ecrans` (which runs `tests.ecrans`) and that each
+red is told apart by `rejouer:` (three replays on the head, then on the target). Before this feature `ecrans:`
+also played the local level, so an « empty » screen run (no screen touched) skipped that local level,
+and a registry failure inside `npm ci` was a counted send-back. The local level stays the agent's
+(`tests.local`); `ecrans:` must play screens and nothing else. Nothing in the product changes.
+
+### AD-ecrans-sans-local-1 — `ecrans` plays the touched screen tests alone, from a script of its own
+
+`scripts/niveaux.mjs ecrans <base>` no longer runs `scripts/suite-locale.sh`. It runs a new
+`scripts/suite-ecrans.sh`, which takes the files in `ADESTIA_JOUER_ECRANS` and plays, in this order:
+the server and web builds (the browser suites drive them), then one vitest run on exactly those
+files, with the flags `suite-locale.sh` gives vitest (`ADESTIA_PATIENCE=4`, `--testTimeout=30000`,
+`--hookTimeout=60000`, the same excludes). No install, typecheck, lint or plugins step. It writes
+`resultats.xml` through `scripts/suite-rapport.mjs` under the suite's test names (the build is the
+step `etape > build`; the steps it does not play are not reported red, as `suite-locale.sh` already
+does for build and boot). **An empty selection** (`ADESTIA_JOUER_ECRANS` empty: nothing touched, or a
+doc-only or server-only change) installs, builds and plays nothing: it writes a report with zero
+test cases and exits 0, the « vide » run of the chain (`1..0` in TAP; an undeclared screen test is always selected, so the run is empty only while `--verifier` is green). `suite-locale.sh` loses
+`ADESTIA_JOUER_ECRANS` and `ADESTIA_ECRANS_AVEC_BUILD`: it is the local level only, as `tests.local`
+declares it, and its screen-file exclusion becomes unconditional. `fiche` is unchanged
+(`ADESTIA_EXCLURE_ECRANS`). The selection stays computed by the same functions (`--liste`,
+`ecrans_liste:` unchanged): `ecrans_liste` and `ecrans` still cannot drift.
+*Rejected:* a flag on `suite-locale.sh` (it would keep the local level one variable away from every
+screen run, and the « empty skips the local » defect with it); making `niveaux.mjs` run vitest itself
+(the shell script keeps the report and the steps in the form `suite-attestee.sh` and `suite-locale.sh`
+already share).
+
+### AD-ecrans-sans-local-2 — The install is declared, once per extraction
+
+`.sdlc.yaml` `tests:` gains `installation: npm ci`; `ecrans:` becomes
+`node scripts/niveaux.mjs ecrans {base}` and `rejouer:` becomes `scripts/rejouer.sh {tests}`, without
+`npm ci &&` in front: the chain plays `installation:` once, before them, and a registry failure there
+is a transient failure it retries, not a send-back. `fiche:`, `commande:` and `local:` keep what they
+have (`fiche:` and the suite install themselves; `ecrans_liste:` still needs no install). `rejouer.sh`
+still needs `node_modules` and says so in its header: it is self-contained *after* `installation:`.
+`CLAUDE.md` (the levels table and the paragraph under it) and the README say the same.
+*Rejected:* `fichiers:` (not asked: `jouer-ecrans` already replays the whole jeu when it cannot tell
+the file of a red; a later feature may add it).
+
+### AD-ecrans-sans-local-3 — The selection tooling is declared, read from `origin/main`
+
+`.sdlc.yaml` `tests:` gains `outillage: [scripts/niveaux.mjs, scripts/ecrans.json,
+scripts/suite-ecrans.sh, scripts/suite-locale.sh, scripts/suite-attestee.sh, scripts/suite-rapport.mjs,
+scripts/rejouer.sh, scripts/rejouer-plan.mjs]`: what decides which screens a branch touches and plays
+them. The chain takes those paths from `origin/main` before it selects and plays, so a branch cannot
+lighten its own level (note: the feature that changes them is itself judged by the previous `main`'s
+tooling; it is proved by `attester` on the whole `fiche` level and by the bench tests below).
+
+### Proof
+
+- `bench/tests/niveaux-besoin.test.mjs`, `niveau-local-besoin.test.mjs` and `niveaux-ensemble.test.mjs`
+  (hand-run `node --test` files; the last one's « rejouer autonome » case now demands that `rejouer:`
+  and `ecrans:` carry no `npm ci`) move with the contract: `ecrans` calls `suite-ecrans.sh` with exactly the joués files and
+  never `suite-locale.sh`; with nothing touched `suite-ecrans.sh` plays no step, writes a zero-case
+  report, exits 0, and touches no `node_modules` (run in a clone without it); `suite-locale.sh`
+  excludes every screen-test file whatever the environment; `.sdlc.yaml` declares `installation`,
+  `outillage` (every path exists) and `ecrans:` / `rejouer:` without `npm ci`.
+- The README gives the new durations of `ecrans` beside those of `fiche`, measured on the three
+  `{base}` of its table (a screen file, a shared file, a server-only change: that last one is now
+  seconds, not 2m52s), and `ecrans_liste` unchanged.
+- Looking at it: nothing is drawn; the report says so.
 
 ## Decisions of adestia-bloc-a-copier
 
