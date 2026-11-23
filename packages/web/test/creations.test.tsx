@@ -40,13 +40,14 @@ describe('creations.ts — what the + offers', () => {
   it('does not offer an entry whose where excludes the place', () => {
     const homeOnly = decl('a', 'Only home', { where: ['home'] })
     const folderOnly = decl('b', 'Only folder', { where: ['folder'] })
-    expect(creationsFor(HOME, [], [homeOnly, folderOnly]).map((c) => c.label)).toEqual(['Only home'])
+    expect(creationsFor(HOME, [''], [homeOnly, folderOnly]).map((c) => c.label)).toEqual(['New folder', 'Only home'])
     expect(creationsFor(inFolder('X'), [], [homeOnly, folderOnly]).map((c) => c.label)).toEqual(['Only folder'])
   })
-  it('offers an entry without where in both places, and a template does not need a writable folder here', () => {
+  it('offers an entry without where in both places (a template needs a writable folder on the home)', () => {
     const both = decl('c', 'Both')
-    expect(creationsFor(HOME, [], [both]).map((c) => c.label)).toEqual(['Both'])
+    expect(creationsFor(HOME, [''], [both]).map((c) => c.label)).toEqual(['New folder', 'Both'])
     expect(creationsFor(inFolder('X'), [], [both]).map((c) => c.label)).toEqual(['Both'])
+    expect(creationsFor(HOME, [], [both]).map((c) => c.label)).toEqual([])
   })
   it('keeps the core first, then the plugins in order, and tags the plugin', () => {
     const list = creationsFor(HOME, [''], [decl('x', 'X'), decl('y', 'Y')])

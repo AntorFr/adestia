@@ -21,7 +21,7 @@ import { Icon } from './Icon.js'
 import { Brief } from './Brief.js'
 import { CreateEntry } from './CreateEntry.js'
 import { Domains, plural } from './Domains.js'
-import { creationsFor } from './creations.js'
+import { creationsFor, pluginCreations } from './creations.js'
 import { INDEX_FILE } from './paths.js'
 import { Loading } from './ui/index.js'
 
@@ -49,7 +49,7 @@ export interface HomeProps {
   readonly onFolderCreated?: (path: string) => void | Promise<void>
   readonly openPlugin: (plugin: LoadedPlugin) => void
   readonly openSection: (path: string) => void
-  readonly openPage: (path: string) => void
+  readonly openPage: (path: string, store?: string) => void
   /** Puts the cursor in the composer — what the search affordance actually does. */
   readonly focusComposer: () => void
   /** The shell's translator; identity in English. */
@@ -114,7 +114,7 @@ export function Home({
   })} — ${plural(pages, t('page'), t('pages'))}.`
 
   const offered = writableFolders !== undefined && onFolderCreated !== undefined
-  const canCreate = offered && creationsFor({ at: 'home' }, writableFolders).length > 0
+  const canCreate = offered && creationsFor({ at: 'home' }, writableFolders, pluginCreations(plugins, locale)).length > 0
   const entry = (variant: 'plus' | 'buttons') =>
     offered ? (
       <CreateEntry
@@ -123,6 +123,11 @@ export function Home({
         variant={variant}
         {...(fetchImpl ? { fetchImpl } : {})}
         onCreated={onFolderCreated}
+        plugins={plugins}
+        pages={entries}
+        stores={stores}
+        locale={locale}
+        openPage={openPage}
         t={t}
       />
     ) : null

@@ -5,6 +5,7 @@ export type {
   PluginBlockSpec,
   PluginFieldSpec,
   PluginGalleryColumn,
+  PluginCreation,
   PluginGalleryEntry,
   PluginGalleryFields,
   PluginGalleryLine,

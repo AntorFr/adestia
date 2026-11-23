@@ -111,9 +111,10 @@ Adestia's own interface.
   with, so a workspace path it names opens that page; what you typed stays
   exactly as you typed it.
 - **A + to create**: beside Ask on the home and in the header of a folder, it lists what can be
-  created here. Today that is **New folder**: a name (reduced to a slug), then the empty folder,
-  which shows as a tile. Nothing is offered where the folder is read-only. To see it:
-  `npm run build`, then `node bench/launch.mjs --engine fake`.
+  created here. That is **New folder** (a name reduced to a slug, then the empty folder, which shows as a tile)
+  and one line per creation an enabled plugin declares in its manifest (`creations`): Project status,
+  Journal and Liste de tâches for the official plugins; turning a plugin off removes its line. Nothing is offered where the folder is read-only. To see it:
+  `npm run build`, then `node bench/launch.mjs --engine fake --seed plugins` (the seed that enables the official plugins).
 - **Pages both hands write**: markdown files with a closed vocabulary of typed
   blocks, edited in a Notion-like editor or by the agent with its own file
   tools. One grammar renders, edits and validates them, so a save cannot change
