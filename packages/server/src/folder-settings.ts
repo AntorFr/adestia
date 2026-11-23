@@ -34,7 +34,7 @@ import { candidatesOf, fileIn, type Store } from './stores.js'
 const FILE = '.folder.md'
 
 /** The six keys the product knows, in the order they are written. */
-export const FOLDER_SETTING_KEYS = ['title', 'ico', 'couleur', 'app', 'attachments', 'page'] as const
+const FOLDER_SETTING_KEYS = ['title', 'ico', 'couleur', 'app', 'attachments', 'page'] as const
 
 const HUES: readonly string[] =
   CORE_FIELDS.find((field) => field.key === 'couleur')?.values ?? []
@@ -148,7 +148,7 @@ export async function folderSettingsOf(
   return Object.fromEntries(Object.entries(out).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
 }
 
-export type FolderSettingsResult =
+type FolderSettingsResult =
   | { readonly ok: true; readonly settings: FolderSettings; readonly revision: string }
   | { readonly ok: false; readonly status: 400 | 403 | 404 | 409; readonly error: string; readonly revision?: string }
 
@@ -164,18 +164,6 @@ const writable = (path: string): Promise<boolean> =>
     () => true,
     () => false,
   )
-
-/** The settings and revision of one folder, or the reason there is no such folder. */
-export async function readFolderSettings(stores: readonly Store[], folder: string): Promise<FolderSettingsResult> {
-  if (!validFolder(folder)) return refuse(400, 'not a valid folder path')
-  const held = await holdersOf(stores, folder)
-  if (held.length === 0) return refuse(404, 'no such folder')
-  for (const { dir } of held) {
-    const read = await readIn(dir)
-    if (read) return { ok: true, settings: read.settings, revision: read.revision }
-  }
-  return { ok: true, settings: {}, revision: '' }
-}
 
 function validFolder(folder: unknown): folder is string {
   if (typeof folder !== 'string' || folder === '' || folder.includes('\0')) return false

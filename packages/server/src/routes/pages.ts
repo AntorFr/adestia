@@ -29,6 +29,7 @@ import {
 import type {
   CreateFolderRequest,
   CreateFolderResponse,
+  FolderSettingsRequest,
   FolderSettingsResponse,
   PageIndexFolders,
   RenameFolderRequest,
@@ -506,7 +507,7 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
   })
 
   /** AD-40: write a folder's settings; the rules live in `../folder-settings.ts`. */
-  app.put<{ Body: unknown }>('/api/folders/settings', async (request, reply) => {
+  app.put<{ Body: Partial<Record<keyof FolderSettingsRequest, unknown>> }>('/api/folders/settings', async (request, reply) => {
     const done = await writeFolderSettings(stores, request.body)
     if (!done.ok) {
       return reply
