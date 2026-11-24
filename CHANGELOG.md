@@ -1212,13 +1212,3 @@ branch and that `test:plugins` is replayed after a red vitest run.
 ## v0.99.1
 
 - **The "server not responding" banner browser test no longer fails under load** — the B-19 test that checks the banner appears on a 502 while the probe fails now lets the page run the handlers triggered by the drained answers before waiting for the banner, and names what answered since the route was armed if it still fails. Tests only: nothing changes for users.
-
-## Unreleased
-
-- **Folders read their `.folder.md`; index pages are pages again** — a folder's tile and header take their
-  title, icon and colour from `folderSettings` of the page index, and a top-level folder whose `.folder.md`
-  sets `app:` is held by that plugin. `INDEX.md`, `index.md` and `x/x.md` are cards, counted and listed like
-  any page, and are no longer read as settings. An address naming a folder (`[[dossier]]`,
-  `#/page/dossier`, `#/section/dossier`) opens the folder route, never a page. `isIndexFile`,
-  `isIndexPath`, `INDEX_FILE` and `isHomonymous` are gone; the `children` depth of a list block now lists
-  the folder's own pages.
