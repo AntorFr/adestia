@@ -9,17 +9,21 @@
  * A workspace already knows its own shape — it is the folders. What it does
  * NOT know is what any of them should be called, and the first version of
  * this file answered that by only surfacing folders carrying an `INDEX.md`.
- * Principled, and wrong: measured against a real corpus it HID TWELVE
- * FOLDERS — seven written in the sibling shell's "space" convention (a
- * folder beside a page of the same name) and five plain folders of pages.
+ * Principled, and wrong: it HID TWELVE FOLDERS of a real corpus.
  *
  * Hiding content is a worse failure than labelling it imperfectly. So a
- * folder holding pages IS a section, and its livery comes from whichever
- * index page it has — `INDEX.md`, or the homonymous page — falling back to
- * its own name when it has none. Declared beats guessed; guessed beats gone.
+ * folder holding pages IS a section, and its livery comes from its
+ * `.folder.md` (`folderSettings` of the index, AD-40), falling back to its
+ * own name when it has none. Declared beats guessed; guessed beats gone.
+ * No page is special any more: `INDEX.md` is a card, counted like the rest.
  */
 
-import { folderOf, isIndexFile, prettify } from './paths.js'
+import type { FolderSettingsEntry } from '@antorfr/adestia-schemas'
+
+import { folderOf, prettify } from './paths.js'
+
+/** The settings of each folder that has a `.folder.md`, keyed by folder (`folderSettings` of the index). */
+export type FolderSettingsMap = Readonly<Record<string, FolderSettingsEntry>>
 
 export interface SectionTile {
   /** Folder path, which is also the route to open it. */
@@ -28,7 +32,7 @@ export interface SectionTile {
   readonly icon: string
   /** A hue name the skin resolves, or undefined to fall back to the accent. */
   readonly hue?: string
-  /** Pages inside, the index page itself excluded. */
+  /** Pages inside, every one counted. */
   readonly count: number
   /**
    * The single store everything inside comes from, when there is one.
@@ -75,21 +79,6 @@ export interface StoreInfo {
 
 /** Folders that are storage, not content: never a section. */
 const NOT_A_SECTION = new Set(['assets'])
-
-/**
- * The index page of a folder, either spelling.
- *
- * Exported because routing needs the SAME answer: a folder's `app:` is read
- * from its index, and a second copy of "which file is the index" is precisely
- * what hid twelve folders of a real corpus the first time.
- */
-export function indexOf(entries: readonly IndexEntry[], folder: string): IndexEntry | undefined {
-  return entries.find(
-    (entry) =>
-      folderOf(entry.path) === folder &&
-      isIndexFile(entry.path),
-  )
-}
 
 function text(value: unknown): string | undefined {
   return typeof value === 'string' && value !== '' ? value : undefined
@@ -154,6 +143,7 @@ export function sectionsOf(
   absorbed: readonly string[] = [],
   /** Every folder the stores hold, empty ones included (AD-38): a folder with no page is still a tile. */
   folders: readonly string[] = [],
+  settings: FolderSettingsMap = {},
 ): readonly SectionTile[] {
   const top = new Set<string>()
   for (const folder of folders) {
@@ -186,17 +176,16 @@ export function sectionsOf(
         )
       )
     })
-    .map((folder) => tileFor(entries, folder, indexOf(entries, folder)))
+    .map((folder) => tileFor(entries, folder, settings[folder]))
     .sort((a, b) => a.title.localeCompare(b.title))
 }
 
-/** One tile, dressed by a folder's index page when it has one. */
+/** One tile, dressed by the folder's `.folder.md` when it has one. */
 function tileFor(
   entries: readonly IndexEntry[],
   folder: string,
-  index: IndexEntry | undefined,
+  declared: FolderSettingsEntry | undefined,
 ): SectionTile {
-  const fields = index?.fields ?? {}
   const held = entries.filter((entry) => entry.path.startsWith(`${folder}/`))
   // An instance with one store marks nothing, so an entry without a store is
   // not a store of its own — it is an instance with no provenance to draw.
@@ -204,13 +193,12 @@ function tileFor(
   const only = from.size === 1 ? [...from][0] : undefined
   return {
     path: folder,
-    // The declaration wins FIELD BY FIELD: a page that only gives an icon
-    // keeps the title it would have had. An all-or-nothing rule would punish a
-    // half-filled frontmatter by discarding the half that was there.
-    title: text(fields['title']) ?? index?.title ?? prettify(folder.split('/').at(-1) ?? folder),
-    icon: text(fields['ico']) ?? '',
-    ...(text(fields['couleur']) ? { hue: text(fields['couleur'])! } : {}),
-    count: held.filter((entry) => !isIndexFile(entry.path)).length,
+    // The declaration wins FIELD BY FIELD: a file that only gives an icon
+    // keeps the title it would have had.
+    title: text(declared?.title) ?? prettify(folder.split('/').at(-1) ?? folder),
+    icon: text(declared?.ico) ?? '',
+    ...(text(declared?.couleur) ? { hue: text(declared?.couleur)! } : {}),
+    count: held.length,
     ...(only !== undefined ? { store: only } : {}),
     ...(from.size > 1 ? { mixed: true } : {}),
   }
@@ -228,11 +216,12 @@ export function sectionAt(
   entries: readonly IndexEntry[],
   folder: string,
   folders: readonly string[] = [],
+  settings: FolderSettingsMap = {},
 ): SectionTile | undefined {
   const holds =
     entries.some((entry) => entry.path.startsWith(`${folder}/`)) ||
     folders.some((one) => one === folder || one.startsWith(`${folder}/`))
-  return holds ? tileFor(entries, folder, indexOf(entries, folder)) : undefined
+  return holds ? tileFor(entries, folder, settings[folder]) : undefined
 }
 
 /**
@@ -241,8 +230,7 @@ export function sectionAt(
  * What separates `domaines/voyages` from `domaines`: the first holds pages,
  * the second only holds folders. A grouping folder is a filing detail, and a
  * breadcrumb that stopped at one would offer a crumb leading to an empty
- * screen. Its own index page counts: a folder with nothing but an overview is
- * still a place, and its overview is what the crumb would open.
+ * screen. `INDEX.md` is a page like another: a folder holding only that is a place.
  */
 export function holdsPages(entries: readonly IndexEntry[], folder: string): boolean {
   if (folder === '' || NOT_A_SECTION.has(folder.split('/').at(-1) ?? '')) return false
@@ -263,7 +251,6 @@ export function pagesIn(
   return entries.filter(
     (entry) =>
       entry.path.startsWith(prefix) &&
-      !isIndexFile(entry.path) &&
       !entry.path.slice(prefix.length).includes('/'),
   )
 }
@@ -273,19 +260,21 @@ export function subsectionsOf(
   entries: readonly IndexEntry[],
   folder: string,
   folders: readonly string[] = [],
+  settings: FolderSettingsMap = {},
 ): readonly SectionTile[] {
   const prefix = `${folder}/`
   const innerFolders = folders.filter((one) => one.startsWith(prefix)).map((one) => one.slice(prefix.length))
   const inside = entries
     .filter((entry) => entry.path.startsWith(prefix))
     .map((entry) => ({ ...entry, path: entry.path.slice(prefix.length) }))
-    // The section's OWN index page has to go, or the rule re-elects the
-    // section as a room of itself — it is the shallowest index in its own
-    // subtree, by construction.
-    .filter((entry) => entry.path.includes('/'))
 
   // Re-run the same rule one level down, on the subtree alone.
-  return sectionsOf(inside, [], innerFolders).map((section) => ({
+  const innerSettings = Object.fromEntries(
+    Object.entries(settings)
+      .filter(([folder]) => folder.startsWith(prefix))
+      .map(([folder, entry]) => [folder.slice(prefix.length), entry]),
+  )
+  return sectionsOf(inside, [], innerFolders, innerSettings).map((section) => ({
     ...section,
     path: `${folder}/${section.path}`,
   }))

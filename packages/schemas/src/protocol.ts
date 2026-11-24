@@ -109,6 +109,31 @@ export interface McpServerView {
 export interface PageIndexFolders {
   readonly writableFolders: readonly string[]
   readonly folders: readonly string[]
+  /** AD-40: the settings of each folder that has a file, keyed by logical folder; `{}` when none. */
+  readonly folderSettings: Readonly<Record<string, FolderSettingsEntry>>
+}
+
+/** The six settings of a folder (AD-40); a key absent is a default. */
+export interface FolderSettings {
+  readonly title?: string
+  readonly ico?: string
+  readonly couleur?: string
+  readonly app?: string
+  readonly attachments?: boolean
+  readonly page?: string
+}
+/** What the index carries: the settings and the revision of the file read. */
+export type FolderSettingsEntry = FolderSettings & { readonly revision: string }
+
+/** `PUT /api/folders/settings` `{path, settings, revision?}` → 200. */
+export interface FolderSettingsRequest {
+  readonly path: string
+  readonly settings: FolderSettings
+  readonly revision?: string
+}
+export interface FolderSettingsResponse {
+  readonly settings: FolderSettings
+  readonly revision: string
 }
 
 /** `POST /api/folders` `{path}` → 201 with the logical path made. */

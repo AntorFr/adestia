@@ -29,6 +29,8 @@ import {
 import type {
   CreateFolderRequest,
   CreateFolderResponse,
+  FolderSettingsRequest,
+  FolderSettingsResponse,
   PageIndexFolders,
   RenameFolderRequest,
   RenameFolderResponse,
@@ -38,6 +40,7 @@ import type { FastifyInstance } from 'fastify'
 import { parseFrontmatter, splitFrontmatter } from '../frontmatter.js'
 import type { DiscoveredPlugin } from '../extensions.js'
 import { rewriteLinks } from '../folder-links.js'
+import { folderSettingsOf, isFolderSettingsPath, writeFolderSettings } from '../folder-settings.js'
 import { gated } from '../io.js'
 import { allFolders, creatableRoot, isAbsorbed, writableFolders } from '../writable-folders.js'
 import { revisionOf, safePagePath, titleOf, type PageContent, type PageInfo } from '../pages.js'
@@ -276,7 +279,11 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
       .flatMap((plugin) => plugin.manifest.absorbs ?? [])
     const folders = await writableFolders(stores, absorbed, order)
     const every = await allFolders(stores, order)
-    const fields: PageIndexFolders = { writableFolders: folders, folders: every }
+    const fields: PageIndexFolders = {
+      writableFolders: folders,
+      folders: every,
+      folderSettings: await folderSettingsOf(stores, every),
+    }
     return multi
       ? { entries: out, stores: table(), ...fields }
       : { entries: out, ...fields }
@@ -499,11 +506,23 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
     return reply.code(403).send({ error: 'write refused' })
   })
 
+  /** AD-40: write a folder's settings; the rules live in `../folder-settings.ts`. */
+  app.put<{ Body: Partial<Record<keyof FolderSettingsRequest, unknown>> }>('/api/folders/settings', async (request, reply) => {
+    const done = await writeFolderSettings(stores, request.body)
+    if (!done.ok) {
+      return reply
+        .code(done.status)
+        .send({ error: done.error, ...(done.revision === undefined ? {} : { revision: done.revision }) })
+    }
+    const answer: FolderSettingsResponse = { settings: done.settings, revision: done.revision }
+    return reply.code(200).send(answer)
+  })
+
   app.get<{ Params: { '*': string }; Querystring: { store?: string } }>(
     '/api/pages/*',
     async (request, reply) => {
       const logical = request.params['*']
-      if (!stores.some((store) => safePagePath(store, logical))) {
+      if (isFolderSettingsPath(logical) || !stores.some((store) => safePagePath(store, logical))) {
         return reply.code(400).send({ error: 'not a valid page path' })
       }
 
@@ -572,7 +591,7 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
     Body: { markdown?: unknown; revision?: unknown }
   }>('/api/pages/*', async (request, reply) => {
     const logical = request.params['*']
-    if (!stores.some((store) => safePagePath(store, logical))) {
+    if (isFolderSettingsPath(logical) || !stores.some((store) => safePagePath(store, logical))) {
       return reply.code(400).send({ error: 'not a valid page path' })
     }
 

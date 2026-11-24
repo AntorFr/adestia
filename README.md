@@ -110,6 +110,7 @@ Adestia's own interface.
   rendered as the markdown it is, through the same renderer a page is read
   with, so a workspace path it names opens that page; what you typed stays
   exactly as you typed it.
+- **Folder settings in `.folder.md`**: a folder's title, icon, colour, owning plugin (`app`), attachments switch and replacement page (`page`) live in `<folder>/.folder.md`, front matter only. The server reads it into the page index (`folderSettings`), `PUT /api/folders/settings` and the agent's `folder_settings` tool write it, and the file never shows as a page, a count or a file. `INDEX.md` and `<folder>/<folder>.md` are ordinary pages. The settings screen is a later slice; see `docs/donnees.md`, *What `adestia-dossiers` changes*.
 - **A + to create**: beside Ask on the home and in the header of a folder, it lists what can be
   created here. That is **New folder** (a name reduced to a slug, then the empty folder, which shows as a tile)
   and one line per creation an enabled plugin declares in its manifest (`creations`): Project status,
@@ -283,7 +284,7 @@ the principles and decision log.
 ## Contributing
 
 Node 22 or later (`engines` in `package.json`). After `npm ci`, check that
-`node_modules/micromark-extension-directive` exists: a missing grammar shows as
+`node_modules/micromark-extension-directive` exists **and is not empty** (`ls node_modules/micromark-extension-directive/package.json`): a missing grammar shows as
 escaped `\:::` in the content tests, and looks like a serialiser bug
 (`CLAUDE.md`).
 

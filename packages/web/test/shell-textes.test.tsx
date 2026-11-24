@@ -79,7 +79,7 @@ describe('E-19 — manifest refusal headed in the reader’s language', () => {
         instance={{ pluginProblems: [{ id: 'bench-invalid', reason, ...(code ? { code } : {}) }] } as never}
         failures={[]}
         loaded={[]}
-        pages={[]}
+        folderSettings={{}}
         t={translator(locale)}
         locale={locale}
       />,

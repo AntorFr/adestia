@@ -16,13 +16,12 @@ import { useEffect, type ReactNode } from 'react'
 
 import type { LoadedPlugin } from '../plugins/loader.js'
 import type { Skin } from './skin.js'
-import type { IndexEntry, StoreInfo } from './sections.js'
+import type { FolderSettingsMap, IndexEntry, StoreInfo } from './sections.js'
 import { Icon } from './Icon.js'
 import { Brief } from './Brief.js'
 import { CreateEntry } from './CreateEntry.js'
 import { Domains, plural } from './Domains.js'
 import { creationsFor, pluginCreations } from './creations.js'
-import { INDEX_FILE } from './paths.js'
 import { Loading } from './ui/index.js'
 
 export interface HomeProps {
@@ -44,6 +43,7 @@ export interface HomeProps {
   readonly stores?: readonly StoreInfo[]
   /** Every folder the stores hold, empty ones included. */
   readonly folders?: readonly string[]
+  readonly folderSettings?: FolderSettingsMap
   /** Where a folder may be made; absent means creation is not offered. */
   readonly writableFolders?: readonly string[]
   readonly onFolderCreated?: (path: string) => void | Promise<void>
@@ -74,6 +74,7 @@ export function Home({
   entries,
   stores = [],
   folders = [],
+  folderSettings = {},
   writableFolders,
   onFolderCreated,
   openPlugin,
@@ -106,7 +107,7 @@ export function Home({
   // Written by the shell because the shell is what knows the corpus: the
   // number is the reason the line exists, and a date with nothing after it is
   // decoration.
-  const pages = entries.filter((entry) => !INDEX_FILE.test(entry.path)).length
+  const pages = entries.length
   const context = `${clock.toLocaleDateString(locale, {
     weekday: 'long',
     day: 'numeric',
@@ -191,6 +192,7 @@ export function Home({
             entries={entries}
             stores={stores}
             folders={folders}
+            folderSettings={folderSettings}
             {...(canCreate ? { emptyAction: entry('buttons') } : {})}
             openPlugin={openPlugin}
             openSection={openSection}

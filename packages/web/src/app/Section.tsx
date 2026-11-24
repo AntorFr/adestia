@@ -23,7 +23,7 @@ import type { IndexEntry, SectionTile, StoreInfo } from './sections.js'
 import { Icon } from './Icon.js'
 import { EmptyState } from './ui/EmptyState.js'
 import { Loading } from './ui/Loading.js'
-import { pagesIn, subsectionsOf } from './sections.js'
+import { pagesIn, subsectionsOf, type FolderSettingsMap } from './sections.js'
 
 export interface SectionProps {
   readonly path: string
@@ -45,6 +45,7 @@ export interface SectionProps {
   readonly notice?: ReactNode
   /** Every folder the stores hold, empty ones included. */
   readonly folders?: readonly string[]
+  readonly folderSettings?: FolderSettingsMap
   /** What fills an empty folder: the creation entries as buttons. */
   readonly emptyAction?: ReactNode
 }
@@ -209,9 +210,10 @@ export function Section({
   headerAction,
   notice,
   folders = [],
+  folderSettings = {},
   emptyAction,
 }: SectionProps) {
-  const rooms = subsectionsOf(entries, path, folders)
+  const rooms = subsectionsOf(entries, path, folders, folderSettings)
   const all = pagesIn(entries, path)
   const live = all.filter((entry) => !isFinished(entry.fields))
   const finished = all.filter((entry) => isFinished(entry.fields))

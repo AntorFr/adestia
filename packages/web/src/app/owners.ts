@@ -20,8 +20,7 @@
 
 import { routeMatches } from '../plugins/contract.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
-import { isIndexFile } from './paths.js'
-import { absorbs, indexOf, type IndexEntry } from './sections.js'
+import { absorbs, type FolderSettingsMap, type IndexEntry } from './sections.js'
 
 /**
  * How a workspace path is written into a route: segments escaped, slashes
@@ -80,20 +79,14 @@ export function pageRoute(path: string, store?: string): string {
  * escaped-slash form. An address is a promise, and promises are not withdrawn
  * because the product got tidier.
  */
-export function pageAddress(
-  rest: string,
-  pages: readonly IndexEntry[] = [],
-): { path: string; store?: string } {
+export function pageAddress(rest: string): { path: string; store?: string } {
   const cut = rest.indexOf('?')
   const raw = cut === -1 ? rest : rest.slice(0, cut)
   const asked = cut === -1 ? null : new URLSearchParams(rest.slice(cut + 1)).get('store')
   const decoded = decodePath(raw)
-  // An address that names a FOLDER opens that folder's index page. `INDEX` is
-  // the same leak `.md` was: a fact about where the text is stored, surfacing
-  // in something a person reads, shares and bookmarks. The address of a
-  // worksite is its FOLDER — the index is merely how the folder speaks.
-  const folded = indexOf(pages, decoded)
-  if (folded) return { path: folded.path, ...(asked ? { store: asked } : {}) }
+  // No page stands for a folder (AD-40): `INDEX.md` is a page like another, so
+  // an address is a page's name and nothing else. A folder's address is
+  // resolved BEFORE this, by `useRoute`, onto the folder route.
   return {
     path: /\.md$/i.test(decoded) ? decoded : `${decoded}.md`,
     ...(asked ? { store: asked } : {}),
@@ -138,7 +131,7 @@ export function addressOf(plugin: {
 }
 
 /**
- * The plugin a folder DECLARES, read from its own index page.
+ * The plugin a folder DECLARES, read from its own `.folder.md` (`app:`).
  *
  * `absorbs` matches a NAME wherever that run of segments sits, which works for
  * a plugin that owns a word — `todo`, `voyages` — and cannot work for one
@@ -147,7 +140,7 @@ export function addressOf(plugin: {
  * it, in the one place that travels with it across a `mv`.
  *
  * TOP LEVEL ONLY, and hereditary: the declaration is read from the first
- * segment's index and covers everything beneath it. Written deeper it is NOT
+ * segment's `.folder.md` and covers everything beneath it. Written deeper it is NOT
  * silently ignored — `strayApp` reports it — because an `app:` that does
  * nothing is an hour spent wondering why.
  *
@@ -158,12 +151,12 @@ export function addressOf(plugin: {
  */
 function declaredApp(
   plugins: readonly LoadedPlugin[],
-  pages: readonly IndexEntry[],
+  settings: FolderSettingsMap,
   folder: string,
 ): LoadedPlugin | undefined {
   const root = folder.split('/')[0]
   if (!root) return undefined
-  const asked = indexOf(pages, root)?.fields['app']
+  const asked = settings[root]?.app
   if (typeof asked !== 'string' || asked === '') return undefined
   return plugins.find((plugin) => plugin.id === asked)
 }
@@ -174,17 +167,17 @@ function declaredApp(
  */
 export function strayApp(
   plugins: readonly LoadedPlugin[],
-  pages: readonly IndexEntry[],
+  settings: FolderSettingsMap,
 ): readonly { readonly path: string; readonly reason: string }[] {
   const out: { path: string; reason: string }[] = []
-  for (const page of pages) {
-    const asked = page.fields['app']
+  for (const [folder, entry] of Object.entries(settings)) {
+    const asked = entry.app
     if (typeof asked !== 'string' || asked === '') continue
-    const folder = page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0))
+    const path = `${folder}/.folder.md`
     if (folder.includes('/')) {
-      out.push({ path: page.path, reason: `"app" is only read on a top-level folder` })
+      out.push({ path, reason: `"app" is only read on a top-level folder` })
     } else if (!plugins.some((plugin) => plugin.id === asked)) {
-      out.push({ path: page.path, reason: `no active plugin is called "${asked}"` })
+      out.push({ path, reason: `no active plugin is called "${asked}"` })
     }
   }
   return out
@@ -230,11 +223,11 @@ function claim(plugin: LoadedPlugin, folder: string): number {
 export function ownerOf(
   plugins: readonly LoadedPlugin[],
   folder: string,
-  pages: readonly IndexEntry[] = [],
+  settings: FolderSettingsMap = {},
 ): LoadedPlugin | undefined {
   // A DECLARATION beats a name: the folder said so itself, and nothing the
   // shell guesses should outrank that.
-  const declared = declaredApp(plugins, pages, folder)
+  const declared = declaredApp(plugins, settings, folder)
   if (declared) return declared
   // The most specific claim wins, mirroring route resolution: a plugin
   // declaring `voyages/archives` takes that folder from one declaring
@@ -311,9 +304,9 @@ function holdsFolder(plugin: LoadedPlugin, folder: string): boolean {
 export function routeForPath(
   plugins: readonly LoadedPlugin[],
   path: string,
-  pages: readonly IndexEntry[] = [],
+  settings: FolderSettingsMap = {},
 ): string | undefined {
-  const owner = ownerOf(plugins, path, pages)
+  const owner = ownerOf(plugins, path, settings)
   if (owner) {
     const said = asks(owner, path)
     if (said) return said
@@ -353,19 +346,18 @@ export function folderRoute(
   plugins: readonly LoadedPlugin[],
   folder: string,
   pages: readonly IndexEntry[] = [],
+  settings: FolderSettingsMap = {},
 ): string {
   // The ladder, in one place. A plugin's own SCREEN wins — it exists because
   // the folder is not a list of files. Failing that, a folder holding exactly
   // one page of its owner's kind IS that thing, and opens on its page.
   // Failing both, the shelf, which is what the reader always had.
-  const owned = routeForPath(plugins, folder, pages)
+  const owned = routeForPath(plugins, folder, settings)
   if (owned) return owned
-  const owner = ownerOf(plugins, folder, pages)
+  const owner = ownerOf(plugins, folder, settings)
   const face = owner ? faceOf(owner, pages, folder) : undefined
   if (!face) return sectionRoute(folder)
-  // The FOLDER's own address when its face is its index — `INDEX` never
-  // belongs in a link. Any other page keeps its own name.
-  return pageRoute(isIndexFile(face) ? folder : face)
+  return pageRoute(face)
 }
 
 /**
@@ -373,24 +365,18 @@ export function folderRoute(
  * one screen rather than two.
  *
  * A folder with a single typed page IS that thing (see `faceOf`), so its
- * address and the page's are the same door. The breadcrumb drew both and the
- * reader got their title twice, the first copy a link back to the screen
- * already under their eyes.
- *
- * Asked through `folderRoute` and read back through `pageAddress` rather than
- * re-deciding it here: the two spellings of that door — `/page/<folder>` when
- * the face is an index, `/page/<page>` otherwise — differ as STRINGS and name
- * the same file, which is precisely the kind of detail a second copy of the
- * rule gets wrong.
+ * address is the page's. Asked through `folderRoute` and read back through
+ * `pageAddress` rather than re-deciding it here.
  */
 export function opensOn(
   plugins: readonly LoadedPlugin[],
   folder: string,
   path: string,
   pages: readonly IndexEntry[] = [],
+  settings: FolderSettingsMap = {},
 ): boolean {
-  const route = folderRoute(plugins, folder, pages)
+  const route = folderRoute(plugins, folder, pages, settings)
   const prefix = '/page/'
   if (!route.startsWith(prefix)) return false
-  return pageAddress(route.slice(prefix.length), pages).path === path
+  return pageAddress(route.slice(prefix.length)).path === path
 }

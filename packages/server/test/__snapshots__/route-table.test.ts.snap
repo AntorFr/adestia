@@ -58,6 +58,7 @@ exports[`the route table > lists every route of a fully-equipped instance, the c
   "GET /api/pages/index",
   "POST /api/folders/rename",
   "POST /api/folders",
+  "PUT /api/folders/settings",
   "GET /api/pages/*",
   "PUT /api/pages/*",
   "GET /api/events",

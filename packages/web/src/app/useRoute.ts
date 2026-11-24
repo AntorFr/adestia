@@ -6,17 +6,22 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { routeMatches } from '../plugins/contract.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
-import { addressOf, decodePath, folderRoute, pageAddress, sectionRoute } from './owners.js'
+import { addressOf, decodePath, folderRoute, pageAddress } from './owners.js'
 import { isPrefsPage, type PrefsPage } from './Preferences.js'
-import type { IndexEntry } from './sections.js'
+import type { FolderSettingsMap, IndexEntry } from './sections.js'
 
 export function useRoute({
   loaded,
   pages,
+  folders = [],
+  folderSettings = {},
   onChange,
 }: {
   readonly loaded: readonly LoadedPlugin[]
   readonly pages: readonly IndexEntry[]
+  /** Every folder the stores hold: an address naming one is a folder's (AD-40). */
+  readonly folders?: readonly string[]
+  readonly folderSettings?: FolderSettingsMap
   /** Called on every navigation, before the new screen renders. */
   readonly onChange: () => void
 }) {
@@ -105,9 +110,6 @@ export function useRoute({
   }, [route])
   const settingsPage = settings?.page
 
-  const section = route.startsWith('/section/')
-    ? decodePath(route.slice('/section/'.length))
-    : undefined
   /**
    * The page the address names, and the copy it asks for.
    *
@@ -115,9 +117,22 @@ export function useRoute({
    * resolves by precedence, which is what keeps a link alive when a page moves
    * from one circle to another.
    */
-  const address = route.startsWith('/page/')
-    ? pageAddress(route.slice('/page/'.length), pages)
-    : undefined
+  const asked = route.startsWith('/page/') ? pageAddress(route.slice('/page/'.length)) : undefined
+  /**
+   * An address that names a FOLDER and no page (`[[dossier]]`, `#/page/dossier`)
+   * opens the folder, never a page (AD-40): no page stands for its folder. A page
+   * of that very name wins, since it is a page and nothing else.
+   */
+  const folderAddress =
+    asked !== undefined &&
+    !pages.some((entry) => entry.path === asked.path) &&
+    folders.includes(asked.path.replace(/\.md$/i, ''))
+      ? asked.path.replace(/\.md$/i, '')
+      : undefined
+  const address = folderAddress === undefined ? asked : undefined
+  const section = route.startsWith('/section/')
+    ? decodePath(route.slice('/section/'.length))
+    : folderAddress
   const pagePath = address?.path
   const pageStore = address?.store
 
@@ -143,12 +158,13 @@ export function useRoute({
     // decided by how the reader arrived. `folderRoute` is the whole ladder,
     // and it is what `openSection` calls.
     //
-    // Compared against the plain section route rather than tested for truth:
-    // `folderRoute` always answers, so redirecting on any answer would
-    // replace the address with itself on every folder that has no owner.
-    const where = folderRoute(loaded, section, pages)
-    if (where !== sectionRoute(section)) location.replace(`#${where}`)
-  }, [section, loaded, pages])
+    // Compared against the CURRENT route rather than tested for truth:
+    // `folderRoute` always answers, so the address is replaced only when it
+    // differs — which also turns a folder named as a page (`/page/<folder>`)
+    // into the folder's route.
+    const where = folderRoute(loaded, section, pages, folderSettings)
+    if (where !== route) location.replace(`#${where}`)
+  }, [section, route, loaded, pages, folderSettings])
 
   /**
    * The addresses settings used to have, handed over rather than kept.

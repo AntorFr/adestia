@@ -62,7 +62,7 @@ each message as "where the reader is" (`screenView`).
 | `#/` or empty | E-2 Home |
 | `#/section/<folder>` | E-3 Section; replaced by the owning app's route when a plugin absorbs the folder or the folder declares `app:`, else by the replacement page (E-4) when `.folder.md` sets `page` and the file exists |
 | `#/section/<folder>?classic` | E-3 Section whatever the setting: the target of the **Folder** link (E-39) |
-| `#/page/<path>[?store=<id>]` | E-4 Page (E-7 when `type: collection`, E-29 when `type: meals`, a plugin layout for other claimed types); E-8 when the server refuses |
+| `#/page/<path>[?store=<id>]` | E-4 Page (an address naming a folder and no page opens the folder route instead: no page stands for its folder, `adestia-dossiers`) (E-7 when `type: collection`, E-29 when `type: meals`, a plugin layout for other claimed types); E-8 when the server refuses |
 | `#/settings` | E-9 Settings mosaic |
 | `#/settings/mcp[/<server>]` | E-10 MCP servers |
 | `#/settings/instructions[/<path>]` | E-11 Instructions (E-12 opens over it) |

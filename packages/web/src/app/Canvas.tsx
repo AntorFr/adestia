@@ -30,7 +30,7 @@ import { templateSources } from './templates.js'
 import { Loading } from './ui/Loading.js'
 import { SkinSlot } from './SkinSlot.js'
 import { encodePath, ownerOf } from './owners.js'
-import { sectionAt, type IndexEntry, type StoreInfo } from './sections.js'
+import { sectionAt, type FolderSettingsMap, type IndexEntry, type StoreInfo } from './sections.js'
 import { skinUser, type Skin, type SkinSlots } from './skin.js'
 import type { InstanceInfo } from './useInstance.js'
 import type { EditorMount, Incoming } from './usePage.js'
@@ -55,6 +55,8 @@ export interface CanvasProps {
   readonly writableFolders?: readonly string[]
   /** Every folder the stores hold, empty ones included (AD-38). */
   readonly folders?: readonly string[]
+  /** The `.folder.md` of each folder (AD-40): title, icon, colour and owner of a folder. */
+  readonly folderSettings?: FolderSettingsMap
   /** Re-reads the index now (after a creation). */
   readonly refreshIndex?: () => Promise<void>
   readonly openApp: string | undefined
@@ -143,8 +145,8 @@ export function Canvas(props: CanvasProps) {
           // reader's `from=` resolution walks. Owner from the page's FOLDER:
           // ownership is a claim on folders, and the deepest claim wins.
           vocabulary={{
-            ...(ownerOf(loaded, page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0)))?.id
-              ? { owner: ownerOf(loaded, page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0)))!.id }
+            ...(ownerOf(loaded, page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0)), props.folderSettings)?.id
+              ? { owner: ownerOf(loaded, page.path.slice(0, Math.max(page.path.lastIndexOf('/'), 0)), props.folderSettings)!.id }
               : {}),
             features: props.featureOrder,
           }}
@@ -204,7 +206,7 @@ export function Canvas(props: CanvasProps) {
         />
       )
     const renamable =
-      props.indexed !== false && canRename(section, props.writableFolders ?? [], folders, ownerOf(loaded, section, pages) !== undefined)
+      props.indexed !== false && canRename(section, props.writableFolders ?? [], folders, ownerOf(loaded, section, props.folderSettings) !== undefined)
     const renamed = async (path: string) => {
       await props.refreshIndex?.()
       openSection(path)
@@ -214,10 +216,11 @@ export function Canvas(props: CanvasProps) {
     return (
       <Section
         path={section}
-        title={sectionAt(pages, section, folders)?.title ?? section}
-        {...(sectionAt(pages, section, folders) ? { tile: sectionAt(pages, section, folders)! } : {})}
+        title={sectionAt(pages, section, folders, props.folderSettings)?.title ?? section}
+        {...(sectionAt(pages, section, folders, props.folderSettings) ? { tile: sectionAt(pages, section, folders, props.folderSettings)! } : {})}
         entries={pages}
         folders={folders}
+        {...(props.folderSettings ? { folderSettings: props.folderSettings } : {})}
         {...(creatable ? { emptyAction: create('buttons') } : {})}
         stores={stores}
         openSection={openSection}
@@ -315,6 +318,7 @@ function LandingScreen({
   locale,
   writableFolders,
   folders,
+  folderSettings,
   refreshIndex,
   indexed,
   t,
@@ -350,6 +354,7 @@ function LandingScreen({
       entries={pages}
       stores={stores}
       {...(folders ? { folders } : {})}
+      {...(folderSettings ? { folderSettings } : {})}
       {...(indexed === false || !writableFolders
         ? {}
         : {

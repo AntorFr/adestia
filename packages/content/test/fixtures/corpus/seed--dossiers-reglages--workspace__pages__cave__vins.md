@@ -1,0 +1,5 @@
+---
+title: Vins
+---
+
+Texte.
