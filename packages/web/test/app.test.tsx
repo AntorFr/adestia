@@ -28,6 +28,7 @@ function apiFetch(
   instance: { status?: number; body?: unknown } = {},
   pages?: { path: string; title: string; fields: Record<string, unknown> }[],
   folderSettings: Record<string, Record<string, unknown>> = {},
+  folders: string[] = [],
 ): typeof fetch {
   return ((url: string) => {
     if (String(url).startsWith('/api/instance')) {
@@ -41,7 +42,7 @@ function apiFetch(
     return Promise.resolve({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({ entries: pages ?? [], conversations: [], folderSettings }),
+      json: () => Promise.resolve({ entries: pages ?? [], conversations: [], folderSettings, folders }),
     } as unknown as Response)
   }) as unknown as typeof fetch
 }
@@ -73,6 +74,36 @@ describe('the landing canvas', () => {
     expect(screen.getByText('41 pages')).toBeTruthy()
   })
 
+})
+
+describe('the address of a folder', () => {
+  const PAGES = [
+    { path: 'diy/INDEX.md', title: 'Index du dossier', fields: {} },
+    { path: 'diy/etabli.md', title: 'Établi', fields: {} },
+  ]
+  const SETTINGS = { diy: { title: 'Bricolage', revision: 'a' } }
+
+  it('opens the folder route, never the INDEX.md page, when a link names the folder', { timeout: 30_000 }, async () => {
+    // AD-40: `[[diy]]` and `#/page/diy` name a FOLDER; no page stands for it.
+    location.hash = '#/page/diy'
+    const { container } = render(<App fetchImpl={apiFetch({}, PAGES, SETTINGS, ['diy'])} />)
+    await waitFor(() => expect(location.hash).toBe('#/section/diy'))
+    await waitFor(() => expect(container.querySelector('.adestia-chead')?.textContent).toContain('Bricolage'))
+    // The INDEX.md page is a card among the others, not the screen.
+    await waitFor(() => expect(container.textContent).toContain('Index du dossier'))
+    location.hash = ''
+  })
+
+  it('lets a page of that very name win: it is a page and nothing else', { timeout: 30_000 }, async () => {
+    const pages = [...PAGES, { path: 'diy.md', title: 'Page diy', fields: {} }]
+    location.hash = '#/page/diy'
+    render(<App fetchImpl={apiFetch({}, pages, SETTINGS, ['diy'])} />)
+    // Let the index land, then check the address was not turned into the folder's.
+    await waitFor(() => expect(screen.queryByText('Home')).toBeTruthy())
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(location.hash).toBe('#/page/diy')
+    location.hash = ''
+  })
 })
 
 describe('the breadcrumb', () => {
