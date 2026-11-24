@@ -328,8 +328,13 @@ const suivi = {
   types: ['project-management'],
 }
 
+/** Ce que dit le `.folder.md` d'un dossier (`folderSettings` de l'index, AD-40). */
+const declare = (folder: string, app: string) => ({
+  [folder]: { app, revision: 'r' },
+})
+
 describe('un dossier qui DÉCLARE son plugin', () => {
-  const pages = [page('chantiers/INDEX.md', { app: 'project-management' })]
+  const pages = declare('chantiers', 'project-management')
 
   it('appartient au plugin nommé, à toute profondeur', () => {
     expect(ownerOf([suivi], 'chantiers', pages)?.id).toBe('project-management')
@@ -353,59 +358,58 @@ describe('un dossier qui DÉCLARE son plugin', () => {
 })
 
 describe('sur quoi un dossier s’ouvre', () => {
-  const racine = page('chantiers/INDEX.md', { app: 'project-management' })
+  const racine = declare('chantiers', 'project-management')
 
   it('sur SA fiche quand il en tient exactement une', () => {
     const pages = [
-      racine,
-      page('chantiers/adestia/INDEX.md', { type: 'project-management' }),
+      page('chantiers/adestia/fiche.md', { type: 'project-management' }),
       page('chantiers/adestia/note.md'),
     ]
-    // L'adresse est celle du DOSSIER : `INDEX` est un détail de stockage, et
-    // il n'a pas plus sa place dans un lien que `.md`.
-    expect(folderRoute([suivi], 'chantiers/adestia', pages)).toBe('/page/chantiers/adestia')
+    expect(folderRoute([suivi], 'chantiers/adestia', pages, racine)).toBe(
+      '/page/chantiers/adestia/fiche',
+    )
   })
 
   it('sur l’étagère quand il n’en tient aucune', () => {
-    expect(folderRoute([suivi], 'chantiers/adestia', [racine, page('chantiers/adestia/note.md')])).toBe(
+    expect(folderRoute([suivi], 'chantiers/adestia', [page('chantiers/adestia/note.md')], racine)).toBe(
       '/section/chantiers/adestia',
     )
   })
 
   it('sur l’étagère quand il en tient plusieurs — c’est un dossier DE projets', () => {
     const pages = [
-      racine,
       page('chantiers/socle.md', { type: 'project-management' }),
       page('chantiers/editeur.md', { type: 'project-management' }),
     ]
-    expect(folderRoute([suivi], 'chantiers', pages)).toBe('/section/chantiers')
+    expect(folderRoute([suivi], 'chantiers', pages, racine)).toBe('/section/chantiers')
   })
 
   it('ne compte que ce qui est DIRECTEMENT là', () => {
     // Une fiche un niveau plus bas ne fait pas du parent un projet.
-    const pages = [racine, page('chantiers/adestia/INDEX.md', { type: 'project-management' })]
-    expect(folderRoute([suivi], 'chantiers', pages)).toBe('/section/chantiers')
+    const pages = [page('chantiers/adestia/fiche.md', { type: 'project-management' })]
+    expect(folderRoute([suivi], 'chantiers', pages, racine)).toBe('/section/chantiers')
   })
 
-  it('reconnaît la page QUI EST le dossier, quelle que soit l’orthographe du lien', () => {
+  it('reconnaît la fiche sur laquelle le dossier s’ouvre, quelle que soit l’orthographe du lien', () => {
     const pages = [
-      racine,
-      page('chantiers/adestia/INDEX.md', { type: 'project-management' }),
+      page('chantiers/adestia/fiche.md', { type: 'project-management' }),
       page('chantiers/adestia/note.md'),
     ]
     // Le défaut : le fil d'Ariane dessinait le dossier PUIS sa fiche, soit le
-    // titre deux fois, la première copie renvoyant à l'écran déjà sous les
-    // yeux du lecteur. Les deux adresses s'écrivent différemment et nomment
+    // titre deux fois. Les deux adresses s'écrivent différemment et nomment
     // le même fichier — c'est là qu'une deuxième copie de la règle se trompe.
-    expect(opensOn([suivi], 'chantiers/adestia', 'chantiers/adestia/INDEX.md', pages)).toBe(true)
-    expect(opensOn([suivi], 'chantiers/adestia', 'chantiers/adestia/note.md', pages)).toBe(false)
+    expect(opensOn([suivi], 'chantiers/adestia', 'chantiers/adestia/fiche.md', pages, racine)).toBe(true)
+    expect(opensOn([suivi], 'chantiers/adestia', 'chantiers/adestia/note.md', pages, racine)).toBe(false)
     // Une étagère n'ouvre sur aucune page : son crumb mène bien ailleurs.
-    expect(opensOn([suivi], 'chantiers', 'chantiers/INDEX.md', pages)).toBe(false)
+    expect(opensOn([suivi], 'chantiers', 'chantiers/INDEX.md', pages, racine)).toBe(false)
   })
 
-  it('vaut aussi pour une fiche qui n’est pas l’index du dossier', () => {
-    const pages = [racine, page('chantiers/adestia/fiche.md', { type: 'project-management' })]
-    expect(opensOn([suivi], 'chantiers/adestia', 'chantiers/adestia/fiche.md', pages)).toBe(true)
+  it('ne fait JAMAIS d’une page INDEX.md la face de son dossier', () => {
+    // AD-40 : aucune page ne tient lieu de son dossier. Même typée, même seule.
+    const pages = [page('chantiers/adestia/INDEX.md', { type: 'project-management' })]
+    expect(opensOn([suivi], 'chantiers/adestia', 'chantiers/adestia/INDEX.md', [], racine)).toBe(false)
+    expect(folderRoute([], 'chantiers/adestia', pages)).toBe('/section/chantiers/adestia')
+    expect(folderRoute([], 'diy', [page('diy/INDEX.md'), page('diy/diy.md')])).toBe('/section/diy')
   })
 
   it('laisse l’ÉCRAN du plugin gagner quand il en a un', () => {
@@ -421,46 +425,48 @@ describe('sur quoi un dossier s’ouvre', () => {
 
 describe('un `app:` écrit là où il ne sera jamais lu', () => {
   it('est signalé plus bas que le premier niveau, jamais obéi', () => {
-    const pages = [page('chantiers/adestia/INDEX.md', { app: 'project-management' })]
-    expect(ownerOf([suivi], 'chantiers/adestia', pages)).toBeUndefined()
-    expect(strayApp([suivi], pages)[0]?.path).toBe('chantiers/adestia/INDEX.md')
+    const settings = declare('chantiers/adestia', 'project-management')
+    expect(ownerOf([suivi], 'chantiers/adestia', settings)).toBeUndefined()
+    expect(strayApp([suivi], settings)[0]?.path).toBe('chantiers/adestia/.folder.md')
   })
 
   it('est signalé quand il nomme un plugin absent', () => {
-    const pages = [page('chantiers/INDEX.md', { app: 'fantome' })]
-    expect(strayApp([suivi], pages)[0]?.reason).toContain('fantome')
+    const settings = declare('chantiers', 'fantome')
+    const [stray] = strayApp([suivi], settings)
+    expect(stray?.path).toBe('chantiers/.folder.md')
+    expect(stray?.reason).toContain('fantome')
   })
 
   it('ne dit rien quand tout va bien', () => {
-    expect(strayApp([suivi], [page('chantiers/INDEX.md', { app: 'project-management' })])).toEqual([])
+    expect(strayApp([suivi], declare('chantiers', 'project-management'))).toEqual([])
+  })
+
+  it('ne lit plus l’`app:` d’une page INDEX.md', () => {
+    // AD-40 : un `app:` posé dans une page d'index est un champ de page comme
+    // un autre. Il ne tient aucun dossier et n'est pas signalé.
+    // La page est là, avec son `app:` ; seul `folderSettings` est lu.
+    const settings = {}
+    expect(ownerOf([suivi], 'chantiers', settings)).toBeUndefined()
+    expect(strayApp([suivi], settings)).toEqual([])
   })
 })
 
-
-describe('une adresse qui nomme un dossier', () => {
-  const pages = [
-    page('chantiers/adestia/INDEX.md', { type: 'project-management' }),
-    page('chantiers/adestia/note.md'),
-    page('voyages/baden/baden.md'),
-  ]
-
-  it('ouvre la page d’index du dossier, quelle que soit son orthographe', () => {
-    expect(pageAddress('chantiers/adestia', pages).path).toBe('chantiers/adestia/INDEX.md')
-    // L'autre convention : une page du nom de son dossier.
-    expect(pageAddress('voyages/baden', pages).path).toBe('voyages/baden/baden.md')
+describe('une adresse qui nomme une page', () => {
+  it('ajoute `.md` à un nom, sans jamais deviner un INDEX ni une page homonyme', () => {
+    // Un dossier n'a pas de page : l'adresse d'un dossier est résolue AVANT,
+    // sur la route dossier (useRoute). Ici une adresse n'est qu'un nom de page.
+    expect(pageAddress('chantiers/adestia').path).toBe('chantiers/adestia.md')
+    expect(pageAddress('voyages/baden').path).toBe('voyages/baden.md')
   })
 
   it('laisse une adresse de PAGE tranquille', () => {
-    expect(pageAddress('chantiers/adestia/note', pages).path).toBe('chantiers/adestia/note.md')
-  })
-
-  it('répond comme avant quand rien n’est connu — un lien reste un lien', () => {
-    expect(pageAddress('chantiers/adestia').path).toBe('chantiers/adestia.md')
+    expect(pageAddress('chantiers/adestia/note').path).toBe('chantiers/adestia/note.md')
+    expect(pageAddress('chantiers/adestia/INDEX').path).toBe('chantiers/adestia/INDEX.md')
   })
 
   it('garde le magasin demandé', () => {
-    expect(pageAddress('chantiers/adestia?store=famille', pages)).toEqual({
-      path: 'chantiers/adestia/INDEX.md',
+    expect(pageAddress('chantiers/adestia?store=famille')).toEqual({
+      path: 'chantiers/adestia.md',
       store: 'famille',
     })
   })

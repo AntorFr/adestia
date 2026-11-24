@@ -27,6 +27,7 @@ const INSTANCE = {
 function apiFetch(
   instance: { status?: number; body?: unknown } = {},
   pages?: { path: string; title: string; fields: Record<string, unknown> }[],
+  folderSettings: Record<string, Record<string, unknown>> = {},
 ): typeof fetch {
   return ((url: string) => {
     if (String(url).startsWith('/api/instance')) {
@@ -40,7 +41,7 @@ function apiFetch(
     return Promise.resolve({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({ entries: pages ?? [], conversations: [] }),
+      json: () => Promise.resolve({ entries: pages ?? [], conversations: [], folderSettings }),
     } as unknown as Response)
   }) as unknown as typeof fetch
 }
@@ -67,18 +68,24 @@ describe('the landing canvas', () => {
 
     await waitFor(() => expect(container.querySelector('.adestia-tiles')).toBeTruthy())
     expect(container.querySelector('.adestia-pages')).toBeNull()
-    // The forty pages are represented, as one section carrying its count.
-    expect(screen.getByText('40 pages')).toBeTruthy()
+    // The forty pages AND `INDEX.md` — a page like another — are represented,
+    // as one section carrying its count.
+    expect(screen.getByText('41 pages')).toBeTruthy()
   })
 
 })
 
 describe('the breadcrumb', () => {
   const CORPUS = [
-    { path: 'domaines/voyages/INDEX.md', title: 'Voyages', fields: {} },
-    { path: 'domaines/voyages/broceliande-2026/INDEX.md', title: 'Brocéliande 2026', fields: {} },
+    { path: 'domaines/voyages/INDEX.md', title: 'Index', fields: {} },
+    { path: 'domaines/voyages/broceliande-2026/INDEX.md', title: 'Index', fields: {} },
     { path: 'domaines/voyages/broceliande-2026/val-sans-retour.md', title: 'Val sans Retour', fields: {} },
   ]
+  /** The names come from the `.folder.md` of each folder (AD-40), never from an index page. */
+  const SETTINGS = {
+    'domaines/voyages': { title: 'Voyages', revision: 'a' },
+    'domaines/voyages/broceliande-2026': { title: 'Brocéliande 2026', revision: 'b' },
+  }
 
   /** The crumbs, in order, and whether each is a way back. */
   function crumbs(container: HTMLElement): { label: string; walkable: boolean }[] {
@@ -94,7 +101,7 @@ describe('the breadcrumb', () => {
     // The defect: from inside a trip, the trail read "Home / Brocéliande 2026"
     // and the app the trip belongs to was nowhere on it.
     location.hash = '#/section/domaines%2Fvoyages%2Fbroceliande-2026'
-    const { container } = render(<App fetchImpl={apiFetch({}, CORPUS)} />)
+    const { container } = render(<App fetchImpl={apiFetch({}, CORPUS, SETTINGS)} />)
 
     await waitFor(() => expect(crumbs(container).length).toBeGreaterThan(1))
     expect(crumbs(container)).toEqual([
@@ -117,8 +124,13 @@ describe('the breadcrumb', () => {
       base: '/plugins/project-management/',
       types: ['project-management'],
     } as unknown as LoadedPlugin
+    const folderSettings = {
+      chantiers: { title: 'Chantiers', app: 'project-management', revision: 'a' },
+      'chantiers/cuisine': { title: 'Rénovation cuisine', revision: 'b' },
+    }
     const pages = [
-      { path: 'chantiers/INDEX.md', title: 'Chantiers', fields: { app: 'project-management' } },
+      // An ordinary page: it makes `chantiers` a place, and names nothing.
+      { path: 'chantiers/INDEX.md', title: 'Index', fields: {} },
       {
         path: 'chantiers/cuisine/cuisine.md',
         title: 'Rénovation cuisine',
@@ -137,6 +149,7 @@ describe('the breadcrumb', () => {
       },
       section: undefined,
       pages,
+      folderSettings,
       stores: [],
       t: (key: string) => key,
     })
@@ -156,8 +169,13 @@ describe('the breadcrumb', () => {
       base: '/plugins/project-management/',
       types: ['project-management'],
     } as unknown as LoadedPlugin
+    const folderSettings = {
+      chantiers: { title: 'Chantiers', app: 'project-management', revision: 'a' },
+      'chantiers/cuisine': { title: 'Rénovation cuisine', revision: 'b' },
+    }
     const pages = [
-      { path: 'chantiers/INDEX.md', title: 'Chantiers', fields: { app: 'project-management' } },
+      // An ordinary page: it makes `chantiers` a place, and names nothing.
+      { path: 'chantiers/INDEX.md', title: 'Index', fields: {} },
       {
         path: 'chantiers/cuisine/cuisine.md',
         title: 'Rénovation cuisine',
@@ -176,6 +194,7 @@ describe('the breadcrumb', () => {
       },
       section: undefined,
       pages,
+      folderSettings,
       stores: [],
       t: (key: string) => key,
     })
@@ -223,16 +242,11 @@ describe('the breadcrumb', () => {
     ])
   })
 
-  it('leaves the index page’s title on the crumb for every OTHER page', () => {
-    // Nothing is renamed for its own sake: from the page next door, the
-    // folder is the worksite, and the worksite has a title.
+  it('names a crumb from its .folder.md, and never from an INDEX.md page', () => {
+    // AD-40: no page stands for its folder. `INDEX.md` here is titled
+    // « Vue d’ensemble » and must not rename the crumb; the file's title does.
     const pages = [
-      { path: 'chantiers/INDEX.md', title: 'Chantiers', fields: {} },
-      {
-        path: 'chantiers/cuisine/cuisine.md',
-        title: 'Rénovation de la cuisine',
-        fields: {},
-      },
+      { path: 'chantiers/INDEX.md', title: 'Vue d’ensemble', fields: {} },
       { path: 'chantiers/cuisine/devis.md', title: 'Devis', fields: {} },
     ]
     const trail = trailOf({
@@ -243,20 +257,17 @@ describe('the breadcrumb', () => {
       page: { path: 'chantiers/cuisine/devis.md', title: 'Devis' },
       section: undefined,
       pages,
+      folderSettings: { chantiers: { title: 'Chantiers', revision: 'a' } },
       stores: [],
       t: (key: string) => key,
     })
-    expect(trail.map((crumb) => crumb.label)).toEqual([
-      'Chantiers',
-      'Rénovation de la cuisine',
-      'Devis',
-    ])
+    expect(trail.map((crumb) => crumb.label)).toEqual(['Chantiers', 'Cuisine', 'Devis'])
   })
 
   it('skips a grouping folder, which would lead to an empty screen', async () => {
     // `domaines/` holds no page of its own — it is a filing detail, not a place.
     location.hash = '#/section/domaines%2Fvoyages%2Fbroceliande-2026'
-    const { container } = render(<App fetchImpl={apiFetch({}, CORPUS)} />)
+    const { container } = render(<App fetchImpl={apiFetch({}, CORPUS, SETTINGS)} />)
 
     await waitFor(() => expect(crumbs(container).length).toBeGreaterThan(1))
     expect(crumbs(container).map((crumb) => crumb.label)).not.toContain('Domaines')

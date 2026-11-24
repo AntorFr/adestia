@@ -18,12 +18,17 @@ const INSTANCE = {
   turns: { max: 3, running: 0 },
 }
 const PAGES = [
-  { path: 'notes/INDEX.md', title: 'Notes', fields: {} },
+  { path: 'notes/INDEX.md', title: 'Index', fields: {} },
   { path: 'notes/a.md', title: 'A', fields: {} },
   { path: 'notes/b.md', title: 'B', fields: {} },
-  { path: 'voyages/INDEX.md', title: 'Voyages', fields: {} },
+  { path: 'voyages/INDEX.md', title: 'Index', fields: {} },
   { path: 'voyages/c.md', title: 'C', fields: {} },
 ]
+/** The folders are named by their `.folder.md` (AD-40), as the index carries them. */
+const FOLDER_SETTINGS = {
+  notes: { title: 'Notes', revision: 'a' },
+  voyages: { title: 'Voyages', revision: 'b' },
+}
 const BRIEF = {
   generatedAt: '2026-10-17T08:00:00Z',
   items: [
@@ -39,9 +44,9 @@ const fetchImpl = ((url: string) => {
   const u = String(url)
   if (u.startsWith('/api/instance')) return Promise.resolve(json(INSTANCE))
   if (u.startsWith('/api/home/brief')) return Promise.resolve(json(BRIEF))
-  if (u.startsWith('/api/pages/index')) return Promise.resolve(json({ entries: PAGES }))
+  if (u.startsWith('/api/pages/index')) return Promise.resolve(json({ entries: PAGES, folderSettings: FOLDER_SETTINGS }))
   if (u.startsWith('/api/pages/')) return Promise.resolve(json({}, 404))
-  return Promise.resolve(json({ entries: PAGES, conversations: [] }))
+  return Promise.resolve(json({ entries: PAGES, conversations: [], folderSettings: FOLDER_SETTINGS }))
 }) as unknown as typeof fetch
 
 // The first case that opens a page pays for importing the editor; pay it here, not inside a waitFor.
