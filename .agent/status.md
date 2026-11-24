@@ -4,7 +4,7 @@
 ## Version courante
 Version courante : **`v0.99.1`** (correctif de test seul : le test B-19 du bandeau « le serveur ne répond pas » sur un 502 laisse la page jouer les gestionnaires des réponses drainées avant d'attendre le bandeau, `rouge-adestia-23`) ; avant elle **`v0.99.0`**, livraison de l'epic `adestia-decouverte` dans `main` ; avant elle, dernier tag stable : **`v0.98.19`** (correctif de test seul, `rouge-adestia-22` ; avant lui `v0.98.18`, `v0.98.17`, `v0.98.16` (`adestia-ecrans-places`), `v0.98.15`, `v0.98.14`, `v0.98.13` (`adestia-web`)). L'histoire des versions et ses raisons sont dans [CHANGELOG.md](../CHANGELOG.md), pas ici.
 
-- Branche de travail : `feature/adestia-decouverte-plugins` (créations des plugins sur le +, voir plus bas ; dernière feature de l'epic livrée : `feature/adestia-decouverte-renommer`, B-35 ; avant elle `feature/adestia-decouverte-creer-dossier`, E-38 : le + et New folder ; `POST /api/folders`, champ `folders` de l'index).
+- Branche de travail : `feature/adestia-dossiers-fichier-reglages` (`.folder.md`, voir plus bas ; epic `adestia-dossiers` en cours, branche `epic/adestia-dossiers`) ; avant elle, dans l'epic `adestia-decouverte`, `feature/adestia-decouverte-plugins` (créations des plugins sur le +, voir plus bas ; dernière feature de l'epic livrée : `feature/adestia-decouverte-renommer`, B-35 ; avant elle `feature/adestia-decouverte-creer-dossier`, E-38 : le + et New folder ; `POST /api/folders`, champ `folders` de l'index).
 
 Déploiement des instances Alfred, Skippy et Nestor : **non attesté ici** (dernière mention commune v0.81.0 le 30/09 ; v0.87.2 dite déployée le 15/10 sans détail par instance).
 
