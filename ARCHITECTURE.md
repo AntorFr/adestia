@@ -92,7 +92,7 @@ Outside `packages/`:
   `routes/restart.ts`, `routes/instance.ts` (`/api/instance`, `buildVersion`).
 - **Attachments** — `attachments.ts` (`AttachmentInbox`, `inboxDir`), `routes/upload.ts`.
 - **Shell tools** — `shell-tools.ts` (`ShellToolsService`: `rename_conversation`, `new_id`,
-  `find_pages`, unix socket plus bridge script).
+  `find_pages`, `folder_settings`, unix socket plus bridge script).
 - **PWA** — `webmanifest.ts` (`baseManifest`, `mergeSkinManifest`, `withInstanceName`),
   served by `static.ts`.
 

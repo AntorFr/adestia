@@ -36,6 +36,7 @@ import { join } from 'node:path'
 import type { ShellToolOutcome, ShellToolSpec, ShellToolsHandle } from '@antorfr/adestia-drivers'
 
 import type { ConversationStore } from './conversations.js'
+import { folderSettingsOf, writeFolderSettings } from './folder-settings.js'
 import { parseFrontmatter } from './frontmatter.js'
 import { titleOf } from './pages.js'
 import { listAll, type Store } from './stores.js'
@@ -226,7 +227,7 @@ export class ShellToolsService {
       spec: {
         name: 'find_pages',
         description:
-          'Where a subject is written down. Searches the memory\'s INDEX — every page\'s '
+          'Where a subject is written down. Searches every page\'s '
           + 'path, title, tags and frontmatter — and answers with a line per page: where it '
           + 'sits, what it is called, its type, its domain and its status. Answers WHERE, '
           + 'never what: it does not read a page and does not look inside one. To search '
@@ -269,6 +270,81 @@ export class ShellToolsService {
       },
       handler: (_ctx, args) => this.#findPages(args),
     })
+
+    this.#register({
+      spec: {
+        name: 'folder_settings',
+        description:
+          'Read or set the settings of a folder of the memory (title, icon, colour, plugin, '
+          + 'attachments, landing page). `get` answers the settings and their `revision`. `set` '
+          + 'changes ONLY the settings you pass, keeps the others, and removes one given as an '
+          + 'empty string; pass the `revision` you read, and a folder changed since is refused. '
+          + 'Settings only, never text.',
+        params: [
+          { name: 'action', description: '`get` or `set`.' },
+          { name: 'folder', description: 'The folder, as its path in the memory (e.g. `projets/maison`).' },
+          { name: 'title', description: 'The folder\'s title (set).', optional: true },
+          { name: 'ico', description: 'The folder\'s icon (set).', optional: true },
+          { name: 'couleur', description: 'The folder\'s colour, one of the palette\'s hues (set).', optional: true },
+          { name: 'app', description: 'The plugin that holds this folder (set).', optional: true },
+          { name: 'attachments', description: '`true` or `false` (set).', optional: true },
+          { name: 'page', description: 'A `.md` page of this folder that opens it (set).', optional: true },
+          { name: 'revision', description: 'The `revision` a `get` returned (set).', optional: true },
+        ],
+      },
+      handler: (_ctx, args) => this.#folderSettings(args),
+    })
+  }
+
+  /** `folder_settings`: the route's rules, through the module that owns them. */
+  async #folderSettings(args: Readonly<Record<string, string>>): Promise<string> {
+    if (this.#stores.length === 0) return 'This instance carries no memory.'
+    const folder = (args['folder'] ?? '').trim().replace(/^\/+|\/+$/g, '')
+    const action = (args['action'] ?? '').trim()
+    if (action !== 'get' && action !== 'set') throw new ShellToolError('action must be "get" or "set"')
+    if (folder === '') throw new ShellToolError('folder is required')
+
+    const show = (settings: object, revision: string | undefined): string =>
+      JSON.stringify({ folder, settings, ...(revision === undefined ? {} : { revision }) })
+
+    const current = (await folderSettingsOf(this.#stores, [folder]))[folder]
+    if (action === 'get') {
+      if (!current) {
+        const probe = await writeFolderSettings(this.#stores, { path: folder, settings: {}, revision: '-' })
+        if (!probe.ok && probe.status === 404) throw new ShellToolError('no such folder')
+        return show({}, undefined)
+      }
+      const { revision, ...settings } = current
+      return show(settings, revision)
+    }
+
+    const { revision: read, ...kept } = current ?? { revision: undefined }
+    const next: Record<string, unknown> = { ...kept }
+    for (const key of ['title', 'ico', 'couleur', 'app', 'page'] as const) {
+      const value = args[key]
+      if (value === undefined) continue
+      if (value.trim() === '') delete next[key]
+      else next[key] = value
+    }
+    const attachments = args['attachments']
+    if (attachments !== undefined) {
+      if (attachments.trim() === '') delete next['attachments']
+      else if (attachments === 'true' || attachments === 'false') next['attachments'] = attachments === 'true'
+      else throw new ShellToolError('attachments must be "true" or "false"')
+    }
+    const done = await writeFolderSettings(this.#stores, {
+      path: folder,
+      settings: next,
+      ...((args['revision'] ?? read) === undefined ? {} : { revision: args['revision'] ?? read }),
+    })
+    if (!done.ok) {
+      throw new ShellToolError(
+        done.status === 409
+          ? `refused: the settings changed since they were read — get them again (revision ${done.revision ?? 'none'})`
+          : `refused: ${done.error}`,
+      )
+    }
+    return show(done.settings, done.revision)
   }
 
   /**
