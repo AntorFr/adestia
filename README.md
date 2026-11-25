@@ -128,7 +128,7 @@ Adestia's own interface.
   while the plugins and page index arrive; pages, their editor and properties
   use shared controls and the instance language (English or French).
   A page's other files — the plan as a PDF, the photo of the dish — sit next to
-  it on disk, display in it, and are listed under it as attachments. What a
+  it on disk, display in it, and are listed under it as attachments; a folder's own files (and those of its `assets/`) form an **Attachments** brick in its view, except the data files an enabled plugin declares (`dataFiles` in its manifest). What a
   page's status says is finished folds away rather than crowding the live ones.
 - **Extensions at runtime**: drop a plugin folder in, name it in the config
   (or switch it on from Settings → Plugins, which writes the same file),
