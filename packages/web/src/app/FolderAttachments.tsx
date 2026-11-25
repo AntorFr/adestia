@@ -22,8 +22,11 @@ export function FolderAttachments({
   fetchImpl = fetch,
   locale = 'en',
   t = (key) => key,
+  announce = true,
 }: {
   readonly folder: string
+  /** Draw the shell's wait row while asking; false waits silently (the section is still empty). */
+  readonly announce?: boolean
   readonly fetchImpl?: typeof fetch
   readonly locale?: string
   readonly t?: (key: string) => string
@@ -48,7 +51,7 @@ export function FolderAttachments({
     }
   }, [folder, fetchImpl])
 
-  if (files === undefined) return <Loading t={t} />
+  if (files === undefined) return announce ? <Loading t={t} /> : null
   if (files.length === 0) return null
 
   const shown = all ? files : files.slice(0, ATTACHMENT_ROWS)

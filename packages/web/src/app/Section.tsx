@@ -436,6 +436,7 @@ export function Section({
         <FolderAttachments
           folder={path}
           t={t}
+          announce={rooms.length > 0 || all.length > 0}
           {...(fetchImpl ? { fetchImpl } : {})}
           {...(locale ? { locale } : {})}
         />
