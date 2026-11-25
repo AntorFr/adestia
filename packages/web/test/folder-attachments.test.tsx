@@ -76,7 +76,7 @@ describe('the folder Attachments brick', () => {
   it('is never asked for when the folder says attachments: false', async () => {
     const fetchImpl = answer([file('a.pdf', 'pdf')])
     const { container } = render(
-      <Section {...props} fetchImpl={fetchImpl} folderSettings={{ voyage: { attachments: false } }} />,
+      <Section {...props} fetchImpl={fetchImpl} folderSettings={{ voyage: { revision: 'r', attachments: false } }} />,
     )
     await new Promise((r) => setTimeout(r, 20))
     expect(container.querySelector('.adestia-folder-files')).toBeNull()
@@ -85,7 +85,7 @@ describe('the folder Attachments brick', () => {
 
   it('shows the brick when attachments is true or unset', async () => {
     render(
-      <Section {...props} fetchImpl={answer([file('a.pdf', 'pdf')])} folderSettings={{ voyage: { attachments: true } }} />,
+      <Section {...props} fetchImpl={answer([file('a.pdf', 'pdf')])} folderSettings={{ voyage: { revision: 'r', attachments: true } }} />,
     )
     await screen.findByText('a.pdf')
   })
