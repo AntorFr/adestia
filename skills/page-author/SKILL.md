@@ -31,7 +31,7 @@ page's first `#` heading, and failing that the file name.
 That middle step was nearly removed the day this contract was written, on the
 argument that a page should be able to open with any heading without changing
 what it is called in a list. Measured against a real corpus it would have
-renamed four pages in five: three different `INDEX.md` all reading "INDEX" in
+renamed four pages in five: three different pages all reading "INDEX" in
 the same list, and "Etabli MFT maison" reading "etabli-mft". A fallback that
 carries most of the titles people actually see is not a guess — it is the
 convention they already write.
@@ -267,39 +267,53 @@ markdown at all (geometry, a timeline) but still belongs to one page's world.
 Pick by what the data actually is, not by habit: forcing timeline JSON into
 frontmatter to stay in the `type` camp is worse than an honest sibling file.
 
-## Sections — folders, and nothing to maintain
+## A folder with its attachments
 
 The landing screen shows the workspace's own shape: **any folder holding
 pages is a section**, and one holding sections is where they live. Nothing
 declares this and nothing has to be kept in step — move a page, the tiles
 follow.
 
-An index page is **optional**, and its only job is to DRESS the section:
+A folder is made of three kinds of thing, and each has ONE place:
 
-```markdown
-<!-- domaines/sante/INDEX.md — or sante/sante.md, either works -->
----
-title: Santé
-ico: ❤️
-couleur: rouge
----
+- **its text** is an ordinary page in the folder (`maison/presentation.md`),
+  written like any other page, with the title and `ico:` of that page;
+- **its files** are put in the folder itself (`maison/devis.pdf`,
+  `maison/assets/avant.jpg`), and open under the folder's **Attachments** at
+  `#/section/<folder>` (the same files `GET /api/files?folder=<folder>` lists);
+- **its settings** — the name shown, the icon, the colour, the plugin that holds
+  it, whether the Attachments are shown, the page that replaces its view — are
+  in `<folder>/.folder.md`, a file of front matter and nothing else.
+
+You write the settings with the `folder_settings` tool, never by writing
+`.folder.md` yourself: the tool refuses a colour outside the palette and a
+stale revision. `action: get` answers the settings and a `revision`; `action:
+set` with that `revision` changes only the keys you pass and keeps the others.
+
+```
+folder_settings  action=set  folder=domaines/sante  title=Santé  ico=❤️  couleur=rouge  revision=<read>
 ```
 
-| Field | Effect |
+| Setting | Effect |
 |---|---|
 | `title` | the tile's label; without it, the folder's own name, prettified |
 | `ico` | an emoji on the tile's plate; without it, a neutral mark |
 | `couleur` | one of the twelve named hues — the skin decides what each means, so never a hex |
+| `app` | the plugin whose screen opens the folder |
+| `attachments` | `false` hides the Attachments brick |
+| `page` | a `.md` page of the folder that opens it instead of the classic view |
 
-Two spellings are read, because a body of pages usually has both: `INDEX.md`,
-and a page named after its folder (`dietetique/dietetique.md`) — the second
-suits a section that is itself one subject with its own assets. Either way
-that page is the section's overview, not one of its contents, and it is not
-listed among them.
+To make a folder with its attachments: write its text as an ordinary page,
+file the documents and photos in the folder, then call `folder_settings` if it
+needs a name, an icon or a colour of its own. Nothing else — no page to
+create so that the folder exists or looks right.
 
-**Do not create index pages for the sake of it.** A section with none is a
-section: it simply wears its folder's name. Write one when the name alone is
-not enough, or when the section deserves a colour — never as bookkeeping.
+**Never create an `INDEX.md`, nor a page named after its folder
+(`sante/sante.md`), to dress or to own a folder.** Neither dresses anything:
+they are ordinary pages, listed, counted and searched like the others, and the
+`title`, `ico` or `couleur` written in them colour nothing. Text about the
+folder is a page like any other, named for what it says. A section with no
+settings is a section: it simply wears its folder's name.
 
 ## Files a page carries — its attachments
 
@@ -485,11 +499,10 @@ written in the block:
 ```
 
 - **`depth`** gives three answers, and the middle one matters. `self` is what
-  is filed directly here. `children` is that **plus the index page of each
-  direct sub-folder** — because a sub-subject is a FOLDER in this product, so
-  the row standing for it is that folder's index, not a page beside it. A rule
-  that only looked at files would list a project's loose notes and miss every
-  one of its sub-projects. `subtree` is everything below, at any depth.
+  is filed directly here. `children` reads the same (a word kept so an
+  older block still works): the pages filed directly in the folder, none
+  standing for a sub-folder, since no page does. `subtree` is everything below,
+  at any depth.
 - **`type`** keeps only the children whose own `type:` matches, comma-separated
   for several (`type=chantier,lot`). **`depth` says how far to look, `type`
   says what to keep**, and you usually want both: a worksite's folder holds
@@ -522,9 +535,7 @@ written in the block:
   list itself: a list is bare, and `frame=card` puts it in a card — rows or
   grid inside.
 - Each row wears a **glyph**, and you never write it on the list: the child's
-  own `ico:` if it declares one — the same field the tiles and the section
-  cards read — else `◆` when the row stands for a FOLDER and `•` when it is a
-  plain page. So giving a page an `ico:` dresses it everywhere at once.
+  own `ico:` if it declares one, else `•`. So giving a page an `ico:` dresses it everywhere at once.
 
 **Never write a default.** `depth=children`, `closed=fold`, `source=children`
 and `view=rows` are what you already get; writing one reads as a decision to
@@ -579,8 +590,7 @@ Every file opens in a tab, as it does from the strip. And the strip stops
 repeating what the body already lists: a files list with no `type` takes every
 attachment out of it, one with `type=pdf` only the PDFs.
 
-A page that carries this block never lists itself, and a folder's index page is
-the folder rather than one of its contents.
+A page that carries this block never lists itself.
 
 ⚠️ **It needs the page index to answer.** Rendered where that index is not at
 hand — inside a chat bubble, a preview — it SAYS so instead of drawing an empty
