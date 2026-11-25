@@ -223,6 +223,8 @@ export function Canvas(props: CanvasProps) {
         {...(props.folderSettings ? { folderSettings: props.folderSettings } : {})}
         {...(creatable ? { emptyAction: create('buttons') } : {})}
         stores={stores}
+        fetchImpl={props.fetchImpl}
+        locale={props.locale}
         openSection={openSection}
         openPage={openPage}
         {...(props.ready === undefined ? {} : { ready: props.ready && props.indexed !== false })}

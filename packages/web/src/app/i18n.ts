@@ -471,6 +471,8 @@ const FR: Readonly<Record<string, string>> = {
   'The day this page is about, when that is not the day it was written.':
     'Le jour dont parle la fiche, quand ce n’est pas celui où elle a été écrite.',
   'Attached files': 'Pièces jointes',
+  Attachments: 'Pièces jointes',
+  'Show all %n': 'Tout afficher (%n)',
   'Drop files to attach them to this page':
     'Déposez des fichiers pour les joindre à cette fiche',
   'File the attached files with the page “%title” (%path).':

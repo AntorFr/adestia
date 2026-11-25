@@ -9,6 +9,7 @@
     "./web/atelier.css"
   ],
   "api": "./api.mjs",
+  "dataFiles": ["assets/workbook.json"],
   "skills": [
     "./skills/workbook-json/SKILL.md",
     "./skills/regles-json/SKILL.md"

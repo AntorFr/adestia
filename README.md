@@ -110,7 +110,7 @@ Adestia's own interface.
   rendered as the markdown it is, through the same renderer a page is read
   with, so a workspace path it names opens that page; what you typed stays
   exactly as you typed it.
-- **Folder settings in `.folder.md`**: a folder's title, icon, colour, owning plugin (`app`), attachments switch and replacement page (`page`) live in `<folder>/.folder.md`, front matter only. The server reads it into the page index (`folderSettings`), `PUT /api/folders/settings` and the agent's `folder_settings` tool write it, and the file never shows as a page, a count or a file. `INDEX.md` and `<folder>/<folder>.md` are ordinary pages. The settings screen is a later slice; see `docs/donnees.md`, *What `adestia-dossiers` changes*.
+- **Folder settings in `.folder.md`**: a folder's title, icon, colour, owning plugin (`app`), attachments switch and replacement page (`page`) live in `<folder>/.folder.md`, front matter only. The server reads it into the page index (`folderSettings`), `PUT /api/folders/settings` and the agent's `folder_settings` tool write it, and the file never shows as a page, a count or a file. `INDEX.md` and `<folder>/<folder>.md` are ordinary pages. The Attachments brick is switched off today by `attachments: false` in that file (or by the agent's tool); the settings screen (E-39) is a later slice; see `docs/donnees.md`, *What `adestia-dossiers` changes*.
 - **A + to create**: beside Ask on the home and in the header of a folder, it lists what can be
   created here. That is **New folder** (a name reduced to a slug, then the empty folder, which shows as a tile)
   and one line per creation an enabled plugin declares in its manifest (`creations`): Project status,
@@ -128,7 +128,7 @@ Adestia's own interface.
   while the plugins and page index arrive; pages, their editor and properties
   use shared controls and the instance language (English or French).
   A page's other files — the plan as a PDF, the photo of the dish — sit next to
-  it on disk, display in it, and are listed under it as attachments. What a
+  it on disk, display in it, and are listed under it as attachments; a folder's own files (and those of its `assets/`) form an **Attachments** brick in its view, except the data files an enabled plugin declares (a disabled plugin hides nothing) (`dataFiles` in its manifest). What a
   page's status says is finished folds away rather than crowding the live ones.
 - **Extensions at runtime**: drop a plugin folder in, name it in the config
   (or switch it on from Settings → Plugins, which writes the same file),
