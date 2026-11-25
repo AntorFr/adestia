@@ -133,6 +133,82 @@ describe('GET /api/files', () => {
   })
 })
 
+describe('GET /api/files?folder=', () => {
+  const voyages = (active: boolean) =>
+    [{ manifest: { id: 'voyages', dataFiles: ['assets/voyage.json'] }, dir: '/p/voyages', active }] as never
+
+  const appWith = async (plugins: unknown, stores: Store[] = [store]) => {
+    const a = Fastify()
+    registerFiles(a, { stores, plugins: plugins as never })
+    await a.ready()
+    return a
+  }
+  const list = async (a: FastifyInstance, folder: string) =>
+    (await a.inject({ url: `/api/files?folder=${encodeURIComponent(folder)}` }).then((r) => r.json())).files.map(
+      (f: { path: string }) => f.path,
+    )
+
+  const seed = async () => {
+    await write('voyage/page.md', '# P')
+    await write('voyage/.folder.md', '---\ntitle: V\n---\n')
+    await write('voyage/plan.pdf', 'PDF')
+    await write('voyage/a.jpg')
+    await write('voyage/b.jpg')
+    await write('voyage/assets/carte.png')
+    await write('voyage/assets/voyage.json', '{}')
+    await write('voyage/sous/deep.pdf')
+  }
+
+  it('lists direct files and assets, without pages, .folder.md or an active plugin data file', async () => {
+    await seed()
+    expect(await list(await appWith(voyages(true)), 'voyage')).toEqual([
+      'voyage/a.jpg',
+      'voyage/assets/carte.png',
+      'voyage/b.jpg',
+      'voyage/plan.pdf',
+    ])
+  })
+
+  it('keeps the data file when the plugin is disabled', async () => {
+    await seed()
+    const paths = await list(await appWith(voyages(false)), 'voyage')
+    expect(paths).toContain('voyage/assets/voyage.json')
+    expect(paths).not.toContain('voyage/.folder.md')
+  })
+
+  it('works without plugins and tolerates slashes around the folder', async () => {
+    await seed()
+    const paths = await list(await appWith(undefined), '/voyage/')
+    expect(paths).toContain('voyage/assets/voyage.json')
+    expect(paths).toHaveLength(5)
+  })
+
+  it('matches a data file pattern against the path inside the folder only', async () => {
+    await write('x/assets/voyage.json')
+    await write('x/sous/assets/voyage.json')
+    const plugins = voyages(true)
+    // only the folder's own assets/voyage.json is declared
+    expect(await list(await appWith(plugins), 'x')).toEqual([])
+    expect(await list(await appWith(plugins), 'x/sous')).toEqual([])
+  })
+
+  it('answers {files: []} for an unknown folder, a traversal, the plumbing and an empty value', async () => {
+    const a = await appWith(voyages(true))
+    expect(await list(a, 'nope')).toEqual([])
+    expect(await list(a, '../../etc')).toEqual([])
+    expect(await list(a, '.git')).toEqual([])
+    expect(await list(a, '')).toEqual(await a.inject({ url: '/api/files' }).then((r) => r.json().files.map((f: { path: string }) => f.path)))
+  })
+
+  it('answers like ?page= for a store that is not readable', async () => {
+    const missing = resolveStores([{ id: 'ghost', path: join(root, 'absent') }], root).stores[0]!
+    const a = await appWith(voyages(true), [missing])
+    const folder = await a.inject({ url: '/api/files?folder=voyage' }).then((r) => r.json())
+    const page = await a.inject({ url: '/api/files?page=voyage/p.md' }).then((r) => r.json())
+    expect(folder).toEqual(page)
+  })
+})
+
 describe('GET /api/files/*', () => {
   it('hands over an image in place', async () => {
     await write('diy/assets/avant.jpg', 'JPEGBYTES')
