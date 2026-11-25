@@ -58,4 +58,16 @@
 .adestia-crumbs__sep { color: var(--text-faint); }
 .adestia-crumbs b { color: var(--text); font-weight: 600; }
 
+.adestia-folder-link,
+.adestia-folder-corner {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+}
+.adestia-folder-link:hover,
+.adestia-folder-corner:hover { color: var(--text); }
+.adestia-folder-corner { display: block; width: max-content; margin: 0 0 var(--space-2) auto; }
 .adestia-canvas__driver { font-size: var(--text-sm); color: var(--text-faint); }

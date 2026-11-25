@@ -11,14 +11,15 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { Chat } from '../chat/Chat.js'
 import type { BlockComponents } from '../editor/Reader.js'
 import { FatalGate, LoadingGate, RefusedGate, SignInGate } from './Gates.js'
-import { ScreenEdges } from './ScreenEdges.js'
+import { FolderCorner, ScreenEdges } from './ScreenEdges.js'
 import { Canvas } from './Canvas.js'
 import { CanvasHeader } from './CanvasHeader.js'
 import { composerButtonsOf, useContributions } from './useContributions.js'
 import { resolveLocale, translator } from './i18n.js'
 import { wordsFor } from '../plugins/words.js'
 import { SkinSlot } from './SkinSlot.js'
-import { folderRoute, pageRoute } from './owners.js'
+import { classicRoute, folderOwnedAt, folderRoute, pageRoute, replacedFolder } from './owners.js'
+import { sectionAt } from './sections.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
 import { Offline } from './Offline.js'
 import { Problems } from './Problems.js'
@@ -168,6 +169,18 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
     [loaded, pages, folderSettings],
   )
 
+  /** The **Folder** link (B-39/B-40): to E-3 `?classic`, drawn by the shell on a replacement page or on the screen of a plugin that owns the folder. */
+  const folderLinks = useMemo(() => {
+    const shown = (folder: string) => ({
+      href: `#${classicRoute(folder)}`,
+      name: sectionAt(pages, folder, folders, folderSettings)?.title ?? folder,
+    })
+    const replaced = pagePath ? replacedFolder(pagePath, pages, folderSettings) : undefined
+    if (replaced !== undefined) return { header: shown(replaced) }
+    const owned = openApp ? folderOwnedAt(loaded, route, folders, folderSettings) : undefined
+    return owned !== undefined ? { corner: shown(owned) } : {}
+  }, [pagePath, openApp, route, loaded, pages, folders, folderSettings])
+
   const goHome = useCallback(() => {
     location.hash = ''
   }, [])
@@ -258,9 +271,11 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
           fetchImpl={fetchImpl}
           locale={locale}
           t={t}
+          {...(folderLinks.header ? { folderLink: folderLinks.header } : {})}
         />
 
         <div className="adestia-canvas__body">
+        {folderLinks.corner && <FolderCorner href={folderLinks.corner.href} name={folderLinks.corner.name} t={t} />}
         {!bannerInChat && offlineBanner}
         <Problems instance={instance} failures={failures} loaded={loaded} folderSettings={folderSettings} t={t} locale={locale} />
 

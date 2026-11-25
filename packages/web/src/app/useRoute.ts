@@ -130,9 +130,17 @@ export function useRoute({
       ? asked.path.replace(/\.md$/i, '')
       : undefined
   const address = folderAddress === undefined ? asked : undefined
-  const section = route.startsWith('/section/')
-    ? decodePath(route.slice('/section/'.length))
-    : folderAddress
+  const sectionRest = route.startsWith('/section/') ? route.slice('/section/'.length) : undefined
+  const sectionCut = sectionRest?.indexOf('?') ?? -1
+  // `?classic` forces E-3 whatever the folder's settings or owner say (AD-42).
+  const classic =
+    sectionRest !== undefined &&
+    sectionCut !== -1 &&
+    new URLSearchParams(sectionRest.slice(sectionCut + 1)).has('classic')
+  const section =
+    sectionRest !== undefined
+      ? decodePath(sectionCut === -1 ? sectionRest : sectionRest.slice(0, sectionCut))
+      : folderAddress
   const pagePath = address?.path
   const pageStore = address?.store
 
@@ -149,7 +157,7 @@ export function useRoute({
    * no business sitting in their history for Back to walk into.
    */
   useEffect(() => {
-    if (section === undefined) return
+    if (section === undefined || classic) return
     // The SAME resolution a CLICK makes. This asked `routeForPath` alone,
     // which knows a plugin's own screen and nothing else — not the folder's
     // own `app:` declaration, and not the worksite it holds. So a link led to
@@ -164,7 +172,7 @@ export function useRoute({
     // into the folder's route.
     const where = folderRoute(loaded, section, pages, folderSettings)
     if (where !== route) location.replace(`#${where}`)
-  }, [section, route, loaded, pages, folderSettings])
+  }, [section, route, classic, loaded, pages, folderSettings])
 
   /**
    * The addresses settings used to have, handed over rather than kept.
@@ -191,5 +199,5 @@ export function useRoute({
     }
   }, [route])
 
-  return { route, openApp, settings, settingsPage, section, pagePath, pageStore }
+  return { route, openApp, settings, settingsPage, section, classic, pagePath, pageStore }
 }

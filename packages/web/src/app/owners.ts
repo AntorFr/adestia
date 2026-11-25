@@ -356,8 +356,60 @@ export function folderRoute(
   if (owned) return owned
   const owner = ownerOf(plugins, folder, settings)
   const face = owner ? faceOf(owner, pages, folder) : undefined
-  if (!face) return sectionRoute(folder)
-  return pageRoute(face)
+  if (face) return pageRoute(face)
+  // Then the page the folder chose (AD-42), when its file is there: a `page`
+  // naming a missing file is ignored, never an error screen.
+  const chosen = replacementOf(folder, pages, settings)
+  if (chosen) return pageRoute(chosen)
+  return sectionRoute(folder)
+}
+
+/** The replacement page of a folder (AD-42): its path, only when `page` is set and the file exists. */
+export function replacementOf(
+  folder: string,
+  pages: readonly IndexEntry[],
+  settings: FolderSettingsMap,
+): string | undefined {
+  const name = settings[folder]?.page
+  if (typeof name !== 'string' || name === '') return undefined
+  const path = `${folder}/${name}`
+  return pages.some((entry) => entry.path === path) ? path : undefined
+}
+
+/**
+ * The folder a page stands for, when it is that folder's replacement page.
+ * Drives the **Folder** link of E-4, which the shell draws and nobody else.
+ */
+export function replacedFolder(
+  path: string,
+  pages: readonly IndexEntry[],
+  settings: FolderSettingsMap,
+): string | undefined {
+  const cut = path.lastIndexOf('/')
+  if (cut <= 0) return undefined
+  const folder = path.slice(0, cut)
+  return replacementOf(folder, pages, settings) === path ? folder : undefined
+}
+
+/** `#/section/<folder>?classic` — E-3 whatever the folder's settings say. */
+export function classicRoute(folder: string): string {
+  return `${sectionRoute(folder)}?classic`
+}
+
+/**
+ * The folder whose screen is the one open, when a plugin owns it: the
+ * shallowest folder whose address is exactly the open route.
+ */
+export function folderOwnedAt(
+  plugins: readonly LoadedPlugin[],
+  route: string,
+  folders: readonly string[],
+  settings: FolderSettingsMap,
+): string | undefined {
+  const candidates = new Set([...folders, ...Object.keys(settings)])
+  return [...candidates]
+    .filter((folder) => routeForPath(plugins, folder, settings) === route)
+    .sort((a, b) => a.split('/').length - b.split('/').length || a.localeCompare(b))[0]
 }
 
 /**

@@ -49,3 +49,25 @@ export function ScreenEdges({
     </div>
   )
 }
+
+/**
+ * The **Folder** link on the screen of a plugin that owns the folder (B-39).
+ *
+ * Drawn by the shell, in the corner, never by the plugin: the way back to the
+ * classic view cannot depend on a plugin remembering to offer it.
+ */
+export function FolderCorner({
+  href,
+  name,
+  t,
+}: {
+  readonly href: string
+  readonly name: string
+  readonly t: (key: string) => string
+}) {
+  return (
+    <a className="adestia-folder-corner" href={href} title={name}>
+      {t('Folder')}
+    </a>
+  )
+}
