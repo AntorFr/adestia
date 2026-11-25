@@ -96,6 +96,7 @@ describe('tests d\'écran hors écran — inventaire (docs/tests-ecran)', () => 
     // born after the inventory (epic/adestia-pages, feature adestia-coller-tableau), listed in docs/tests-ecran/README.md and still to classify)
     expect(horsInventaire).toEqual([
       'bench/tests/bench-once.test.mjs',
+      'bench/tests/folders-migration-ensemble.test.mjs',
       'bench/tests/niveaux-besoin.test.mjs',
       'bench/tests/niveaux-ensemble.test.mjs',
       'packages/server/test/besoin-dossiers-pieces-jointes-ecran-ensemble.test.ts',

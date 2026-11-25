@@ -1228,3 +1228,15 @@ branch and that `test:plugins` is replayed after a red vitest run.
   that way, to look at the tiles and headers.
 - Tests, `scripts/ecrans.json` and the docs (README, architecture, screens, status) follow; the
   tests that encoded index pages as folders were rewritten.
+
+## Unreleased (adestia-dossiers, after `v0.100.0-adestia-dossiers.1`)
+
+- **An instance in the old folder format is brought to the new one by its own agent** — the
+  skill `folders-migration` tells it to copy `title`, `ico`, `couleur` and `app` from every
+  `INDEX.md` and homonymous `x/x.md` into the folder's `.folder.md` through `folder_settings`,
+  to remove `couleur` and `app` from the page (which keeps its text, `title` and `ico`), and to
+  report. It deletes nothing and a second run changes no file. The server never migrates.
+- **The window between the deploy and the migration**: from the deploy, nothing reads the old
+  settings in a page, so a folder dressed by an index loses its icon and colour and, if the
+  index declared an `app:`, its plugin (the folder then follows the plugin's `absorbs`) until
+  the owner asks the agent to migrate. Known and accepted.
