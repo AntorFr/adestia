@@ -1212,3 +1212,19 @@ branch and that `test:plugins` is replayed after a red vitest run.
 ## v0.99.1
 
 - **The "server not responding" banner browser test no longer fails under load** — the B-19 test that checks the banner appears on a 502 while the probe fails now lets the page run the handlers triggered by the drained answers before waiting for the banner, and names what answered since the route was armed if it still fails. Tests only: nothing changes for users.
+
+## v0.100.0-adestia-dossiers.1
+
+- **A folder is dressed by its own `.folder.md`, and no page stands for the folder any more** —
+  the server reads and writes a `.folder.md` file in each folder and serves its settings in the
+  page index; the shell dresses folders (tiles, headers, livery) from those settings. An `INDEX`
+  page is now an ordinary page, no longer the folder's stand-in, and the folder address route and
+  the reader's rows follow. The folder settings screen is E-39 (main kept E-37 for Plugins and
+  E-38 for Create).
+- **The agent can change a folder's settings** — a `folder_settings` tool goes through the same
+  settings path as the route, merging what it is given into the existing settings, and is listed
+  in the socket's `tools/list`.
+- **The bench seeds** declare their plugin ownership in `.folder.md` and include folders dressed
+  that way, to look at the tiles and headers.
+- Tests, `scripts/ecrans.json` and the docs (README, architecture, screens, status) follow; the
+  tests that encoded index pages as folders were rewritten.
