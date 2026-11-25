@@ -120,6 +120,21 @@ export function humanSize(bytes: number, locale = 'en'): string {
   return `${value.toLocaleString(locale, { maximumFractionDigits: value < 10 ? 1 : 0 })} ${units[unit]}`
 }
 
+/** One file as a row: glyph, name, size; it opens in a tab (the viewer or the browser's download). */
+export function AttachmentRow({ file, locale = 'en' }: { readonly file: Attachment; readonly locale?: string }) {
+  return (
+    <li>
+      <a className="adestia-page-files__file" href={fileUrl(file.path)} target="_blank" rel="noreferrer">
+        <span className="adestia-page-files__glyph" aria-hidden="true">
+          <Icon name={KIND_ICONS[file.kind]} />
+        </span>
+        <span className="adestia-page-files__name" title={file.name}>{file.name}</span>
+        <span className="adestia-page-files__size">{humanSize(file.bytes, locale)}</span>
+      </a>
+    </li>
+  )
+}
+
 export function Attachments({
   path,
   markdown,
@@ -188,20 +203,7 @@ export function Attachments({
       {others.length > 0 && (
         <ul className="adestia-page-files__list">
           {others.map((file) => (
-            <li key={file.path}>
-              <a
-                className="adestia-page-files__file"
-                href={fileUrl(file.path)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <span className="adestia-page-files__glyph" aria-hidden="true">
-                  <Icon name={KIND_ICONS[file.kind]} />
-                </span>
-                <span className="adestia-page-files__name" title={file.name}>{file.name}</span>
-                <span className="adestia-page-files__size">{humanSize(file.bytes, locale)}</span>
-              </a>
-            </li>
+            <AttachmentRow key={file.path} file={file} locale={locale} />
           ))}
         </ul>
       )}

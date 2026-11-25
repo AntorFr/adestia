@@ -22,6 +22,7 @@ import { isFinished, toneOf } from '@antorfr/adestia-content'
 import type { IndexEntry, SectionTile, StoreInfo } from './sections.js'
 import { Icon } from './Icon.js'
 import { EmptyState } from './ui/EmptyState.js'
+import { FolderAttachments } from './FolderAttachments.js'
 import { Loading } from './ui/Loading.js'
 import { pagesIn, subsectionsOf, type FolderSettingsMap } from './sections.js'
 
@@ -48,6 +49,9 @@ export interface SectionProps {
   readonly folderSettings?: FolderSettingsMap
   /** What fills an empty folder: the creation entries as buttons. */
   readonly emptyAction?: ReactNode
+  /** The shell's fetch, for the Attachments brick. */
+  readonly fetchImpl?: typeof fetch
+  readonly locale?: string
 }
 
 function text(value: unknown): string | undefined {
@@ -212,6 +216,8 @@ export function Section({
   folders = [],
   folderSettings = {},
   emptyAction,
+  fetchImpl,
+  locale,
 }: SectionProps) {
   const rooms = subsectionsOf(entries, path, folders, folderSettings)
   const all = pagesIn(entries, path)
@@ -424,6 +430,15 @@ export function Section({
             ))}
           </ul>
         </details>
+      )}
+
+      {ready && folderSettings[path]?.attachments !== false && (
+        <FolderAttachments
+          folder={path}
+          t={t}
+          {...(fetchImpl ? { fetchImpl } : {})}
+          {...(locale ? { locale } : {})}
+        />
       )}
 
       {!ready && rooms.length === 0 && all.length === 0 && <Loading t={t} />}
