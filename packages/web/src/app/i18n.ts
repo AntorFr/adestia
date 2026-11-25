@@ -187,7 +187,7 @@ const FR: Readonly<Record<string, string>> = {
   'This folder holds no page yet.': 'Ce dossier ne contient encore aucune page.',
   'The settings could not be written. Try again.': 'Les réglages n’ont pas pu être écrits. Réessayez.',
   'You can no longer change this folder.': 'Vous ne pouvez plus modifier ce dossier.',
-  'You are offline.': 'Vous êtes hors ligne.',
+  'You are offline.': 'Vous avez perdu la connexion.',
   'The folder settings changed.': 'Les réglages du dossier ont changé.',
   Red: 'Rouge', Orange: 'Orange', Amber: 'Ambre', Green: 'Vert', Emerald: 'Émeraude', Turquoise: 'Turquoise',
   Blue: 'Bleu', Indigo: 'Indigo', Violet: 'Violet', Pink: 'Rose', Grey: 'Gris', Slate: 'Ardoise',
