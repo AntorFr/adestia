@@ -136,6 +136,7 @@ Tests d'écran nés dans `epic/adestia-pages`, après l'inventaire par grappe : 
 - `packages/web/test/besoin-creer-dossier-complement-browser.test.ts` — écran de la feature `adestia-decouverte-creer-dossier`, seconde passe (B-32, B-33 ; E-2, E-3, E-38), classement à faire
 - `packages/web/test/besoin-decouverte-plugins-browser.test.ts` — écran de la feature `adestia-decouverte-plugins` (B-34, P-21 étape 4 ; E-3, E-36, E-38), classement à faire
 - `packages/web/test/besoin-dossiers-reglages-browser.test.ts` — écran de la feature `adestia-dossiers-fichier-reglages` (B-36, B-37 ; E-2, E-3), classement à faire
+- `packages/web/test/besoin-dossiers-reglages-ecran-browser.test.ts` — écran de la feature `adestia-dossiers-reglages-ecran` (B-39, B-40, P-23 ; E-3, E-4, E-39), classement à faire
 - `packages/server/test/besoin-dossiers-pieces-jointes-ecran-ensemble.test.ts` — écran de la feature `adestia-dossiers-pieces-jointes` (B-38, AD-41 ; E-3), classement à faire
 - `packages/web/test/besoin-renommer-browser.test.ts` — écran de la feature `adestia-decouverte-renommer` (B-35 ; E-3, E-38), classement à faire
 - `packages/web/test/besoin-etat-projet-browser.test.ts` — écran de l'epic `adestia-pages` (E-3, E-4, E-31, E-36), classement à faire
