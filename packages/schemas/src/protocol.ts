@@ -99,3 +99,62 @@ export interface McpServerView {
    */
   readonly shadowed?: boolean
 }
+
+/**
+ * The folder fields of `GET /api/pages/index` (AD-38). `folders` lists every
+ * folder that exists as a directory in some store, empty ones included, so a
+ * folder with no page yet still shows; `writableFolders` is the subset where
+ * a page or a folder may be written.
+ */
+export interface PageIndexFolders {
+  readonly writableFolders: readonly string[]
+  readonly folders: readonly string[]
+  /** AD-40: the settings of each folder that has a file, keyed by logical folder; `{}` when none. */
+  readonly folderSettings: Readonly<Record<string, FolderSettingsEntry>>
+}
+
+/** The six settings of a folder (AD-40); a key absent is a default. */
+export interface FolderSettings {
+  readonly title?: string
+  readonly ico?: string
+  readonly couleur?: string
+  readonly app?: string
+  readonly attachments?: boolean
+  readonly page?: string
+}
+/** What the index carries: the settings and the revision of the file read. */
+export type FolderSettingsEntry = FolderSettings & { readonly revision: string }
+
+/** `PUT /api/folders/settings` `{path, settings, revision?}` → 200. */
+export interface FolderSettingsRequest {
+  readonly path: string
+  readonly settings: FolderSettings
+  readonly revision?: string
+}
+export interface FolderSettingsResponse {
+  readonly settings: FolderSettings
+  readonly revision: string
+}
+
+/** `POST /api/folders` `{path}` → 201 with the logical path made. */
+export interface CreateFolderRequest {
+  readonly path: string
+}
+export interface CreateFolderResponse {
+  readonly path: string
+}
+
+/**
+ * `POST /api/folders/rename` `{path, name}` → 200 (AD-39). `name` is the new
+ * last segment; the folder keeps its parent.
+ */
+export interface RenameFolderRequest {
+  readonly path: string
+  readonly name: string
+}
+export interface RenameFolderResponse {
+  /** The folder's new logical path. */
+  readonly path: string
+  /** Pages still holding a link to the old path (read-only store, failed write); the rename stands. */
+  readonly unrewritten: number
+}

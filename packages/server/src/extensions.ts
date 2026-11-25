@@ -23,6 +23,7 @@ import {
   type PluginFieldSpec,
   type PluginGalleryEntry,
   type PluginManifest,
+  type PluginOrigin,
   type SkinManifest,
 } from '@antorfr/adestia-schemas'
 
@@ -46,7 +47,11 @@ export interface DiscoveredPlugin {
   readonly dir: string
   /** Whether the instance config turned it on. Discovery is not activation. */
   readonly active: boolean
+  /** Which root it was found under; absent only in objects built by hand. */
+  readonly origin?: PluginOrigin
 }
+
+
 
 export interface DiscoveredSkin {
   readonly manifest: SkinManifest
@@ -360,12 +365,16 @@ function folderName(folder: string, root: string, raw: unknown): string {
 export async function discoverPlugins(
   roots: string | readonly string[],
   config: ActivationConfig,
+  /** The source name of a root fetched from elsewhere; any other root is the plugins folder. */
+  sourceNames: ReadonlyMap<string, string> = new Map(),
 ): Promise<PluginDiscovery> {
   const plugins: DiscoveredPlugin[] = []
   const problems: DiscoveryProblem[] = []
   const held = new Map<string, string>()
 
   for (const root of typeof roots === 'string' ? [roots] : roots) {
+    const named = sourceNames.get(root)
+    const origin: PluginOrigin = named === undefined ? { kind: 'folder' } : { kind: 'source', name: named }
     for (const folder of await extensionFolders(root, MANIFEST)) {
       let raw: unknown
       try {
@@ -389,7 +398,7 @@ export async function discoverPlugins(
           continue
         }
         held.set(manifest.id, folder)
-        plugins.push({ manifest, dir: folder, active: isActive(manifest, config) })
+        plugins.push({ manifest, dir: folder, active: isActive(manifest, config), origin })
       } catch (error) {
         problems.push({ id: basename(folder), reason: describeError(error) })
       }
@@ -459,6 +468,8 @@ export interface PluginPayload {
   readonly gallery?: Readonly<Record<string, PluginGalleryEntry>>
   /** The page seeds it ships, as paths under its folder (AD-36). */
   readonly templates?: readonly string[]
+  /** What it offers to create (AD-37). */
+  readonly creations?: PluginManifest['creations']
   readonly chrome?: string
   /** Whole-page layouts module, for the frontmatter types below. */
   readonly layouts?: string
@@ -492,6 +503,7 @@ export function frontendPayload(plugins: readonly DiscoveredPlugin[]): readonly 
         ...(manifest.vocabulary ? { vocabulary: manifest.vocabulary } : {}),
         ...(manifest.gallery ? { gallery: manifest.gallery } : {}),
         ...(manifest.templates ? { templates: manifest.templates } : {}),
+        ...(manifest.creations ? { creations: manifest.creations } : {}),
         ...(manifest.chrome ? { chrome: manifest.chrome } : {}),
         ...(manifest.layouts ? { layouts: manifest.layouts } : {}),
         // Sent because the shell matches a page's `type` against the CLAIM,

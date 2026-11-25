@@ -13,7 +13,8 @@
  */
 
 import { createHash, randomUUID } from 'node:crypto'
-import { mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import { access, chmod, mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import { constants } from 'node:fs'
 import { basename, dirname, extname, join } from 'node:path'
 
 import {
@@ -25,15 +26,27 @@ import {
   serialize,
   validateDocument,
 } from '@antorfr/adestia-content'
+import type {
+  CreateFolderRequest,
+  CreateFolderResponse,
+  FolderSettingsRequest,
+  FolderSettingsResponse,
+  PageIndexFolders,
+  RenameFolderRequest,
+  RenameFolderResponse,
+} from '@antorfr/adestia-schemas'
 import type { FastifyInstance } from 'fastify'
 
 import { parseFrontmatter, splitFrontmatter } from '../frontmatter.js'
 import type { DiscoveredPlugin } from '../extensions.js'
+import { rewriteLinks } from '../folder-links.js'
+import { folderSettingsOf, isFolderSettingsPath, writeFolderSettings } from '../folder-settings.js'
 import { gated } from '../io.js'
-import { writableFolders } from '../writable-folders.js'
+import { allFolders, creatableRoot, isAbsorbed, writableFolders } from '../writable-folders.js'
 import { revisionOf, safePagePath, titleOf, type PageContent, type PageInfo } from '../pages.js'
 import {
   candidatesOf,
+  fileIn,
   listAll,
   targetFor,
   type Store,
@@ -58,6 +71,8 @@ export interface PagesOptions {
   readonly locale?: string | undefined
   /** Plugins discovered; the ACTIVE ones' `absorbs` leave the writable folders. */
   readonly plugins?: readonly DiscoveredPlugin[] | undefined
+  /** Logical folders a configuration key names (`workspace.memory`, `workspace.planif`): not renamable. */
+  readonly configured?: readonly string[] | undefined
 }
 /**
  * The store a `?store=` qualifier names, or undefined.
@@ -92,6 +107,9 @@ function qualified(stores: readonly Store[], asked: unknown): Store | undefined 
 function hasBody(markdown: string): boolean {
   return splitFrontmatter(markdown).body.trim() !== ''
 }
+
+/** E-36's slug: runs of `[a-z0-9]` separated by single dashes. */
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 /** This API's whole contract, as a predicate: markdown, and nothing else. */
 const isMarkdown = (name: string): boolean => name.endsWith('.md')
@@ -260,16 +278,251 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
       .filter((plugin) => plugin.active)
       .flatMap((plugin) => plugin.manifest.absorbs ?? [])
     const folders = await writableFolders(stores, absorbed, order)
+    const every = await allFolders(stores, order)
+    const fields: PageIndexFolders = {
+      writableFolders: folders,
+      folders: every,
+      folderSettings: await folderSettingsOf(stores, every),
+    }
     return multi
-      ? { entries: out, stores: table(), writableFolders: folders }
-      : { entries: out, writableFolders: folders }
+      ? { entries: out, stores: table(), ...fields }
+      : { entries: out, ...fields }
+  })
+
+  /**
+   * Taken: a directory or a page file of that logical name in ANY store, or a
+   * folder that is the mount point (or the logical parent) of one.
+   */
+  const nameTaken = async (asked: string): Promise<boolean> => {
+    const exists = async (store: Store, logical: string): Promise<boolean> => {
+      const there = logical === store.at ? store.dir : fileIn(store, logical)
+      if (!there) return false
+      return stat(there).then(
+        () => true,
+        () => false,
+      )
+    }
+    for (const store of stores) {
+      if (store.at === asked || store.at.startsWith(`${asked}/`)) return true
+      if ((await exists(store, asked)) || (await exists(store, `${asked}.md`))) return true
+    }
+    return false
+  }
+
+  const isWritable = (path: string): Promise<boolean> =>
+    access(path, constants.W_OK).then(
+      () => true,
+      () => false,
+    )
+
+  /**
+   * AD-39: rename the last segment of a folder, then mend the path links that
+   * led into it. The directory `rename` is the verdict and is never undone;
+   * a page that cannot be mended is counted in `unrewritten`.
+   */
+  app.post<{ Body: Partial<Record<keyof RenameFolderRequest, unknown>> }>(
+    '/api/folders/rename',
+    async (request, reply) => {
+      const asked = request.body?.path
+      const name = request.body?.name
+      if (typeof asked !== 'string' || asked === '' || asked.includes('\0')) {
+        return reply.code(400).send({ error: 'path is required' })
+      }
+      if (typeof name !== 'string' || !SLUG.test(name) || name.length > 80) {
+        return reply.code(400).send({ error: 'not a valid folder name' })
+      }
+      const segments = asked.split('/')
+      if (segments.some((part) => part === '' || part === '.' || part === '..')) {
+        return reply.code(400).send({ error: 'not a valid folder path' })
+      }
+      const renamed = [...segments.slice(0, -1), name].join('/')
+
+      // Mount points and the logical parents of mounts are held by no one.
+      const mounted = stores.some((store) => store.at === asked || store.at.startsWith(`${asked}/`))
+      const holders: { store: Store; dir: string }[] = []
+      for (const store of stores) {
+        const dir = fileIn(store, asked)
+        if (!dir) continue
+        const info = await stat(dir).catch(() => undefined)
+        if (info?.isDirectory()) holders.push({ store, dir })
+      }
+      if (!mounted && holders.length === 0) {
+        return reply.code(404).send({ error: 'no such folder' })
+      }
+
+      const absorbed = (options.plugins ?? [])
+        .filter((plugin) => plugin.active)
+        .flatMap((plugin) => plugin.manifest.absorbs ?? [])
+      if (isAbsorbed(absorbed, asked)) {
+        return reply.code(422).send({ error: 'this folder belongs to an app' })
+      }
+      if ((options.configured ?? []).some((one) => one === asked || one.startsWith(`${asked}/`))) {
+        return reply.code(422).send({ error: 'this folder is named in the configuration' })
+      }
+      if (mounted) return reply.code(422).send({ error: 'this folder is a mount point' })
+      if (holders.length > 1) {
+        return reply.code(422).send({ error: 'several stores hold this folder' })
+      }
+      const [held] = holders
+      if (!held) return reply.code(404).send({ error: 'no such folder' })
+
+      if (!(await isWritable(held.dir)) || !(await isWritable(dirname(held.dir)))) {
+        return reply.code(403).send({ error: 'write refused' })
+      }
+      if (await nameTaken(renamed)) {
+        return reply.code(409).send({ error: 'name already taken' })
+      }
+
+      const target = join(dirname(held.dir), name)
+      try {
+        await rename(held.dir, target)
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code
+        if (code === 'EEXIST' || code === 'ENOTEMPTY') {
+          return reply.code(409).send({ error: 'name already taken' })
+        }
+        if (code === 'EACCES' || code === 'EPERM' || code === 'EROFS') {
+          return reply.code(403).send({ error: 'write refused' })
+        }
+        if (code === 'ENOENT') return reply.code(404).send({ error: 'no such folder' })
+        throw error
+      }
+
+      let unrewritten = 0
+      const writableStore = new Map<string, boolean>()
+      const { entries } = await listAll(stores, { keep: (file) => file.endsWith('.md') })
+      for (const entry of entries) {
+        // A page of the renamed folder is read where it lives now, its
+        // relative links resolved from where it was written.
+        const inside = entry.path === renamed || entry.path.startsWith(`${renamed}/`)
+        const was = inside ? `${asked}${entry.path.slice(renamed.length)}` : entry.path
+        let text: string
+        try {
+          text = await readFile(entry.file, 'utf8')
+        } catch {
+          continue
+        }
+        if (!text.includes(segments[segments.length - 1] ?? '')) continue
+        let rewritten: string | undefined
+        try {
+          rewritten = rewriteLinks(text, {
+            from: asked,
+            name,
+            pageDir: was.includes('/') ? was.slice(0, was.lastIndexOf('/')) : '',
+          })
+        } catch (error) {
+          request.log.warn({ err: error, page: entry.path }, 'a page could not be read for its links')
+          continue
+        }
+        if (rewritten === undefined) continue
+        let open = writableStore.get(entry.store.id)
+        if (open === undefined) {
+          open = await isWritable(entry.store.dir)
+          writableStore.set(entry.store.id, open)
+        }
+        if (!open) {
+          unrewritten += 1
+          continue
+        }
+        const temporary = join(dirname(entry.file), `.${basename(entry.file)}.${randomUUID()}.tmp`)
+        try {
+          await writeFile(temporary, rewritten, 'utf8')
+          await chmod(temporary, (await stat(entry.file)).mode & 0o7777).catch(() => undefined)
+          await rename(temporary, entry.file)
+        } catch (error) {
+          await unlink(temporary).catch(() => undefined)
+          request.log.warn({ err: error, page: entry.path }, 'a page could not be rewritten')
+          unrewritten += 1
+        }
+      }
+      const done: RenameFolderResponse = { path: renamed, unrewritten }
+      return reply.code(200).send(done)
+    },
+  )
+
+  /**
+   * AD-38: make an empty folder. The client sends the path already reduced to
+   * slugs (E-36); the server never slugs, it refuses a last segment that is
+   * not one. The folder goes in the first store that holds the parent and
+   * lets the user write there; the `mkdir` is the atomic verdict.
+   */
+  app.post<{ Body: Partial<Record<keyof CreateFolderRequest, unknown>> }>('/api/folders', async (request, reply) => {
+    const asked = request.body?.path
+    if (typeof asked !== 'string' || asked.includes('\0')) {
+      return reply.code(400).send({ error: 'path is required' })
+    }
+    const segments = asked.split('/')
+    const name = segments[segments.length - 1] ?? ''
+    if (!SLUG.test(name) || name.length > 80) {
+      return reply.code(400).send({ error: 'not a valid folder name' })
+    }
+    const parents = segments.slice(0, -1)
+    if (parents.some((part) => part === '' || part === '.' || part === '..')) {
+      return reply.code(400).send({ error: 'not a valid parent folder' })
+    }
+    const parent = parents.join('/')
+
+    if (await nameTaken(asked)) {
+      return reply.code(409).send({ error: 'name already taken' })
+    }
+
+    const absorbed = (options.plugins ?? [])
+      .filter((plugin) => plugin.active)
+      .flatMap((plugin) => plugin.manifest.absorbs ?? [])
+    if (parent !== '' && isAbsorbed(absorbed, parent)) {
+      return reply.code(403).send({ error: 'write refused' })
+    }
+    // Default store first, then the others as declared.
+    const ordered = [...stores.filter((s) => s.isDefault), ...stores.filter((s) => !s.isDefault)]
+    for (const store of ordered) {
+      const parentDir = parent === store.at ? store.dir : parent === '' ? undefined : fileIn(store, parent)
+      if (!parentDir) continue
+      const held = await stat(parentDir).then(
+        (info) => info.isDirectory(),
+        () => false,
+      )
+      if (!held) {
+        // A fresh instance has no pages directory yet: the first folder makes it.
+        if (parent !== store.at || !(await creatableRoot(store))) continue
+        await mkdir(parentDir, { recursive: true }).catch(() => undefined)
+      }
+      const writable = await access(parentDir, constants.W_OK).then(
+        () => true,
+        () => false,
+      )
+      if (!writable) continue
+      const target = join(parentDir, name)
+      try {
+        await mkdir(target)
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+          return reply.code(409).send({ error: 'name already taken' })
+        }
+        continue
+      }
+      const made: CreateFolderResponse = { path: asked }
+      return reply.code(201).send(made)
+    }
+    return reply.code(403).send({ error: 'write refused' })
+  })
+
+  /** AD-40: write a folder's settings; the rules live in `../folder-settings.ts`. */
+  app.put<{ Body: Partial<Record<keyof FolderSettingsRequest, unknown>> }>('/api/folders/settings', async (request, reply) => {
+    const done = await writeFolderSettings(stores, request.body)
+    if (!done.ok) {
+      return reply
+        .code(done.status)
+        .send({ error: done.error, ...(done.revision === undefined ? {} : { revision: done.revision }) })
+    }
+    const answer: FolderSettingsResponse = { settings: done.settings, revision: done.revision }
+    return reply.code(200).send(answer)
   })
 
   app.get<{ Params: { '*': string }; Querystring: { store?: string } }>(
     '/api/pages/*',
     async (request, reply) => {
       const logical = request.params['*']
-      if (!stores.some((store) => safePagePath(store, logical))) {
+      if (isFolderSettingsPath(logical) || !stores.some((store) => safePagePath(store, logical))) {
         return reply.code(400).send({ error: 'not a valid page path' })
       }
 
@@ -338,7 +591,7 @@ export function registerPages(app: FastifyInstance, options: PagesOptions): void
     Body: { markdown?: unknown; revision?: unknown }
   }>('/api/pages/*', async (request, reply) => {
     const logical = request.params['*']
-    if (!stores.some((store) => safePagePath(store, logical))) {
+    if (isFolderSettingsPath(logical) || !stores.some((store) => safePagePath(store, logical))) {
       return reply.code(400).send({ error: 'not a valid page path' })
     }
 

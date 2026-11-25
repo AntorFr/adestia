@@ -1,5 +1,4 @@
 import { toneOf, type Indexed } from '@antorfr/adestia-content'
-import { isIndexPath } from '../../app/paths.js'
 import { initials, titleOf } from '../listing.js'
 import type { Ctx } from './types.js'
 
@@ -93,20 +92,10 @@ export function Row({
     .find((text) => text !== undefined && text !== '')
   const title = titleOf(page)
   // The glyph a row wears, and none of it is invented here. A page that
-  // declares `ico:` wins — the same field the section cards and the tiles
-  // read, so a subject looks like itself wherever it appears. Failing that,
-  // the shell's own two words: `◆` for a row standing for a FOLDER, which is
-  // what `sections.ts` already draws for a subject, and `•` for a plain page,
-  // which is what the launcher already draws for an item. The shape then says
-  // something true that the list had already worked out — whether this row is
-  // a subject you descend into or a page you open.
+  // declares `ico:` wins — the same field the launcher reads — and a plain
+  // page wears `•`. No row stands for a folder any more (AD-40).
   const declared = page.fields['ico']
-  const glyph =
-    typeof declared === 'string' && declared !== ''
-      ? declared
-      : isIndexPath(page.path)
-        ? '◆'
-        : '•'
+  const glyph = typeof declared === 'string' && declared !== '' ? declared : '•'
   return (
     <button
       type="button"

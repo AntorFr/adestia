@@ -79,7 +79,7 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
     [],
   )
 
-  const { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, writableFolders, skin, skinScheme, loaded, ready, indexed, pageChanges } =
+  const { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, writableFolders, folders, folderSettings, refreshIndex, skin, skinScheme, loaded, ready, indexed, pageChanges } =
     useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, blocksRef, onTrail })
 
   /**
@@ -115,6 +115,8 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
   const { route, openApp, settings, settingsPage, section, pagePath, pageStore } = useRoute({
     loaded,
     pages,
+    folders,
+    folderSettings,
     // The trail is cleared on navigation rather than by the plugin: a view
     // that says nothing about its new screen must show the app's name alone.
     onChange: () => setPluginTrail({ id: '', crumbs: [] }),
@@ -129,8 +131,8 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
   /** The breadcrumb — derived once, drawn by the header and carried by every message. */
   const trail = useMemo(
     () =>
-      trailOf({ settings, openApp, loaded, pluginTrail, page, section, pages, stores, t, say }),
-    [openApp, loaded, page, pages, section, pluginTrail, say, settings, stores, t],
+      trailOf({ settings, openApp, loaded, pluginTrail, page, section, pages, folderSettings, stores, t, say }),
+    [openApp, loaded, page, pages, folderSettings, section, pluginTrail, say, settings, stores, t],
   )
 
   /**
@@ -161,9 +163,9 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
    */
   const openSection = useCallback(
     (path: string) => {
-      location.hash = folderRoute(loaded, path, pages)
+      location.hash = folderRoute(loaded, path, pages, folderSettings)
     },
-    [loaded, pages],
+    [loaded, pages, folderSettings],
   )
 
   const goHome = useCallback(() => {
@@ -260,7 +262,7 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
 
         <div className="adestia-canvas__body">
         {!bannerInChat && offlineBanner}
-        <Problems instance={instance} failures={failures} loaded={loaded} pages={pages} t={t} locale={locale} />
+        <Problems instance={instance} failures={failures} loaded={loaded} folderSettings={folderSettings} t={t} locale={locale} />
 
         <Canvas ready={ready} indexed={indexed}
           instance={instance}
@@ -269,6 +271,9 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
           pages={pages}
           stores={stores}
           writableFolders={writableFolders}
+          folders={folders}
+          folderSettings={folderSettings}
+          refreshIndex={refreshIndex}
           openApp={openApp}
           settings={settings}
           settingsPage={settingsPage}

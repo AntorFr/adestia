@@ -22,8 +22,9 @@ import { isFinished, toneOf } from '@antorfr/adestia-content'
 import type { IndexEntry, SectionTile, StoreInfo } from './sections.js'
 import { Icon } from './Icon.js'
 import { EmptyState } from './ui/EmptyState.js'
+import { FolderAttachments } from './FolderAttachments.js'
 import { Loading } from './ui/Loading.js'
-import { pagesIn, subsectionsOf } from './sections.js'
+import { pagesIn, subsectionsOf, type FolderSettingsMap } from './sections.js'
 
 export interface SectionProps {
   readonly path: string
@@ -41,6 +42,16 @@ export interface SectionProps {
   readonly t?: (key: string) => string
   /** A control for the header's right edge (E-3's New from template); drawn only when given. */
   readonly headerAction?: ReactNode
+  /** A line under the header (B-35: pages that still point to the old name). */
+  readonly notice?: ReactNode
+  /** Every folder the stores hold, empty ones included. */
+  readonly folders?: readonly string[]
+  readonly folderSettings?: FolderSettingsMap
+  /** What fills an empty folder: the creation entries as buttons. */
+  readonly emptyAction?: ReactNode
+  /** The shell's fetch, for the Attachments brick. */
+  readonly fetchImpl?: typeof fetch
+  readonly locale?: string
 }
 
 function text(value: unknown): string | undefined {
@@ -201,8 +212,14 @@ export function Section({
   ready = true,
   t = (key) => key,
   headerAction,
+  notice,
+  folders = [],
+  folderSettings = {},
+  emptyAction,
+  fetchImpl,
+  locale,
 }: SectionProps) {
-  const rooms = subsectionsOf(entries, path)
+  const rooms = subsectionsOf(entries, path, folders, folderSettings)
   const all = pagesIn(entries, path)
   const live = all.filter((entry) => !isFinished(entry.fields))
   const finished = all.filter((entry) => isFinished(entry.fields))
@@ -311,8 +328,9 @@ export function Section({
             </ul>
           )}
         </div>
-        {headerAction}
+        {headerAction ? <div className="adestia-chead__actions">{headerAction}</div> : null}
       </header>
+      {notice}
 
       {rooms.length > 0 && (
         <>
@@ -414,10 +432,20 @@ export function Section({
         </details>
       )}
 
+      {ready && folderSettings[path]?.attachments !== false && (
+        <FolderAttachments
+          folder={path}
+          t={t}
+          announce={rooms.length > 0 || all.length > 0}
+          {...(fetchImpl ? { fetchImpl } : {})}
+          {...(locale ? { locale } : {})}
+        />
+      )}
+
       {!ready && rooms.length === 0 && all.length === 0 && <Loading t={t} />}
 
       {ready && rooms.length === 0 && all.length === 0 && (
-        <EmptyState icon="folder-open" text={t('This section holds nothing yet.')} />
+        <EmptyState icon="folder-open" text={t('This section holds nothing yet.')} action={emptyAction} />
       )}
     </div>
   )

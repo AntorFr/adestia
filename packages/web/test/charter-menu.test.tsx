@@ -108,17 +108,18 @@ describe('the token states', () => {
 
 describe('the mosaic', () => {
   // Fails if an emoji comes back on a tile or the header.
-  it('draws the four tiles and its header with icons, never an emoji', () => {
+  it('draws the five tiles and its header with icons, never an emoji', () => {
     const { container } = render(
       <Preferences page="" onPage={vi.fn()} onItem={vi.fn()} fetchImpl={quiet} t={(k) => k} />,
     )
     const tiles = Array.from(container.querySelectorAll('.adestia-tiles > li'))
-    expect(tiles.length).toBe(4)
+    expect(tiles.length).toBe(5)
     expect(tiles.map((t) => t.textContent)).toEqual(
       expect.arrayContaining([
         expect.stringContaining('MCP servers'),
         expect.stringContaining('Instructions'),
         expect.stringContaining('Configuration'),
+        expect.stringContaining('Plugins'),
         expect.stringContaining('Delegations'),
       ]),
     )
@@ -138,10 +139,10 @@ describe('the problems band', () => {
       since: '2026-03-05T10:00:00Z',
     },
   } as never
-  const pages = [
-    { path: 'a', title: 'a', fields: { app: 'ghost' } },
-    { path: 'b/c/d', title: 'd', fields: { app: 'x' } },
-  ] as never
+  const folderSettings = {
+    a: { app: 'ghost', revision: '1' },
+    'b/c/d': { app: 'x', revision: '2' },
+  } as never
 
   const band = (locale: string) =>
     render(
@@ -149,7 +150,7 @@ describe('the problems band', () => {
         instance={instance}
         failures={[{ id: 'p', reason: 'boom' }]}
         loaded={[]}
-        pages={pages}
+        folderSettings={folderSettings}
         t={translator(locale === 'fr' ? 'fr' : 'en')}
         locale={locale}
       />,

@@ -316,6 +316,8 @@ async function projectManagement(w) {
   const p = (path, front, body) => put(w, `pages/${path}`, page(front, body))
   await p('renovation/INDEX.md', { title: 'Rénovation de la maison', type: 'project-management', app: 'project-management', ico: '🏗️', 'project-status': 'Amber' },
     ':::subproject\n:::\n\n:::timeline{depth=subtree}\n:::\n\n:::timeline{frame=card title="Jalons écrits" ico=🗓️}\n- Cadrage: 2026-09-01 → 2026-09-20\n- Réalisation: 2026-09-20 → 2026-12-15\n- Réception: 2026-12-20\n:::')
+  // AD-40: the plugin owns a folder because its `.folder.md` says so, not because a page does.
+  await put(w, 'pages/renovation/.folder.md', '---\ntitle: Rénovation de la maison\nico: 🏗️\napp: project-management\n---\n')
   await p('renovation/cuisine/INDEX.md', { title: 'Cuisine', type: 'project-management', start: '2026-09-20', due: '2026-11-10', status: '"en cours"', 'project-status': 'Green' }, 'Plan de travail et crédence.')
   await p('renovation/salle-de-bain/INDEX.md', { title: 'Salle de bain', type: 'project-management', start: '2026-11-02', due: '2026-12-12', status: '"en cours"', 'project-status': 'Red' }, 'Le carrelage est en retard.')
   await p('renovation/toiture.md', { title: 'Toiture', type: 'project-management', start: '2026-07-01', due: '2026-08-31', status: 'clos' }, 'Terminée en août.')
@@ -324,6 +326,7 @@ async function projectManagement(w) {
   // The empty states: a timeline over a folder with no dated page, a status block with no sub-project.
   await p('petit-chantier/INDEX.md', { title: 'Petit chantier', type: 'project-management', app: 'project-management' },
     ':::subproject\n:::\n\n:::timeline{depth=children}\n:::')
+  await put(w, 'pages/petit-chantier/.folder.md', '---\ntitle: Petit chantier\napp: project-management\n---\n')
   await p('petit-chantier/notes.md', { title: 'Notes', type: 'fiche' }, 'Aucune date ici.')
 }
 

@@ -370,18 +370,27 @@ describe(':::list', () => {
     expect(glyph('Socle de contenu')).toBe('•')
   })
 
-  it('marque d’un losange la ligne qui tient pour un DOSSIER', () => {
+  it('ne marque plus aucune ligne d’un losange : INDEX.md est une page comme une autre', () => {
+    // AD-40 : aucune page ne tient lieu de son dossier. Un `INDEX.md` listé
+    // porte le point d'une page ordinaire, pas le `◆` d'un dossier.
     const pages = [
       ...PAGES,
       { path: 'chantiers/adestia/editeur/INDEX.md', fields: { title: 'Éditeur' } },
     ]
     const { container } = render(
-      <Reader markdown={':::list{depth=children}\n:::\n'} path={HERE} pages={pages} />,
+      <Reader
+        markdown={':::list{depth=subtree}\n:::\n'}
+        path="chantiers/adestia/note.md"
+        pages={pages}
+      />,
     )
-    const row = [...container.querySelectorAll('.adestia-list__row')].find((r) =>
-      r.querySelector('.adestia-list__title')?.textContent?.startsWith('Éditeur'),
-    )
-    expect(row?.querySelector('.adestia-list__ico')?.textContent).toBe('◆')
+    const glyph = (titre: string) =>
+      [...container.querySelectorAll('.adestia-list__row')]
+        .find((r) => r.querySelector('.adestia-list__title')?.textContent?.startsWith(titre))
+        ?.querySelector('.adestia-list__ico')?.textContent
+    expect(glyph('Éditeur')).toBe('•')
+    expect(glyph('Adestia')).toBe('•')
+    expect(container.textContent).not.toContain('◆')
   })
 
   it('garde le type demandé, et laisse le reste où il est', () => {
@@ -421,24 +430,25 @@ describe(':::list', () => {
     expect(screen.getByText('Plus bas')).toBeTruthy()
   })
 
-  it('fait d’un sous-DOSSIER un enfant, par son index', () => {
-    // Le cas que la première version ratait, et il n'est pas marginal : ce
-    // produit range un sous-sujet dans un dossier. Une règle qui ne regarde
-    // que les fichiers liste les notes en vrac d'un projet et manque tous ses
-    // sous-projets.
+  it('liste les pages posées dans le dossier, INDEX.md compris, pas celles d’un sous-dossier', () => {
+    // AD-40 : un sous-dossier n'a plus de page qui le représente ; `children`
+    // liste les pages du dossier et rien de plus bas.
     const arbre = [
-      { path: 'chantiers/adestia/INDEX.md', fields: { title: 'Adestia' } },
+      { path: 'chantiers/adestia/INDEX.md', fields: { title: 'Aperçu' } },
       { path: 'chantiers/adestia/note.md', fields: { title: 'Une note' } },
       { path: 'chantiers/adestia/socle/INDEX.md', fields: { title: 'Socle' } },
       { path: 'chantiers/adestia/socle/detail.md', fields: { title: 'Un détail' } },
     ]
-    render(<Reader markdown={':::list{depth=children}\n:::\n'} path={HERE} pages={arbre} />)
-    expect(screen.getByText('Socle')).toBeTruthy()
-    expect(screen.getByText('Une note')).toBeTruthy()
-    // Le contenu du sous-dossier appartient au sous-dossier, pas à cette liste.
+    render(
+      <Reader
+        markdown={':::list{depth=children}\n:::\n'}
+        path="chantiers/adestia/note.md"
+        pages={arbre}
+      />,
+    )
+    expect(screen.getByText('Aperçu')).toBeTruthy()
+    expect(screen.queryByText('Socle')).toBeNull()
     expect(screen.queryByText('Un détail')).toBeNull()
-    // Et la page qui porte le bloc ne se liste jamais elle-même.
-    expect(screen.queryByText('Adestia')).toBeNull()
   })
 
   it('remonte les champs d’entête demandés, et rien d’autre', () => {

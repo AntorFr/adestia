@@ -10,6 +10,9 @@ import { sep } from 'node:path'
 
 import type { FastifyInstance } from 'fastify'
 
+import { matchesDataFile } from '@antorfr/adestia-schemas'
+
+import type { DiscoveredPlugin } from '../extensions.js'
 import { attachmentsOf, collectFiles, inlineTypeOf, safeFilePath } from '../files.js'
 import { candidatesOf, type Store } from '../stores.js'
 
@@ -23,11 +26,17 @@ export interface FilesOptions {
    * one failed on the other.
    */
   readonly locale?: string | undefined
+  /** The discovered plugins: the `dataFiles` of the ACTIVE ones leave a folder's attachments (AD-41). */
+  readonly plugins?: readonly DiscoveredPlugin[] | undefined
 }
 export function registerFiles(app: FastifyInstance, options: FilesOptions): void {
   const { stores } = options
   const order = new Intl.Collator(options.locale, { numeric: true })
   const multi = stores.length > 1
+  // A disabled plugin is not read (AD-37): its data file is then an ordinary attachment.
+  const dataFiles = (options.plugins ?? [])
+    .filter((plugin) => plugin.active)
+    .flatMap((plugin) => plugin.manifest.dataFiles ?? [])
 
   /**
    * What is there, as data.
@@ -36,7 +45,24 @@ export function registerFiles(app: FastifyInstance, options: FilesOptions): void
    * attached to this page" — so the convention lives HERE rather than being
    * re-derived by the shell, by a plugin, and eventually differently by both.
    */
-  app.get<{ Querystring: { page?: string; under?: string } }>('/api/files', async (request) => {
+  app.get<{ Querystring: { page?: string; folder?: string; under?: string } }>('/api/files', async (request) => {
+    // `?folder=` answers "what is attached to this folder" (AD-41): its direct
+    // files and those of its `assets/`, minus the plugins' data files. The
+    // convention lives here, not in the shell. `.folder.md` is excluded by its
+    // name only; it is the folder's settings, not a pattern.
+    const folder = request.query.folder
+    if (typeof folder === 'string' && folder !== '' && !request.query.page) {
+      const clean = folder.replace(/^\/+|\/+$/g, '')
+      if (clean === '' || !stores.some((store) => safeFilePath(store, clean))) return { files: [] }
+      const files = await attachmentsOf(stores, `${clean}/.`, order)
+      return {
+        files: files.filter((file) => {
+          const relative = file.path.startsWith(`${clean}/`) ? file.path.slice(clean.length + 1) : file.path
+          return relative !== '.folder.md' && !dataFiles.some((pattern) => matchesDataFile(pattern, relative))
+        }),
+      }
+    }
+
     const page = request.query.page
     if (typeof page === 'string' && page !== '') {
       if (!stores.some((store) => safeFilePath(store, page))) return { files: [] }

@@ -22,7 +22,7 @@ node bench/launch.mjs --engine fake                               # the scripted
 CLAUDE_CODE_OAUTH_TOKEN=… node bench/launch.mjs --engine claude   # a real Claude turn
 ```
 
-Options: `--skin <id>`, `--locale en|fr`, `--seed <name>` (default `base`),
+Options: `--restart` (with `--engine fake`: the binary's boot loop replayed with the scripted engine, so `/api/restart` is mounted), `--skin <id>`, `--locale en|fr`, `--seed <name>` (default `base`),
 `--no-end-session` (the `oidc` seed's provider announces no `end_session_endpoint`, so sign-out takes the `/auth/login?switch=1` fallback), `--port <n>` (default: a free one), `--data <dir>` (default: a throwaway
 directory under `os.tmpdir()`; a directory you name is kept). It prints
 `listening on <url>` once `/api/health` answers `ok`, and runs until SIGTERM,
@@ -71,6 +71,7 @@ or scenario caller. It uses the repository's TypeScript parser, without a browse
 | `chat-permission` | E-17/E-18: isolated desk/phone threads, pending/signed/denied/expired signatures, questions with and without a lasting rule; `permissions.mode: ask` also supports the real-Claude proof. |
 | `besoin-copie` | E-16 copy box (AD-copie-1): settled replies with `copy` fences (an email, a short line, an empty and an unclosed block, a `sh` block that gets no button) and one turn that streams a fence; `scenarios/copy-block.mjs` takes the pictures (docker); without docker open the threads by hand. |
 | `config-writable` | `base`, with the configuration file the screen reads and writes. |
+| `plugins-reglages` | `config-writable` plus two apps in the plugins folder — `bench-actif` (named in `extensions.apps`) and `bench-inactif` (found, not named) — beside the plugins `base` refuses, for the Plugins page (E-37, `scenarios/plugins-reglages.mjs`). With `--restart` the launcher runs the binary's boot loop with the scripted engine (`bench/restart-loop.mjs`, held turns stay held): `/api/restart` really restarts the instance. |
 | `config-readonly` | `base`, with the file read-only and the credential refused upstream. A process running as root can write a `0444` file: the screen then shows it writable. |
 | `oidc` | `base` behind a sign-in; the provider is `bench/oidc-stub.mjs`. |
 | `empty` | Nothing: no plugin, page, conversation, server, catalogue or credential. |
@@ -228,6 +229,31 @@ State the store owns — a finished turn, a thread as it comes back after a
 reload — is seeded by writing the conversation JSONL into the mounted data
 directory, which is the same thing the server would have written.
 
+## The web plugin on a real turn: `bench/web-reel.sh`
+
+```sh
+CLAUDE_CODE_OAUTH_TOKEN=… bench/web-reel.sh <image> [page-url]
+```
+
+Plays a real agent turn (the claude driver, the pod's token) against an image you
+name — the one published at the delivery tag; nothing is built — first with
+`extensions.tools: [web]`, then with `[]`. The turn asks for the price of a
+protected shop page (the default `page-url`, or yours). For each run it prints the
+rendered text, the tools the agent called and the ones it says it has, the page
+file written under `.adestia-web/` of the workspace, and the Chrome processes
+left after the turn. It needs Docker and the token, nothing else, so it runs as
+it is from `homenode`, whose outgoing address is the one the site judges.
+
+It codes no price and no Chrome version: the price is the page's on the day, and a
+refusal by the site is a result to read, not a failure. It exits 1 when a Chrome
+survives the turn (`WEB_REEL_WAIT`, 30 s by default, is how long one may take to
+go), when the active run called no browser tool or one of the three withheld ones,
+or when the inactive run sees any web tool. The instance is reached with
+`docker exec` and the image's own node: no port is published. The agent's list of
+its own tools is the agent's word; the called tools come from the stream.
+
+Pods have no Docker: this is played by hand after the tag, not by the suite.
+
 ## The traps, each paid for once
 
 - **`waitUntil: 'networkidle'` never resolves.** An attached turn holds its SSE
@@ -352,3 +378,5 @@ rows or bubbles, message and Retry after a failure, Retry bringing the data, the
 off screen nor covered by the failure block. It then checks the two `.adestia-thread__mark` lines (text, `role="note"`, above a
 bubble, no overlap, no truncation, inside the viewport) and that the plain conversation has none.
 Pictures in `bench/shots-chat-ajouts/` (`BENCH_OUT`): `<skin>/<locale>/<theme>-<viewport>/{liste,fil}-{chargement,echec,reessai}.png`, `marque.png`, `marque-2.png`. `BENCH_SKINS`, `BENCH_LOCALES` narrow it.
+
+**Plugins page, without docker.** `npm run build && node bench/scenarios/plugins-reglages.mjs` starts two launchers (the scripted engine for the four pictures, `--restart` for the real restart), checks the page's groups, both flips and the pending marks, the refusal of a restart with a running turn then the forced one, and the tile and route after the restart. Pictures in `BENCH_OUT` (default `bench/shots-plugins-reglages`): `<light|dark>-<desk|phone>.png`, each checked for console errors.

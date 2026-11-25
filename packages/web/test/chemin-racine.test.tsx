@@ -31,11 +31,21 @@ describe('the trail of a page at the root', () => {
 
   it('keeps the folders of a nested page', () => {
     const pages = [
-      { path: 'a/INDEX.md', title: 'Alpha', fields: {} },
-      { path: 'a/b/INDEX.md', title: 'Beta', fields: {} },
+      { path: 'a/INDEX.md', title: 'Index', fields: {} },
+      { path: 'a/b/INDEX.md', title: 'Index', fields: {} },
       { path: 'a/b/c.md', title: 'Cee', fields: {} },
     ]
-    const trail = trailOf({ ...base, page: { path: 'a/b/c.md', title: 'Cee' }, section: undefined, pages })
+    const folderSettings = {
+      a: { title: 'Alpha', revision: '1' },
+      'a/b': { title: 'Beta', revision: '2' },
+    }
+    const trail = trailOf({
+      ...base,
+      page: { path: 'a/b/c.md', title: 'Cee' },
+      section: undefined,
+      pages,
+      folderSettings,
+    })
     expect(trail).toEqual([
       { folder: 'a', label: 'Alpha' },
       { folder: 'a/b', label: 'Beta' },
