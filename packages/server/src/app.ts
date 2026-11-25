@@ -356,7 +356,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   if (deps.restart) registerRestart(app, { running: () => limiter.running, restart: deps.restart })
   // The same stores: an attachment is a file sitting next to a page, and a
   // second configurable place would be a second thing to explain.
-  registerFiles(app, { stores, locale: config.locale })
+  registerFiles(app, { stores, locale: config.locale, plugins })
 
   // Mounted before the static catch-all, so a plugin route always wins over
   // the shell's fallback; and after the auth hook, so it is gated like
