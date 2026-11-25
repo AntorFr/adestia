@@ -520,7 +520,7 @@ button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outli
 }
 .adestia-nameprompt__context { margin: 0 0 var(--space-2); font-size: var(--text-sm); color: var(--text-muted); overflow-wrap: anywhere; }
 @media (max-width: 820px) {
-  .adestia-btn--rename .adestia-btn__word { display: none; }
+  .adestia-btn--fold .adestia-btn__word { display: none; }
 }
 
 /* Setting row: label and help left, the control right (E-39) ---------------- */
@@ -591,3 +591,10 @@ button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outli
   border-radius: var(--radius-round);
   background: var(--hue);
 }
+
+/* Folder settings sheet (E-39) ------------------------------------------------ */
+.adestia-sheet-actions { display: flex; justify-content: flex-end; gap: var(--space-2); width: 100%; }
+.adestia-folder-settings__form { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.adestia-folder-settings__form .adestia-select { max-width: 100%; text-overflow: ellipsis; }
+.adestia-folder-settings__app { margin: 0; font-size: var(--text-sm); color: var(--text-muted); overflow-wrap: anywhere; }
+.adestia-folder-settings__error { margin: 0; font-size: var(--text-sm); color: var(--danger-text, var(--text)); }

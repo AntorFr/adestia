@@ -279,7 +279,7 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
         {!bannerInChat && offlineBanner}
         <Problems instance={instance} failures={failures} loaded={loaded} folderSettings={folderSettings} t={t} locale={locale} />
 
-        <Canvas ready={ready} indexed={indexed}
+        <Canvas ready={ready} indexed={indexed} offline={!reachable}
           instance={instance}
           skin={skin}
           loaded={loaded}

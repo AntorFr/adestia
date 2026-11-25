@@ -69,7 +69,7 @@ export function RenameFolder({ section, fetchImpl = (...args) => fetch(...args),
   }
   return (
     <>
-      <Button className="adestia-btn--rename" icon="pencil" aria-label={t('Rename')} onClick={() => setOpen(true)}>
+      <Button className="adestia-btn--fold" icon="pencil" aria-label={t('Rename')} onClick={() => setOpen(true)}>
         <span className="adestia-btn__word">{t('Rename')}</span>
       </Button>
       {open ? (
