@@ -67,7 +67,7 @@ To look at the app without an agent or Docker (a scripted engine, seeded data):
 ```sh
 npm ci && npm run build               # npm run build also builds the web shell
 node bench/launch.mjs --engine fake    # prints `listening on <url>`; <url>/api/health answers ok
-node bench/sweep.mjs                   # the screens it lists (not E-35, E-36 or E-37), light and dark, desk and phone
+node bench/sweep.mjs                   # E-1 to E-31 only, light and dark, desk and phone (not E-32 to E-39), light and dark, desk and phone
 node bench/scenarios/plugins-reglages.mjs   # E-37, Settings → Plugins: list, switch, restart, the plugin appears (needs the build; starts two launchers, the second after a real restart; needs Playwright on the host; images in $BENCH_OUT)
 node bench/scenarios/chargements.mjs   # takes several minutes (16 capture combinations); loading and Retry on E-3, E-4, E-8, E-9, E-11, E-13 (needs the build; images in $BENCH_OUT); the plugins' E-25 and E-28 are covered by plugins/*/test/chargement.test.js and, in a browser, by bench/tests/plugins-chargements-besoin.test.mjs, not by this scenario; to see them by hand, start the launcher from the clone's root (the atelier and parcours plugins come from `./plugins`) and open #/atelier or a parcours page
 node bench/scenarios/page-suivie.mjs   # the open page follows the agent, B-17 (needs the build; BENCH_SKINS, BENCH_LOCALES narrow it)
