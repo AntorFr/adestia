@@ -5,11 +5,12 @@
  * (what the route lists) are in `besoin-dossiers-pieces-jointes-ensemble.test.ts`.
  *
  * Plan (E-3):
- *   nominal   PDF + two photos (one in assets/) + assets/voyage.json + .folder.md: heading « Attachments 3 », three rows,
- *             no voyage.json, no .folder.md; clicking the PDF opens /api/files/<path> in a new tab; captures light/dark, desk/phone
- *   bords     `attachments: false` -> no brick; only a data file -> no brick; thirteen files -> twelve rows then
+ *   nominal   PDF + two photos (one in assets/) + .folder.md, a folder the Trips plugin does not claim: heading « Attachments 3 »,
+ *             three rows, no .folder.md; clicking the PDF opens /api/files/<path> in a new tab; captures light/dark, desk/phone
+ *   bords     `attachments: false` -> no brick; thirteen files -> twelve rows then
  *             « Show all 13 » shows all thirteen; a voyage.json at the root of the folder is a row
  *   échec     the files route fails (500) -> no brick, no error frame, the page cards still there
+ *   (a folder with assets/voyage.json is claimed by the Trips screen and never reaches E-3: the route test proves the exclusion)
  *
  * Needs the built shell (`npm run build`) and Playwright with Chromium; without them the file SKIPS and says why.
  * Captures go to $ADESTIA_SHOTS or the OS temp directory, never the tree.
@@ -110,15 +111,6 @@ const shot = async (page: any, name: string) => {
 }
 
 describe.skipIf(!canDrive)(`E-3 Attachments brick${canDrive ? '' : ` (SKIPPED: ${SKIP_REASON})`}`, () => {
-  const sejour = async (pages: string) => {
-    await put(join(pages, 'sejour', 'note.md'), note('Note du séjour'))
-    await put(join(pages, 'sejour', '.folder.md'), '---\nattachments: true\n---\n')
-    await put(join(pages, 'sejour', 'billet.pdf'), '%PDF-1.4\n% billet\n')
-    await put(join(pages, 'sejour', 'photo-une.png'), PNG)
-    await put(join(pages, 'sejour', 'assets', 'photo-deux.png'), PNG)
-    await put(join(pages, 'sejour', 'assets', 'voyage.json'), '{"titre":"X","lieux":[],"items":[]}')
-  }
-
   /** The same folder without the data file: not claimed by the Trips plugin's screen, so E-3 draws it. */
   const complet = async (pages: string) => {
     await put(join(pages, 'complet', 'note.md'), note('Note du séjour'))
@@ -127,24 +119,6 @@ describe.skipIf(!canDrive)(`E-3 Attachments brick${canDrive ? '' : ` (SKIPPED: $
     await put(join(pages, 'complet', 'photo-une.png'), PNG)
     await put(join(pages, 'complet', 'assets', 'photo-deux.png'), PNG)
   }
-
-  it('a folder with a PDF, two photos and assets/voyage.json shows the brick with three rows, not the data file nor .folder.md', async () => {
-    // red if the brick is missing, counts the data file or the settings file, or lists a wrong number of rows
-    await boot(sejour)
-    const page = await open('sejour', { noRequest: true })
-    await heading(page).or(page.getByText('Trips', { exact: true }).first()).first().waitFor()
-    // what the user lands on: E-3 of the folder, not another screen
-    expect(new URL(page.url()).hash).toBe('#/section/sejour')
-    await heading(page).waitFor({ timeout: 3000 })
-    expect((await heading(page).textContent())!.replace(/\s+/g, ' ').trim()).toBe('Attachments 3')
-    const body = await page.locator('body').innerText()
-    expect(body).toContain('billet.pdf')
-    expect(body).toContain('photo-une.png')
-    expect(body).toContain('photo-deux.png')
-    expect(body).not.toContain('voyage.json')
-    expect(body).not.toContain('.folder.md')
-    expect(await page.getByText('Note du séjour').count()).toBe(1)
-  })
 
   it('a folder with a PDF and two photos shows the brick with three rows (captures light/dark, desk/phone)', async () => {
     // red if the brick is missing or counts a wrong number of rows
