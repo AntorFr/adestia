@@ -98,6 +98,7 @@ describe('tests d\'écran hors écran — inventaire (docs/tests-ecran)', () => 
       'bench/tests/bench-once.test.mjs',
       'bench/tests/niveaux-besoin.test.mjs',
       'bench/tests/niveaux-ensemble.test.mjs',
+      'packages/server/test/besoin-dossiers-pieces-jointes-ecran-ensemble.test.ts',
       'packages/web/test/besoin-coller-tableau-browser.test.ts',
       'packages/web/test/besoin-creer-dossier-browser.test.ts',
       'packages/web/test/besoin-creer-dossier-complement-browser.test.ts',
