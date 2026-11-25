@@ -156,3 +156,4 @@ Tests d'écran nés dans `epic/adestia-pages`, après l'inventaire par grappe : 
 - `packages/web/test/reglages-undo-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/verify-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/version-hors-image-ecran-browser.test.ts` — écran E-15 de la feature `adestia-version-hors-image` (ligne de version du menu ⚙), classement à faire
+- `bench/tests/folders-migration-ensemble.test.mjs` — écran de la feature `adestia-dossiers-migration-agent` (B-41 ; E-3, deux tests d'écran ; le reste du fichier passe par les portes sans navigateur), classement à faire

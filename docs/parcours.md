@@ -468,7 +468,7 @@ Needs: B-32, B-33, B-34, B-35
 ### P-22 — An agent makes a folder with its attachments
 A user asks the agent for a folder of a subject (a dossier on the boiler: a summary text, the invoice PDF, two photos).
 
-1. The agent writes the pages and puts the files in the folder, per the page-author skill (B-41); if the folder needs an icon or a colour it writes them to `.folder.md` through the settings route, never into a page (B-36).
+1. The agent writes the pages and puts the files in the folder, per the page-author skill (B-41); if the folder needs an icon or a colour it writes them to `.folder.md` through the `folder_settings` tool, never into a page (B-36).
 2. The user opens the folder (E-3): the sub-folders, the pages (the summary page among them, an ordinary page, B-37) and the **Attachments** brick with the invoice and the photos (B-38). Nothing the agent wrote is invisible.
 
 Needs: B-36, B-37, B-38, B-41
@@ -488,7 +488,7 @@ Needs: B-36, B-38, B-39, B-40
 ### P-24 — Bring an old instance to the new format
 The owner has deployed the version and asks the instance's agent to migrate.
 
-1. The agent reads the shipped instructions (the `folders-migration` skill, B-41), lists the pages named `INDEX.md` and those homonymous with their folder, and for each copies `title`, `ico`, `couleur`, `app` into the folder's `.folder.md` through the settings route; the page loses `couleur` and `app` but keeps its text, its `title` and `ico` (its own name and icon as an ordinary page) and its other fields.
+1. The agent reads the shipped instructions (the `folders-migration` skill, B-41), lists the pages named `INDEX.md` and those homonymous with their folder, and for each copies `title`, `ico`, `couleur`, `app` into the folder's `.folder.md` through the `folder_settings` tool; the page loses `couleur` and `app` but keeps its text, its `title` and `ico` (its own name and icon as an ordinary page) and its other fields.
 2. The agent opens a few folders (E-3): same icons, colours, owners; texts and attachments now visible (B-37, B-38). It reports the list of what it moved.
 
 Needs: B-36, B-37, B-41
