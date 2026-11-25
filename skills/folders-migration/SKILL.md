@@ -19,11 +19,11 @@ and you never touch the text of a page.
 
 ## The six steps
 
-1. **List the candidates.** Look through the memory for every file named `INDEX.md`, in any
+1. **List the candidates.** Look through the memory (the pages root of the instance) with `find_pages` or your file-search tools for every file named `INDEX.md`, in any
    case (`index.md`, `Index.md`), and every page `x/x.md` whose name is the name of the
    folder that holds it. Each gives one pair: the page and its folder `x` (for `INDEX.md`,
    the folder that holds it). A page at the root of the memory has no folder: leave it, and
-   say so in the report. Read the front matter of each page.
+   say so in the report. Read each page with your file tools to see its front matter.
 2. **Keep the pages that carry something.** The old settings are four front-matter keys:
    `title`, `ico`, `couleur`, `app`. A page that has none of the four is left alone, and
    the report says so. A page that has only some of them (only `ico`, or only `title`)
@@ -31,10 +31,12 @@ and you never touch the text of a page.
    and a homonymous page, take the index first, then the homonymous page for the keys the
    index did not give.
 3. **Copy the settings.** For each pair, call `folder_settings` with `action: get` and note
-   the `revision`. Then `action: set`, with that `revision`, passing **only the keys the
+   the `revision` (a folder without a `.folder.md` has none: pass no `revision`). Then
+   `action: set`, with that `revision` when there is one, passing **only the keys the
    folder's settings do not already hold**: a value already in `.folder.md` is newer than
    the page's and wins, and a value equal to the page's needs no write. Nothing to pass,
-   no call. The tool merges, so the other settings stay. If it refuses (a colour outside
+   no call. The plugin of `app` is read only on a top-level folder: for a nested folder
+   (`a/b`) still write `app` as asked, but say in the report that it has no effect there. The tool merges, so the other settings stay. If it refuses (a colour outside
    the palette, a folder that cannot be written, a stale revision: read again and retry
    once), leave that page **untouched**, and put the folder and the reason in the report.
 4. **Clean the page.** Only for a pair whose settings are now in `.folder.md` (just written,
@@ -64,5 +66,5 @@ remove. It changes no file. If a first run was cut off, run it again from step 1
 - Do not guess a value: a colour that is not one of the palette's hues is reported, not
   corrected.
 - Do not write `.folder.md` yourself, and do not put text in it.
-- If you cannot reach `folder_settings`, stop and say so: the owner runs the same steps by
-  hand from this text.
+- If you cannot reach `folder_settings`, stop and say so: the owner writes each `.folder.md` by hand (front matter only, the keys of step 2,
+  `couleur` from the palette) and cleans the pages as in step 4.

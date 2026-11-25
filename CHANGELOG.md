@@ -1229,7 +1229,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
 - Tests, `scripts/ecrans.json` and the docs (README, architecture, screens, status) follow; the
   tests that encoded index pages as folders were rewritten.
 
-## Unreleased (adestia-dossiers)
+## Unreleased (adestia-dossiers, after `v0.100.0-adestia-dossiers.1`)
 
 - **An instance in the old folder format is brought to the new one by its own agent** — the
   skill `folders-migration` tells it to copy `title`, `ico`, `couleur` and `app` from every
