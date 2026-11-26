@@ -169,16 +169,16 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
     [loaded, pages, folderSettings],
   )
 
-  /** The **Folder** link (B-39/B-40): to E-3 `?classic`, drawn by the shell on a replacement page or on the screen of a plugin that owns the folder. */
+  /** The **Folder** link (B-39/B-40): to E-3 `?classic`, drawn by the shell, in one row at the top of the body, on a replacement page or on the screen of a plugin that owns the folder. */
   const folderLinks = useMemo(() => {
     const shown = (folder: string) => ({
       href: `#${classicRoute(folder)}`,
       name: sectionAt(pages, folder, folders, folderSettings)?.title ?? folder,
     })
     const replaced = pagePath ? replacedFolder(pagePath, pages, folderSettings) : undefined
-    if (replaced !== undefined) return { header: shown(replaced) }
+    if (replaced !== undefined) return { shown: shown(replaced) }
     const owned = openApp ? folderOwnedAt(loaded, route, folders, folderSettings) : undefined
-    return owned !== undefined ? { corner: shown(owned) } : {}
+    return owned !== undefined ? { shown: shown(owned) } : {}
   }, [pagePath, openApp, route, loaded, pages, folders, folderSettings])
 
   const goHome = useCallback(() => {
@@ -271,11 +271,10 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
           fetchImpl={fetchImpl}
           locale={locale}
           t={t}
-          {...(folderLinks.header ? { folderLink: folderLinks.header } : {})}
         />
 
         <div className="adestia-canvas__body">
-        {folderLinks.corner && <FolderCorner href={folderLinks.corner.href} name={folderLinks.corner.name} t={t} />}
+        {folderLinks.shown && <FolderCorner href={folderLinks.shown.href} name={folderLinks.shown.name} t={t} />}
         {!bannerInChat && offlineBanner}
         <Problems instance={instance} failures={failures} loaded={loaded} folderSettings={folderSettings} t={t} locale={locale} />
 
