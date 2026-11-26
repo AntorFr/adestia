@@ -10,20 +10,18 @@ export interface IconPickerProps {
   readonly label: string
   /** The name of the « none » option (translated by the screen). */
   readonly noneLabel: string
-  /** Names of the icons when the screen has some; the icon's own name otherwise. */
-  readonly names?: Partial<Record<IconName, string>>
   readonly disabled?: boolean
 }
 
 /** `.adestia-icon-picker` (docs/charte.md § 4): a radiogroup grid of `ICON_NAMES` plus « none ». */
-export function IconPicker({ value, onChange, label, noneLabel, names, disabled }: IconPickerProps) {
+export function IconPicker({ value, onChange, label, noneLabel, disabled }: IconPickerProps) {
   const choices: (IconName | null)[] = [null, ...ICON_NAMES]
   const checkedIndex = choices.findIndex((one) => one === value)
   const { group, tabIndexOf, onKeyDown } = useRadioGroup(choices.length, checkedIndex, (at) => onChange(choices[at]!))
   return (
     <div ref={group} className="adestia-icon-picker" role="radiogroup" aria-label={label} aria-disabled={disabled || undefined}>
       {choices.map((one, i) => {
-        const name = one === null ? noneLabel : (names?.[one] ?? one)
+        const name = one === null ? noneLabel : one
         return (
           <button
             key={one ?? '∅'}

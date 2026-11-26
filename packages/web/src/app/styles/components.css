@@ -535,7 +535,6 @@ button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outli
 
 .adestia-setting-row__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .adestia-setting-row__label { font-size: var(--text-sm); font-weight: 500; color: var(--text); }
-.adestia-setting-row__help { font-size: var(--text-xs); color: var(--text-muted); overflow-wrap: anywhere; }
 .adestia-setting-row__control { flex: none; display: flex; align-items: center; }
 
 /* Icon picker and hue picker: radiogroups, one Tab stop, arrows choose (E-39) */
@@ -593,7 +592,6 @@ button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outli
 }
 
 /* Folder settings sheet (E-39) ------------------------------------------------ */
-.adestia-sheet-actions { display: flex; justify-content: flex-end; gap: var(--space-2); width: 100%; }
 .adestia-folder-settings__form { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
 .adestia-folder-settings__form .adestia-select { max-width: 100%; text-overflow: ellipsis; }
 .adestia-folder-settings__app { margin: 0; font-size: var(--text-sm); color: var(--text-muted); overflow-wrap: anywhere; }

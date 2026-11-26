@@ -13,7 +13,7 @@ import type { FolderSettings as Settings, FolderSettingsEntry } from '@antorfr/a
 import { ICON_NAMES, type IconName } from './icons.js'
 import { jsonInit, requestJson } from './request.js'
 import { type IndexEntry } from './sections.js'
-import { Button, Field, HUE_NAMES, HuePicker, IconPicker, Loading, SettingRow, Sheet, type HueName } from './ui/index.js'
+import { Button, Field, HUE_NAMES, HuePicker, IconPicker, SettingRow, Sheet, type HueName } from './ui/index.js'
 
 /** The hue names the sheet says aloud (never a hex value). */
 const HUE_LABELS: Record<HueName, string> = {
@@ -33,8 +33,6 @@ export interface FolderSettingsProps {
   readonly pages: readonly IndexEntry[]
   /** The name of the plugin screen the folder declares through `app:`, when it does. */
   readonly appName?: string
-  /** The index has not answered yet: the fields wait. */
-  readonly loading?: boolean
   readonly offline?: boolean
   readonly fetchImpl?: typeof fetch
   /** Read the index again, after a write or when the user reloads a conflict. */
@@ -65,7 +63,7 @@ function FolderSettingsSheet({ onClose, ...props }: FolderSettingsProps & { read
 }
 
 function Form({
-  section, entry, pages, appName, loading, offline, fetchImpl = (...args) => fetch(...args), refreshIndex, t, onClose, onReload,
+  section, entry, pages, appName, offline, fetchImpl = (...args) => fetch(...args), refreshIndex, t, onClose, onReload,
 }: FolderSettingsProps & { readonly onClose: () => void; readonly onReload: () => void }) {
   const own = pages.filter((one) => one.path.startsWith(`${section}/`) && !one.path.slice(section.length + 1).includes('/'))
   const [title, setTitle] = useState(entry?.title ?? '')
@@ -77,7 +75,7 @@ function Form({
   const [failure, setFailure] = useState<Failure>()
   const fileOf = (one: IndexEntry) => one.path.slice(section.length + 1)
   const missing = page !== '' && !own.some((one) => fileOf(one) === page)
-  const locked = loading === true || saving
+  const locked = saving
   const sendable = !locked && !offline && failure !== 'forbidden' && failure !== 'conflict'
 
   const save = async () => {
@@ -128,12 +126,12 @@ function Form({
       t={t}
       className="adestia-folder-settings"
       footer={
-        <div className="adestia-sheet-actions">
+        <>
           <Button onClick={onClose}>{t('Cancel')}</Button>
           <Button variant="accent" icon="check" disabled={!sendable} onClick={() => void save()}>
             {saving ? t('Saving…') : t('Save')}
           </Button>
-        </div>
+        </>
       }
     >
       <form
@@ -179,33 +177,29 @@ function Form({
             />
           )}
         </SettingRow>
-        {loading ? (
-          <Loading t={t} />
-        ) : (
-          <Field
-            label={t('Replacement page')}
-            help={
-              own.length === 0 && !missing
-                ? t('This folder holds no page yet.')
-                : `${t('Opening the folder shows this page. The classic view stays one link away.')}${appName ? ` ${t('It is behind that screen.')}` : ''}`
-            }
+        <Field
+          label={t('Replacement page')}
+          help={
+            own.length === 0 && !missing
+              ? t('This folder holds no page yet.')
+              : `${t('Opening the folder shows this page. The classic view stays one link away.')}${appName ? ` ${t('It is behind that screen.')}` : ''}`
+          }
+        >
+          <select
+            className="adestia-select"
+            value={page}
+            disabled={locked || (own.length === 0 && !missing)}
+            onChange={(event) => setPage(event.currentTarget.value)}
           >
-            <select
-              className="adestia-select"
-              value={page}
-              disabled={locked || (own.length === 0 && !missing)}
-              onChange={(event) => setPage(event.currentTarget.value)}
-            >
-              <option value="">{t('None — the classic view')}</option>
-              {missing ? <option value={page}>{`${page} ${t('(missing)')}`}</option> : null}
-              {own.map((one) => (
-                <option key={`${one.store ?? ''}:${one.path}`} value={fileOf(one)} title={one.title || fileOf(one)}>
-                  {one.title || fileOf(one)}
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
+            <option value="">{t('None — the classic view')}</option>
+            {missing ? <option value={page}>{`${page} ${t('(missing)')}`}</option> : null}
+            {own.map((one) => (
+              <option key={`${one.store ?? ''}:${one.path}`} value={fileOf(one)} title={one.title || fileOf(one)}>
+                {one.title || fileOf(one)}
+              </option>
+            ))}
+          </select>
+        </Field>
         {appName ? <p className="adestia-folder-settings__app">{t('Opens as the %app screen').replace('%app', appName)}</p> : null}
         {failure === 'conflict' ? (
           <p className="adestia-folder-settings__error" role="alert">
