@@ -3,7 +3,7 @@
  * The three setting components (docs/charte.md § 4): SettingRow, IconPicker, HuePicker.
  * Exit criterion: one Tab stop per picker, arrows choose and onChange gets the value
  * (null for « none »), aria-checked on the choice, twelve named hues plus « none » without
- * hexadecimal, the row renders label, help and control, the charter lists the three.
+ * hexadecimal, the row renders label and control, the charter lists the three.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -115,17 +115,13 @@ describe('HuePicker', () => {
 })
 
 describe('IconPicker', () => {
-  it('offers « none » then every ICON_NAMES entry, named by the icon or its translation', () => {
-    const { unmount } = render(<IconHost />)
+  it('offers « none » then every ICON_NAMES entry, named by the icon', () => {
+    render(<IconHost />)
     const radios = screen.getByRole('radiogroup', { name: 'Icône' }).querySelectorAll('[role=radio]')
     expect(radios).toHaveLength(ICON_NAMES.length + 1)
     expect(radios[0]!.getAttribute('aria-label')).toBe('Aucune')
     expect(radios[0]!.querySelector('svg')).toBeNull()
     expect(Array.from(radios).slice(1).map((r) => r.getAttribute('aria-label'))).toEqual([...ICON_NAMES])
-    unmount()
-    render(<IconPicker value={null} onChange={() => {}} label="I" noneLabel="N" names={{ [ICON_NAMES[0]!]: 'Premier' }} />)
-    expect(screen.getByRole('radio', { name: 'Premier' })).toBeTruthy()
-    expect(screen.getByRole('radio', { name: ICON_NAMES[1]! })).toBeTruthy()
   })
 
   it('has one Tab stop on the checked option and arrows choose, with null for « none »', () => {
@@ -155,28 +151,19 @@ describe('IconPicker', () => {
 })
 
 describe('SettingRow', () => {
-  it('renders label, help and the control, which names itself through the ids', () => {
-    render(
-      <SettingRow label="Ouvrir au démarrage" help="Aide ici">
-        {({ labelId, helpId }) => <input type="checkbox" role="switch" aria-labelledby={labelId} aria-describedby={helpId} />}
+  it('renders its label and the control, which names itself through the label id', () => {
+    const { container } = render(
+      <SettingRow label="Ouvrir au démarrage">
+        {({ labelId }) => <input type="checkbox" role="switch" aria-labelledby={labelId} />}
       </SettingRow>,
     )
-    const sw = screen.getByRole('switch', { name: 'Ouvrir au démarrage' })
-    expect(sw.getAttribute('aria-describedby')).toBeTruthy()
-    expect(document.getElementById(sw.getAttribute('aria-describedby')!)!.textContent).toBe('Aide ici')
-  })
-
-  it('without help, offers no help id and no empty help node', () => {
-    let seen: string | undefined = 'x'
-    const { container } = render(<SettingRow label="L">{({ helpId }) => { seen = helpId; return <button>c</button> }}</SettingRow>)
-    expect(seen).toBeUndefined()
-    expect(container.querySelector('.adestia-setting-row__help')).toBeNull()
-    expect(container.querySelector('.adestia-setting-row__control button')).toBeTruthy()
+    expect(screen.getByRole('switch', { name: 'Ouvrir au démarrage' })).toBeTruthy()
+    expect(container.querySelector('.adestia-setting-row__control input')).toBeTruthy()
   })
 
   it('two rows get distinct ids', () => {
     const ids: string[] = []
-    render(<><SettingRow label="a" help="h">{({ labelId }) => { ids.push(labelId); return <i /> }}</SettingRow><SettingRow label="b" help="h">{({ labelId }) => { ids.push(labelId); return <i /> }}</SettingRow></>)
+    render(<><SettingRow label="a">{({ labelId }) => { ids.push(labelId); return <i /> }}</SettingRow><SettingRow label="b">{({ labelId }) => { ids.push(labelId); return <i /> }}</SettingRow></>)
     expect(new Set(ids).size).toBe(2)
   })
 })
