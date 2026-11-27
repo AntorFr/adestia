@@ -84,6 +84,11 @@ export type IconName = keyof typeof ICON_PATHS
 
 export const ICON_NAMES = Object.keys(ICON_PATHS) as IconName[]
 
+/** The shell icon a stored `ico:` names, or undefined when it is a glyph (an emoji) or unknown. */
+export function knownIcon(value: string | undefined): IconName | undefined {
+  return ICON_NAMES.find((name) => name === value)
+}
+
 const SPRITE_ID = 'adestia-icon-sprite'
 
 /** The id a `<use href>` points at. */

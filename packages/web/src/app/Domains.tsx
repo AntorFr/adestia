@@ -12,7 +12,7 @@ import { wordsFor } from '../plugins/words.js'
 import type { TileInfo } from '../plugins/contract.js'
 import { EmptyState } from './ui/EmptyState.js'
 import { Tile } from './Tile.js'
-import type { IconName } from './icons.js'
+import { knownIcon, type IconName } from './icons.js'
 import { sectionsOf, type FolderSettingsMap, type IndexEntry, type SectionTile, type StoreInfo } from './sections.js'
 import { ORDER_KEY_DOMAINS } from './order.js'
 import { useReorder } from './useReorder.js'
@@ -180,8 +180,10 @@ export function Domains({
       const from = stores.find((store) => store.id === section.store)
       return {
         key: section.path,
-        icon: section.icon,
-        ...(!section.icon ? { iconName: 'folder' as const } : {}),
+        icon: knownIcon(section.icon) ? '' : section.icon,
+        ...(knownIcon(section.icon) || !section.icon
+          ? { iconName: knownIcon(section.icon) ?? ('folder' as const) }
+          : {}),
         ...(section.hue ? { hue: section.hue } : {}),
         label: section.title,
         chips: [{ text: plural(section.count, t('page'), t('pages')) }],

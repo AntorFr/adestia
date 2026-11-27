@@ -21,6 +21,7 @@ import { isFinished, toneOf } from '@antorfr/adestia-content'
 
 import type { IndexEntry, SectionTile, StoreInfo } from './sections.js'
 import { Icon } from './Icon.js'
+import { knownIcon } from './icons.js'
 import { EmptyState } from './ui/EmptyState.js'
 import { FolderAttachments } from './FolderAttachments.js'
 import { Loading } from './ui/Loading.js'
@@ -171,7 +172,7 @@ function RoomCard({
     <li>
       <button type="button" className="adestia-tile" style={hueVar(room.hue)} onClick={onOpen}>
         <span className="adestia-tile__icon" aria-hidden="true">
-          {room.icon || <Icon name="folder" />}
+          {knownIcon(room.icon) ? <Icon name={knownIcon(room.icon)!} /> : room.icon || <Icon name="folder" />}
         </span>
         {from && !from.default && (
           <span
@@ -304,7 +305,7 @@ export function Section({
           rather than a jump to somewhere unrelated. */}
       <header className="adestia-chead">
         <span className="adestia-chead__icon" aria-hidden="true">
-          {tile?.icon ? tile.icon : <Icon name="folder" />}
+          {knownIcon(tile?.icon) ? <Icon name={knownIcon(tile?.icon)!} /> : tile?.icon ? tile.icon : <Icon name="folder" />}
         </span>
         <div>
           <h1 className="adestia-chead__title">{title}</h1>
