@@ -238,3 +238,27 @@ describe('E-3 header, New from template (needs a template source, which jsdom do
     expect(source).not.toContain('adestia-btn--rename')
   })
 })
+
+describe('E-3 header order and icon (docs/ecrans.md, the action row)', () => {
+  it('Folder settings comes before Rename in tab order and draws the sliders icon, not the settings gear', async () => {
+    // red if Folder settings is moved after Rename, or takes the gear icon of the app settings
+    location.hash = '#/section/a?classic'
+    render(<App fetchImpl={api(setup())} />)
+    const settings = await screen.findByRole('button', { name: 'Folder settings' })
+    const rename = screen.getByRole('button', { name: 'Rename' })
+    expect(settings.compareDocumentPosition(rename) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const { iconId } = await import('../src/app/icons.js')
+    const href = settings.querySelector('use')?.getAttribute('href') ?? ''
+    expect(href).toBe(`#${iconId('sliders-horizontal')}`)
+    expect(href).not.toBe(`#${iconId('settings')}`)
+  })
+
+  it('the source orders Folder settings, New from template, +, Rename', async () => {
+    // red if + is drawn before New from template again
+    const src = (await import('node:fs')).readFileSync(`${process.cwd()}/packages/web/src/app/Canvas.tsx`, 'utf8')
+    const at = (s: string) => src.indexOf(s, src.indexOf('headerAction'))
+    const order = ['<FolderSettings', '<NewFromTemplate', "{create('plus')}", '<RenameFolder'].map(at)
+    expect(order.every((n) => n > 0)).toBe(true)
+    expect([...order].sort((a, b) => a - b)).toEqual(order)
+  })
+})
