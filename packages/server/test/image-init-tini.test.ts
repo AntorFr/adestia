@@ -4,12 +4,13 @@
  * `tini` absent from the environment makes (2) FAIL, never skip.
  */
 import { spawn, spawnSync } from 'node:child_process'
-import { readFileSync, readdirSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+
+import { cleanTmp, tmpDir } from './support/tmp.js'
 
 const root = resolve(fileURLToPath(new URL('../../..', import.meta.url)))
 const code = readFileSync(join(root, 'Dockerfile'), 'utf8')
@@ -75,6 +76,8 @@ parent.on('close', () => {
 `
 
 describe('real processes under tini -s (AD-zombies-1)', () => {
+  afterEach(cleanTmp)
+
   it('control: the detector sees a zombie when nobody reaps (a parent that never waits)', async () => {
     const p = spawn('sh', ['-c', 'sleep 0.1 & exec sleep 5'], { stdio: 'ignore' })
     try {
@@ -90,7 +93,7 @@ describe('real processes under tini -s (AD-zombies-1)', () => {
   })
 
   it('orphans killed after their parent died leave no Z entry; SIGTERM reaches the script, which exits with its own code', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'tini-'))
+    const dir = await tmpDir('tini-')
     const file = join(dir, 'tree.cjs')
     writeFileSync(file, SCRIPT)
     const tini = spawn('tini', ['-s', '--', process.execPath, file], { stdio: ['ignore', 'pipe', 'inherit'] })
@@ -115,7 +118,6 @@ describe('real processes under tini -s (AD-zombies-1)', () => {
       expect(r).toEqual({ code: 42, signal: null })
     } finally {
       tini.kill('SIGKILL')
-      rmSync(dir, { recursive: true, force: true })
     }
   }, 30000)
 })
