@@ -171,6 +171,27 @@ const FR: Readonly<Record<string, string>> = {
   'the key behind background reading of %servers stopped working — signing in again renews it':
     'la clé de la lecture en fond de %servers ne marche plus — se reconnecter la renouvelle',
 
+  // Folder settings (E-39)
+  'Folder settings': 'Réglages du dossier',
+  'Name shown': 'Nom affiché',
+  'Empty shows the folder’s own name.': 'Vide : le nom du dossier.',
+  None: 'Aucune',
+  'Show attachments': 'Afficher les pièces jointes',
+  'Replacement page': 'Page de remplacement',
+  'None — the classic view': 'Aucune — la vue classique',
+  'Opening the folder shows this page. The classic view stays one link away.':
+    'Ouvrir le dossier montre cette page. La vue classique reste à un lien.',
+  'It is behind that screen.': 'Elle passe après cet écran.',
+  'Opens as the %app screen': 'S’ouvre comme l’écran %app',
+  '(missing)': '(introuvable)',
+  'This folder holds no page yet.': 'Ce dossier ne contient encore aucune page.',
+  'The settings could not be written. Try again.': 'Les réglages n’ont pas pu être écrits. Réessayez.',
+  'You can no longer change this folder.': 'Vous ne pouvez plus modifier ce dossier.',
+  'You are offline.': 'Vous avez perdu la connexion.',
+  'The folder settings changed.': 'Les réglages du dossier ont changé.',
+  Red: 'Rouge', Orange: 'Orange', Amber: 'Ambre', Green: 'Vert', Emerald: 'Émeraude', Turquoise: 'Turquoise',
+  Blue: 'Bleu', Indigo: 'Indigo', Violet: 'Violet', Pink: 'Rose', Grey: 'Gris', Slate: 'Ardoise',
+
   // The instruction zone
   Catalogues: 'Catalogues',
   'A name': 'Un nom',
@@ -471,6 +492,8 @@ const FR: Readonly<Record<string, string>> = {
   'The day this page is about, when that is not the day it was written.':
     'Le jour dont parle la fiche, quand ce n’est pas celui où elle a été écrite.',
   'Attached files': 'Pièces jointes',
+  Attachments: 'Pièces jointes',
+  'Show all %n': 'Tout afficher (%n)',
   'Drop files to attach them to this page':
     'Déposez des fichiers pour les joindre à cette fiche',
   'File the attached files with the page “%title” (%path).':

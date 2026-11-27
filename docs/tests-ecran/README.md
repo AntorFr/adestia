@@ -135,6 +135,11 @@ Tests d'écran nés dans `epic/adestia-pages`, après l'inventaire par grappe : 
 - `packages/web/test/besoin-creer-dossier-browser.test.ts` — écran de la feature `adestia-decouverte-creer-dossier` (B-32, B-33 ; E-2, E-3, E-38), classement à faire
 - `packages/web/test/besoin-creer-dossier-complement-browser.test.ts` — écran de la feature `adestia-decouverte-creer-dossier`, seconde passe (B-32, B-33 ; E-2, E-3, E-38), classement à faire
 - `packages/web/test/besoin-decouverte-plugins-browser.test.ts` — écran de la feature `adestia-decouverte-plugins` (B-34, P-21 étape 4 ; E-3, E-36, E-38), classement à faire
+- `packages/web/test/besoin-dossiers-reglages-browser.test.ts` — écran de la feature `adestia-dossiers-fichier-reglages` (B-36, B-37 ; E-2, E-3), classement à faire
+- `packages/web/test/besoin-dossiers-reglages-ecran-browser.test.ts` — écran de la feature `adestia-dossiers-reglages-ecran` (B-39, B-40, P-23 ; E-3, E-4, E-39), classement à faire
+- `packages/web/test/besoin-dossiers-reglages-ecran-complement-browser.test.ts` — écran de la feature `adestia-dossiers-reglages-ecran`, seconde passe (B-39, B-40, P-23 ; E-3, E-4, E-39), classement à faire
+- `packages/web/test/besoin-dossiers-reglages-ecran-bords-browser.test.ts` — écran de la feature `adestia-dossiers-reglages-ecran`, troisième passe, les bords (B-39, B-40, P-23 ; E-3, E-4, E-39), classement à faire
+- `packages/server/test/besoin-dossiers-pieces-jointes-ecran-ensemble.test.ts` — écran de la feature `adestia-dossiers-pieces-jointes` (B-38, AD-41 ; E-3), classement à faire
 - `packages/web/test/besoin-renommer-browser.test.ts` — écran de la feature `adestia-decouverte-renommer` (B-35 ; E-3, E-38), classement à faire
 - `packages/web/test/besoin-etat-projet-browser.test.ts` — écran de l'epic `adestia-pages` (E-3, E-4, E-31, E-36), classement à faire
 - `packages/web/test/besoin-popover-bandeau-tardif-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
@@ -154,3 +159,4 @@ Tests d'écran nés dans `epic/adestia-pages`, après l'inventaire par grappe : 
 - `packages/web/test/reglages-undo-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/verify-formulaires-browser.test.ts` — écran de l'epic `adestia-pages`, classement à faire
 - `packages/web/test/version-hors-image-ecran-browser.test.ts` — écran E-15 de la feature `adestia-version-hors-image` (ligne de version du menu ⚙), classement à faire
+- `bench/tests/folders-migration-ensemble.test.mjs` — écran de la feature `adestia-dossiers-migration-agent` (B-41 ; E-3, deux tests d'écran ; le reste du fichier passe par les portes sans navigateur), classement à faire

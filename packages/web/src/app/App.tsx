@@ -11,14 +11,15 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { Chat } from '../chat/Chat.js'
 import type { BlockComponents } from '../editor/Reader.js'
 import { FatalGate, LoadingGate, RefusedGate, SignInGate } from './Gates.js'
-import { ScreenEdges } from './ScreenEdges.js'
+import { FolderCorner, ScreenEdges } from './ScreenEdges.js'
 import { Canvas } from './Canvas.js'
 import { CanvasHeader } from './CanvasHeader.js'
 import { composerButtonsOf, useContributions } from './useContributions.js'
 import { resolveLocale, translator } from './i18n.js'
 import { wordsFor } from '../plugins/words.js'
 import { SkinSlot } from './SkinSlot.js'
-import { folderRoute, pageRoute } from './owners.js'
+import { classicRoute, folderOwnedAt, folderRoute, pageRoute, replacedFolder } from './owners.js'
+import { sectionAt } from './sections.js'
 import type { LoadedPlugin } from '../plugins/loader.js'
 import { Offline } from './Offline.js'
 import { Problems } from './Problems.js'
@@ -79,7 +80,7 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
     [],
   )
 
-  const { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, writableFolders, folders, refreshIndex, skin, skinScheme, loaded, ready, indexed, pageChanges } =
+  const { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, writableFolders, folders, folderSettings, refreshIndex, skin, skinScheme, loaded, ready, indexed, pageChanges } =
     useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, blocksRef, onTrail })
 
   /**
@@ -115,6 +116,8 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
   const { route, openApp, settings, settingsPage, section, pagePath, pageStore } = useRoute({
     loaded,
     pages,
+    folders,
+    folderSettings,
     // The trail is cleared on navigation rather than by the plugin: a view
     // that says nothing about its new screen must show the app's name alone.
     onChange: () => setPluginTrail({ id: '', crumbs: [] }),
@@ -129,8 +132,8 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
   /** The breadcrumb — derived once, drawn by the header and carried by every message. */
   const trail = useMemo(
     () =>
-      trailOf({ settings, openApp, loaded, pluginTrail, page, section, pages, stores, t, say }),
-    [openApp, loaded, page, pages, section, pluginTrail, say, settings, stores, t],
+      trailOf({ settings, openApp, loaded, pluginTrail, page, section, pages, folderSettings, stores, t, say }),
+    [openApp, loaded, page, pages, folderSettings, section, pluginTrail, say, settings, stores, t],
   )
 
   /**
@@ -161,10 +164,22 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
    */
   const openSection = useCallback(
     (path: string) => {
-      location.hash = folderRoute(loaded, path, pages)
+      location.hash = folderRoute(loaded, path, pages, folderSettings)
     },
-    [loaded, pages],
+    [loaded, pages, folderSettings],
   )
+
+  /** The **Folder** link (B-39/B-40): to E-3 `?classic`, drawn by the shell, in one row at the top of the body, on a replacement page or on the screen of a plugin that owns the folder. */
+  const folderLinks = useMemo(() => {
+    const shown = (folder: string) => ({
+      href: `#${classicRoute(folder)}`,
+      name: sectionAt(pages, folder, folders, folderSettings)?.title ?? folder,
+    })
+    const replaced = pagePath ? replacedFolder(pagePath, pages, folderSettings) : undefined
+    if (replaced !== undefined) return { shown: shown(replaced) }
+    const owned = openApp ? folderOwnedAt(loaded, route, folders, folderSettings) : undefined
+    return owned !== undefined ? { shown: shown(owned) } : {}
+  }, [pagePath, openApp, route, loaded, pages, folders, folderSettings])
 
   const goHome = useCallback(() => {
     location.hash = ''
@@ -259,10 +274,11 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
         />
 
         <div className="adestia-canvas__body">
+        {folderLinks.shown && <FolderCorner href={folderLinks.shown.href} name={folderLinks.shown.name} t={t} />}
         {!bannerInChat && offlineBanner}
-        <Problems instance={instance} failures={failures} loaded={loaded} pages={pages} t={t} locale={locale} />
+        <Problems instance={instance} failures={failures} loaded={loaded} folderSettings={folderSettings} t={t} locale={locale} />
 
-        <Canvas ready={ready} indexed={indexed}
+        <Canvas ready={ready} indexed={indexed} offline={!reachable}
           instance={instance}
           skin={skin}
           loaded={loaded}
@@ -270,6 +286,7 @@ export function App({ fetchImpl: baseFetch = fetch }: { fetchImpl?: typeof fetch
           stores={stores}
           writableFolders={writableFolders}
           folders={folders}
+          folderSettings={folderSettings}
           refreshIndex={refreshIndex}
           openApp={openApp}
           settings={settings}

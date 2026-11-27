@@ -12,8 +12,8 @@ import { wordsFor } from '../plugins/words.js'
 import type { TileInfo } from '../plugins/contract.js'
 import { EmptyState } from './ui/EmptyState.js'
 import { Tile } from './Tile.js'
-import type { IconName } from './icons.js'
-import { sectionsOf, type IndexEntry, type SectionTile, type StoreInfo } from './sections.js'
+import { knownIcon, type IconName } from './icons.js'
+import { sectionsOf, type FolderSettingsMap, type IndexEntry, type SectionTile, type StoreInfo } from './sections.js'
 import { ORDER_KEY_DOMAINS } from './order.js'
 import { useReorder } from './useReorder.js'
 
@@ -96,6 +96,7 @@ export function Domains({
   entries,
   stores,
   folders = [],
+  folderSettings = {},
   emptyAction,
   openPlugin,
   openSection,
@@ -107,6 +108,8 @@ export function Domains({
   readonly stores: readonly StoreInfo[]
   /** Every folder the stores hold, empty ones included (AD-38). */
   readonly folders?: readonly string[]
+  /** The `.folder.md` of each folder: what dresses a tile (AD-40). */
+  readonly folderSettings?: FolderSettingsMap
   /** The creation entries as buttons, for an instance with nothing yet. */
   readonly emptyAction?: ReactNode
   readonly openPlugin: (plugin: LoadedPlugin) => void
@@ -143,7 +146,7 @@ export function Domains({
     // would offer to open what the reader is already looking at.
     'home',
   ]
-  const sections: readonly SectionTile[] = sectionsOf(entries, absorbed, folders)
+  const sections: readonly SectionTile[] = sectionsOf(entries, absorbed, folders, folderSettings)
 
   /**
    * Every door on this instance, in one list.
@@ -177,8 +180,10 @@ export function Domains({
       const from = stores.find((store) => store.id === section.store)
       return {
         key: section.path,
-        icon: section.icon,
-        ...(!section.icon ? { iconName: 'folder' as const } : {}),
+        icon: knownIcon(section.icon) ? '' : section.icon,
+        ...(knownIcon(section.icon) || !section.icon
+          ? { iconName: knownIcon(section.icon) ?? ('folder' as const) }
+          : {}),
         ...(section.hue ? { hue: section.hue } : {}),
         label: section.title,
         chips: [{ text: plural(section.count, t('page'), t('pages')) }],

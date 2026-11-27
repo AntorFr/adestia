@@ -145,6 +145,8 @@ async function pages(w, famille) {
   await p('maison/INDEX.md', { title: 'Maison', type: 'index' }, 'Ce qui se répare, se range, se planifie.')
   await p('maison/rangement.md', { title: 'Rangement du garage', type: 'projet', status: 'clos', id: 'rangement' }, 'Fini en juin.')
   await p('maison/travaux/INDEX.md', { title: 'Travaux', type: 'index', app: 'todo' }, 'Un `app:` écrit trop bas : le shell le signale, il ne le suit pas.')
+  // AD-40: the declaration lives in the folder's `.folder.md`; the `app:` of the page above is a field like another.
+  await put(w, 'pages/maison/travaux/.folder.md', '---\napp: todo\n---\n')
   await p('maison/travaux/cuisine.md', { title: 'Cuisine', type: 'projet', status: 'en cours' }, 'Plan de travail à poser.')
   await p('maison/travaux/jardin.md', { title: 'Jardin', type: 'projet', status: 'à faire' }, 'Tailler la haie.')
 

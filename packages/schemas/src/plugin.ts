@@ -351,6 +351,12 @@ export interface PluginManifest {
   /** Agent-facing facets. */
   readonly skills?: readonly string[]
   /**
+   * Data files this plugin reads, as paths relative to a folder (`*` stands for
+   * a run of characters inside one segment): `assets/voyage.json`,
+   * `*.parcours.json`. They are not attachments of the folder (AD-41).
+   */
+  readonly dataFiles?: readonly string[]
+  /**
    * Subagent definitions (`./agents/<name>.md`, the engine's own format) that
    * a skill names with `agent:` to run in a fresh context. Delivered as
    * `<id>-<name>`, and the skills of the same plugin that name one are

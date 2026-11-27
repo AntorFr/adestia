@@ -248,7 +248,7 @@ export function parsePluginManifest(input: unknown, folderName: string): PluginM
   for (const field of ['view', 'blocks', 'chrome', 'api', 'setup']) {
     checkRelativePath(input, field, issues, 'plugin folder')
   }
-  for (const field of ['styles', 'bin', 'skills', 'agents', 'types', 'absorbs', 'secrets']) {
+  for (const field of ['styles', 'bin', 'skills', 'agents', 'types', 'absorbs', 'secrets', 'dataFiles']) {
     checkStringArray(input, field, issues)
   }
   for (const [index, agent] of (Array.isArray(input['agents']) ? input['agents'] : []).entries()) {
@@ -258,6 +258,13 @@ export function parsePluginManifest(input: unknown, folderName: string): PluginM
     checkRelativePath({ [`agents[${index}]`]: agent }, `agents[${index}]`, issues, 'plugin folder')
     if (!agent.endsWith('.md')) {
       issues.push({ field: `agents[${index}]`, message: 'must name a markdown file (`.md`)' })
+    }
+  }
+  for (const [index, pattern] of (Array.isArray(input['dataFiles']) ? input['dataFiles'] : []).entries()) {
+    // A pattern is matched against paths inside a folder, never dereferenced,
+    // but one that could not match inside the folder is a mistake to refuse.
+    if (typeof pattern === 'string') {
+      checkRelativePath({ [`dataFiles[${index}]`]: pattern }, `dataFiles[${index}]`, issues, 'folder')
     }
   }
   for (const [index, style] of (Array.isArray(input['styles']) ? input['styles'] : []).entries()) {

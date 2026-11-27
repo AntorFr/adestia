@@ -258,10 +258,11 @@ describe.skipIf(!playwright)('pages tranche, from the need', () => {
             for (const dir of ['lf', 'crlf']) {
               const { context, page } = await visit(browser, instance.url, locale, 'light', 'desk', `/section/${dir}${suffix}`)
               await appears(page, b, 'button.adestia-card')
-              await until(page, b, `${dir}${suffix}: the chips never settled`, (n: number) => document.querySelectorAll('button.adestia-chip').length === n && document.querySelectorAll('button.adestia-card').length === 3, pills.length + 1)
+              await until(page, b, `${dir}${suffix}: the chips never settled`, (n: number) => document.querySelectorAll('button.adestia-chip').length === n && document.querySelectorAll('button.adestia-card').length === 4, pills.length + 1)
               const chips = (await page.evaluate(() => [...document.querySelectorAll('button.adestia-chip')].map((e) => (e.textContent ?? '').trim()))) as string[]
               expect(chips.slice(1), `${dir}${suffix}`).toEqual(pills) // the first chip is "All" / "Tout"
-              expect(await page.locator('button.adestia-card').count()).toBe(3)
+              // three fiches AND `INDEX.md`, a card like another (AD-40)
+              expect(await page.locator('button.adestia-card').count()).toBe(4)
               await context.close()
             }
         })
@@ -269,7 +270,7 @@ describe.skipIf(!playwright)('pages tranche, from the need', () => {
         spec('section_crlf_filtre_par_facette', 60_000, async (b) => {
           const { context, page } = await visit(browser, instance.url, locale, 'light', 'desk', '/section/crlf')
           await appears(page, b, 'button.adestia-card')
-          await until(page, b, 'the three cards never settled', () => document.querySelectorAll('button.adestia-card').length === 3)
+          await until(page, b, 'the four cards never settled (three fiches and INDEX.md)', () => document.querySelectorAll('button.adestia-card').length === 4)
           await page.getByRole('button', { name: 'ouverte', exact: true }).click({ timeout: b.left(15_000) })
           await until(page, b, 'the facette never narrowed the list to two cards', () => document.querySelectorAll('button.adestia-card').length === 2)
           const cards = (await page.evaluate(() => [...document.querySelectorAll('button.adestia-card')].map((e) => e.textContent ?? ''))) as string[]

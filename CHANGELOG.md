@@ -1220,3 +1220,36 @@ branch and that `test:plugins` is replayed after a red vitest run.
 ## v0.99.3
 
 - **No more zombie Chrome processes in the pod after a web read** — the image now runs `tini` as PID 1 in front of the server, so Chrome processes that are killed after their parent has died are reaped instead of piling up as zombies. Nothing changes in the interface.
+
+## v0.100.0
+
+- **A folder is dressed by its own `.folder.md`, and no page stands for the folder any more** —
+  the server reads and writes a `.folder.md` file in each folder and serves its settings in the
+  page index; the shell dresses folders (tiles, headers, livery) from those settings. An `INDEX`
+  page is now an ordinary page, no longer the folder's stand-in, and the folder address route and
+  the reader's rows follow. The folder settings screen is E-39 (main kept E-37 for Plugins and
+  E-38 for Create).
+- **The agent can change a folder's settings** — a `folder_settings` tool goes through the same
+  settings path as the route, merging what it is given into the existing settings, and is listed
+  in the socket's `tools/list`.
+- **The bench seeds** declare their plugin ownership in `.folder.md` and include folders dressed
+  that way, to look at the tiles and headers.
+- Tests, `scripts/ecrans.json` and the docs (README, architecture, screens, status) follow; the
+  tests that encoded index pages as folders were rewritten.
+
+- **A folder's attachments are shown** — the folder view lists the files in the folder and its
+  `assets/` (PDFs, photos…) as an Attachments block of twelve rows then "Show all n", hidden when
+  empty or when the folder sets `attachments: false`. Plugins declare the data files they own
+  through a `dataFiles` manifest key.
+- **A folder's settings sheet** — from a folder's header, a sheet sets a display name, icon and
+  colour, hides attachments and chooses a replacement page. The folder then opens on that page,
+  with a "Folder" link back to the classic view, where "Folder settings" clears the choice.
+- **An instance in the old folder format is brought to the new one by its own agent** — the
+  skill `folders-migration` tells it to copy `title`, `ico`, `couleur` and `app` from every
+  `INDEX.md` and homonymous `x/x.md` into the folder's `.folder.md` through `folder_settings`,
+  to remove `couleur` and `app` from the page (which keeps its text, `title` and `ico`), and to
+  report. It deletes nothing and a second run changes no file. The server never migrates.
+- **The window between the deploy and the migration**: from the deploy, nothing reads the old
+  settings in a page, so a folder dressed by an index loses its icon and colour and, if the
+  index declared an `app:`, its plugin (the folder then follows the plugin's `absorbs`) until
+  the owner asks the agent to migrate. Known and accepted.

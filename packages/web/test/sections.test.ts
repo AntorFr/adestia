@@ -5,6 +5,7 @@ import {
   sectionAt,
   sectionsOf,
   subsectionsOf,
+  type FolderSettingsMap,
   type IndexEntry,
 } from '../src/app/sections.js'
 
@@ -16,16 +17,24 @@ const entry = (path: string, fields: Record<string, unknown> = {}): IndexEntry =
 
 /** Shaped like the real corpus this was built against. */
 const CORPUS: IndexEntry[] = [
-  entry('achats/INDEX.md', { title: 'Achats', ico: '🛍️', couleur: 'turquoise' }),
+  entry('achats/INDEX.md', { title: 'Index des achats' }),
   entry('achats/cnc.md'),
   entry('achats/bateau.md'),
-  entry('diy/INDEX.md', { title: 'DIY', ico: '🪚' }),
-  entry('diy/projets/INDEX.md', { title: 'Projets' }),
+  entry('diy/INDEX.md'),
+  entry('diy/projets/INDEX.md'),
   entry('diy/projets/etabli.md'),
-  entry('sujets/INDEX.md', { title: 'Sujets', ico: '💬' }),
+  entry('sujets/INDEX.md'),
   entry('sujets/armee.md'),
   entry('todo/taches.md'),
 ]
+
+/** What the folders' `.folder.md` files say (AD-40): the livery lives here, not in a page. */
+const SETTINGS: FolderSettingsMap = {
+  achats: { title: 'Achats', ico: '🛍️', couleur: 'turquoise', revision: 'r1' },
+  diy: { title: 'DIY', ico: '🪚', revision: 'r2' },
+  'diy/projets': { title: 'Projets', revision: 'r3' },
+  sujets: { title: 'Sujets', ico: '💬', revision: 'r4' },
+}
 
 describe('sectionsOf', () => {
   it('makes a section of every first-level folder', () => {
@@ -53,10 +62,9 @@ describe('sectionsOf', () => {
       entry('voyages/colo-ucpa-2026/colo-ucpa-2026.md'),
     ]
     expect(sectionsOf(circle).map((s) => s.path)).toEqual(['voyages'])
-    // One, not three: `baden-2026/baden-2026.md` and `colo-ucpa-2026/…` are
-    // homonymous, which makes them their folder's index rather than its
-    // contents — so only `val-sans-retour` counts as a page held.
-    expect(sectionsOf(circle)[0]?.count).toBe(1)
+    // Three, not one: `baden-2026/baden-2026.md` is a page like another, no
+    // page stands for its folder any more (AD-40).
+    expect(sectionsOf(circle)[0]?.count).toBe(3)
   })
 
   it('shows a grouping folder as itself, rather than guessing past it', () => {
@@ -68,19 +76,22 @@ describe('sectionsOf', () => {
     expect(sectionsOf(grouped).map((s) => s.path)).toEqual(['domaines'])
   })
 
-  it('reads the sibling shell’s "space": a folder beside a page of its name', () => {
-    // `dietetique/dietetique.md` — seven of them in the corpus, all invisible
-    // until this. The homonymous page dresses the section AND is not listed
-    // among its contents.
+  it('dresses a room from its .folder.md, and counts the page of its own name', () => {
+    // `dietetique/dietetique.md` is an ordinary page now: it is listed and
+    // counted, and the room's title and icon come from its `.folder.md`.
     const corpus = [
-      entry('sante/INDEX.md', { title: 'Santé' }),
-      entry('sante/dietetique/dietetique.md', { title: 'Diététique', ico: '🥗' }),
+      entry('sante/INDEX.md'),
+      entry('sante/dietetique/dietetique.md', { title: 'Page homonyme', ico: '🍎' }),
       entry('sante/dietetique/menus.md'),
     ]
-    const rooms = subsectionsOf(corpus, 'sante')
+    const settings: FolderSettingsMap = {
+      'sante/dietetique': { title: 'Diététique', ico: '🥗', revision: 'r' },
+    }
+    const rooms = subsectionsOf(corpus, 'sante', [], settings)
     expect(rooms.map((r) => r.path)).toEqual(['sante/dietetique'])
-    expect(rooms[0]).toMatchObject({ title: 'Diététique', icon: '🥗', count: 1 })
+    expect(rooms[0]).toMatchObject({ title: 'Diététique', icon: '🥗', count: 2 })
     expect(pagesIn(corpus, 'sante/dietetique').map((e) => e.path)).toEqual([
+      'sante/dietetique/dietetique.md',
       'sante/dietetique/menus.md',
     ])
   })
@@ -133,25 +144,25 @@ describe('sectionsOf', () => {
   })
 
   it('dresses a tile from the declaration, field by field', () => {
-    const achats = sectionsOf(CORPUS).find((s) => s.path === 'achats')
+    const achats = sectionsOf(CORPUS, [], [], SETTINGS).find((s) => s.path === 'achats')
     expect(achats).toMatchObject({ title: 'Achats', icon: '🛍️', hue: 'turquoise' })
   })
 
   it('falls back per field rather than all at once', () => {
     // `diy` gives a title and an icon but no colour: it must keep both, not
     // lose them to an all-or-nothing rule.
-    const diy = sectionsOf(CORPUS).find((s) => s.path === 'diy')
+    const diy = sectionsOf(CORPUS, [], [], SETTINGS).find((s) => s.path === 'diy')
     expect(diy).toMatchObject({ title: 'DIY', icon: '🪚' })
     expect(diy?.hue).toBeUndefined()
   })
 
-  it('counts what a section holds, index pages excluded', () => {
+  it('counts what a section holds, INDEX.md included as the card it is', () => {
     const achats = sectionsOf(CORPUS).find((s) => s.path === 'achats')
-    expect(achats?.count).toBe(2)
+    expect(achats?.count).toBe(3)
     // Everything below counts, not only the top level: a section's weight is
     // what it contains, however deep.
     const diy = sectionsOf(CORPUS).find((s) => s.path === 'diy')
-    expect(diy?.count).toBe(1)
+    expect(diy?.count).toBe(3)
   })
 
   it('names the store a folder comes from, when it comes from one', () => {
@@ -195,13 +206,14 @@ describe('sectionsOf', () => {
 describe('pagesIn', () => {
   it('returns the pages a section holds directly', () => {
     expect(pagesIn(CORPUS, 'achats').map((e) => e.path)).toEqual([
+      'achats/INDEX.md',
       'achats/cnc.md',
       'achats/bateau.md',
     ])
   })
 
-  it('does not reach into sub-folders, nor list the index page', () => {
-    expect(pagesIn(CORPUS, 'diy')).toEqual([])
+  it('does not reach into sub-folders, but lists INDEX.md as a page', () => {
+    expect(pagesIn(CORPUS, 'diy').map((e) => e.path)).toEqual(['diy/INDEX.md'])
   })
 })
 

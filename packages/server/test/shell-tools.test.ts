@@ -178,6 +178,7 @@ describe('the socket — what an external-binary engine reaches through the brid
     }
     expect(list.result.tools.map((tool) => tool.name).sort()).toEqual([
       'find_pages',
+      'folder_settings',
       'new_id',
       'rename_conversation',
     ])

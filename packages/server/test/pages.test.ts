@@ -199,7 +199,7 @@ describe('the index', () => {
   })
 
   it('is empty rather than failing on a fresh workspace', async () => {
-    expect((await app.inject({ url: '/api/pages/index' })).json()).toEqual({ entries: [], writableFolders: [''], folders: [] })
+    expect((await app.inject({ url: '/api/pages/index' })).json()).toEqual({ entries: [], writableFolders: [''], folders: [], folderSettings: {} })
   })
 
   it('says whether a page has anything under its frontmatter', async () => {

@@ -170,6 +170,17 @@ keep opening as they did (B-31).
 - **B-plugins-3** — The page applies the change through the existing restart (P-10): the restart bar, refused while turns are running with their count, **Restart anyway** to force, then "Coming back…". After it, an app turned on shows its tile and route; one turned off has none. Nothing is reloaded in place. *(P-plugins-1, P-10)*
 - **B-plugins-4** — The page changes nothing it should not: it can only turn on or off a plugin this instance found, never add a name the instance does not know, a source or a repository, and never touches another key of the file. When the file cannot be written (a read-only mount) the page still lists everything and says why the switches are inert, as the Configuration page does; an instance started without a config file has no such page content, and the page says it does not expose its configuration, as the Configuration page does. *(P-plugins-1)*
 
+### What `adestia-dossiers` adds
+
+The folder model: settings apart from content. Six needs, from Monsieur's brief of 2026-11-20. They change a visible behaviour (a folder's text and files become visible; the index file stops being special), so `B-1` does not bind them.
+
+- **B-36** — The settings of a folder (icon, colour, name shown, the plugin app it declares, whether its attachments are shown, its replacement page) live in one file, `<folder>/.folder.md`, whose front matter is the whole of it: it never carries content (a body written there is refused, a body found there is ignored). It is excluded everywhere a page or a file is counted or listed: card lists, counters, attachments, search, the files route. *(P-22, P-23)*
+- **B-37** — `INDEX.md` and the homonymous page `x/x.md` are ordinary pages: listed, counted, searchable, opened like any page; they dress nothing and own nothing. Nothing reads the old settings in them any more (no legacy support). *(P-22, P-24)*
+- **B-38** — The view of a folder (E-3) gains an **Attachments** brick beside the sub-folders and the pages: the files of the folder, except `.folder.md` and the data files that plugins declare in their manifest (`assets/voyage.json`, `assets/workbook.json`, `*.parcours.json`…; the same name at the root of the folder stays an attachment). Each file opens or downloads as an attachment does on a page (E-4). The brick is absent when the folder holds no such file or when its settings hide it. *(P-22, P-23)*
+- **B-39** — A folder-settings screen (E-39), opened from the header of E-3, sets without editing a file: the name shown, the icon, the colour, and whether the Attachments brick is shown. A folder owned by a plugin's screen reaches it through the **Folder** link the shell draws on that screen (to E-3 with `?classic`). *(P-23)*
+- **B-40** — The same screen designates one page of the folder as its **replacement page**: opening the folder then shows that page instead of the classic view (E-3); the classic view stays one gesture away and the setting can be cleared. Opening order, unchanged: the active plugin's screen, then the replacement page, then the classic view. *(P-23)*
+- **B-41** — An agent that follows the instructions makes the folder right, and an old instance is brought to the new format by its own agent. The page-author skill states the rule (« a folder with its attachments »: pages and files in the folder, settings in `.folder.md`, text in an ordinary page); the product ships the migration instructions that agent follows once the version is in production (settings of every index out to `.folder.md`, the text stays a page, nothing visible lost). The server never migrates by itself. *(P-22, P-24)*
+
 ## Journeys
 
 ### P-1 — Reach the instance
@@ -454,11 +465,40 @@ Claire, who has just installed Adestia on her own machine (core functions only),
 
 Needs: B-32, B-33, B-34, B-35
 
+### P-22 — An agent makes a folder with its attachments
+A user asks the agent for a folder of a subject (a dossier on the boiler: a summary text, the invoice PDF, two photos).
+
+1. The agent writes the pages and puts the files in the folder, per the page-author skill (B-41); if the folder needs an icon or a colour it writes them to `.folder.md` through the `folder_settings` tool, never into a page (B-36).
+2. The user opens the folder (E-3): the sub-folders, the pages (the summary page among them, an ordinary page, B-37) and the **Attachments** brick with the invoice and the photos (B-38). Nothing the agent wrote is invisible.
+
+Needs: B-36, B-37, B-38, B-41
+
+### P-23 — Set up a folder from the interface
+The user (owner or any signed-in identity: there is no role) wants the Boiler dossier's icon changed, the attachments out of the way, and its summary page shown as the folder's face. Strong moment: reopening the folder and finding the page, with the way back one link away.
+
+1. In E-3 the user presses **Folder settings** (E-39); the button is absent where the folder cannot be written.
+2. They pick an icon and a colour, switch the Attachments brick off (B-39), and choose the summary page as replacement page (B-40). **Save** writes `.folder.md`; the sheet closes.
+3. Opening the folder now shows that page (E-4) with a **Folder** link to the classic view; in that view **Folder settings** opens E-39, where choosing **None — the classic view** and saving clears the choice and restores the classic view.
+4. A folder owned by a plugin: its screen carries the same **Folder** link, which leads to the classic view of the folder, whence **Folder settings** opens E-39.
+
+Failure paths: the write is refused (error line, the sheet stays with its entries, the user retries or cancels); the settings changed meanwhile (conflict line, **Reload**, the user starts again from what is saved); the folder holds no page (the replacement choice is disabled and says so; the other settings save); the saved replacement page was deleted (the folder opens its classic view with no error; E-39 shows the page as missing until another choice is saved); the user is offline (the sheet says so, **Save** is disabled until the connection returns); the right to write was withdrawn meanwhile (the sheet says so and **Save** is disabled); the replacement page cannot be read (E-8 shows its error and the **Folder** link still leads to the classic view).
+
+Needs: B-36, B-38, B-39, B-40
+
+### P-24 — Bring an old instance to the new format
+The owner has deployed the version and asks the instance's agent to migrate.
+
+1. The agent reads the shipped instructions (the `folders-migration` skill, B-41), lists the pages named `INDEX.md` and those homonymous with their folder, and for each copies `title`, `ico`, `couleur`, `app` into the folder's `.folder.md` through the `folder_settings` tool; the page loses `couleur` and `app` but keeps its text, its `title` and `ico` (its own name and icon as an ordinary page) and its other fields.
+2. The agent opens a few folders (E-3): same icons, colours, owners; texts and attachments now visible (B-37, B-38). It reports the list of what it moved.
+
+Needs: B-36, B-37, B-41
+
 
 ## Out of scope
 
+- **`adestia-dossiers` does not build**: any support of the old formats (`INDEX.md` and the homonymous page are never read as settings again, not even as a fallback); deleting a folder; editing the declared `app:` from the screen (E-39 shows it, the agent or the owner changes it in `.folder.md`); a server-side migration at boot; per-file settings of an attachment; sorting or filtering the Attachments brick; a body or free text in `.folder.md`.
 - **A guided tour, a tutorial, a checklist of first steps** (`adestia-decouverte`): discovery is the + button of B-32 and the buttons of the empty screens only. Plugins carried elsewhere than this repository, the cockpit included (visible by default once enabled), may follow the manifest contract later (B-34). Creating a chat, a project entity, user-defined creations, deleting a folder.
-- **Any functional change, except the six of `adestia-ajouts` (B-17 to B-22), the nine of `adestia-pages` (B-23 to B-31) B-paste-1 of `adestia-coller-tableau`, and B-32 to B-35 of `adestia-decouverte`** (B-copie-1, from `adestia-qualite`, is added the same way) (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
+- **Any functional change, except the six of `adestia-ajouts` (B-17 to B-22), the nine of `adestia-pages` (B-23 to B-31) B-paste-1 of `adestia-coller-tableau`, and B-32 to B-35 of `adestia-decouverte`, and B-36 to B-41 of `adestia-dossiers`** (B-copie-1, from `adestia-qualite`, is added the same way) (from `adestia-qualite`; `adestia-correctifs` repairs defects but adds no function, AD-18): a new feature, a removed feature, a renamed configuration key,
   route or file, a changed data format, a changed MCP tool. A defect found on the way is
   written down (`ARCHITECTURE.md` › Known defects) and left for its own feature.
 - **Catalogue security corrections** belonged to the separate catalogue work, not

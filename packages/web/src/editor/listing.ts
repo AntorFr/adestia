@@ -5,37 +5,26 @@
 
 import { isFinished, type Indexed } from '@antorfr/adestia-content'
 
-import { folderOf, isIndexPath, prettify } from '../app/paths.js'
+import { folderOf, prettify } from '../app/paths.js'
 
 /**
  * Whether a page belongs in the list, at the depth asked for.
  *
- * The subtlety is that **a child is not always a file**. This product files a
- * sub-subject as a FOLDER — that is the whole hierarchy, decided 2026-09-04 —
- * so the row standing for a child is that folder's own index page,
- * not a page beside it. A rule that only looked at files would list a project's
- * loose notes and miss every one of its sub-projects.
+ * No page stands for a folder any more (AD-40): a folder's settings live in its
+ * `.folder.md`, and `INDEX.md` or `x/x.md` is a page like another. So there are
+ * two answers rather than three:
  *
- * Hence three answers rather than a depth counter:
- *
- * - `self`     the pages filed directly here, and nothing that stands for a folder
- * - `children` the same, PLUS the index of each direct sub-folder — the children
+ * - `self` and `children` the pages filed directly in the folder (`children`
+ *   used to add the index of each sub-folder; no such page exists now, and the
+ *   word is kept so a block written with it still reads)
  * - `subtree`  everything below, at any depth
  *
- * An index page is never listed as a content page of its own folder: it IS the
- * folder. Which also keeps the page carrying the block out of its own list.
+ * The page carrying the block is the caller's to leave out of its own list.
  */
 export function under(path: string, base: string, depth: string): boolean {
   const folder = folderOf(path)
-  const inside = base === '' ? folder !== '' || true : folder === base || folder.startsWith(`${base}/`)
-  if (!inside) return false
-  if (depth === 'subtree') return true
-
-  const rest = base === '' ? folder : folder.slice(base.length + 1).replace(/^\//, '')
-  if (folder === base) return !isIndexPath(path)
-  if (depth === 'self') return false
-  // One folder down: only its index stands for it, the rest is that folder's business.
-  return !rest.includes('/') && isIndexPath(path)
+  if (depth === 'subtree') return base === '' || folder === base || folder.startsWith(`${base}/`)
+  return folder === base
 }
 
 /**

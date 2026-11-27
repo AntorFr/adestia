@@ -12,7 +12,7 @@ import { wordsFor } from '../plugins/words.js'
 import { resolveLocale, translator } from './i18n.js'
 import { followChanges } from './live.js'
 import { requestJson } from './request.js'
-import type { IndexEntry, StoreInfo } from './sections.js'
+import type { FolderSettingsMap, IndexEntry, StoreInfo } from './sections.js'
 import { browserSkinEnvironment, loadSkin, type Skin, type SkinDescriptor, type SkinSlots } from './skin.js'
 
 export interface InstanceInfo {
@@ -80,6 +80,8 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
   // A hint for drawing, not a permission: the write stays the verdict.
   const [writableFolders, setWritableFolders] = useState<readonly string[]>([])
   const [folders, setFolders] = useState<readonly string[]>([])
+  /** The `.folder.md` of each folder that has one (AD-40): its title, icon, colour and owner. */
+  const [folderSettings, setFolderSettings] = useState<FolderSettingsMap>({})
   /**
    * The stores this instance composes — empty when it has only one, which is
    * how the shell knows there is no provenance to draw.
@@ -224,7 +226,7 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
 
         // The INDEX rather than the plain list: sections are dressed by their
         // index page's frontmatter, and only this endpoint carries it.
-        const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[]; folders?: string[] }>(
+        const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[]; folders?: string[]; folderSettings?: FolderSettingsMap }>(
           fetchImpl,
           '/api/pages/index',
         )
@@ -238,6 +240,7 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
           setStores(Array.isArray(body?.stores) ? body.stores : [])
           setWritableFolders(Array.isArray(body?.writableFolders) ? body.writableFolders : [])
           setFolders(Array.isArray(body?.folders) ? body.folders : [])
+          setFolderSettings(body?.folderSettings && typeof body.folderSettings === 'object' ? body.folderSettings : {})
           setIndexed(true)
         }
         if (!cancelled) setReady(true)
@@ -280,7 +283,7 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
       onChange: (paths) => {
         setPageChanges((current) => ({ seq: current.seq + 1, paths }))
         void (async () => {
-          const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[]; folders?: string[] }>(
+          const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[]; folders?: string[]; folderSettings?: FolderSettingsMap }>(
             fetchImpl,
             '/api/pages/index',
           )
@@ -290,6 +293,7 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
           setStores(Array.isArray(body?.stores) ? body.stores : [])
           setWritableFolders(Array.isArray(body?.writableFolders) ? body.writableFolders : [])
           setFolders(Array.isArray(body?.folders) ? body.folders : [])
+          setFolderSettings(body?.folderSettings && typeof body.folderSettings === 'object' ? body.folderSettings : {})
         })()
       },
     })
@@ -298,7 +302,7 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
 
   /** Re-reads the index now: a folder made here does not wait for the change feed to appear. */
   const refreshIndex = useCallback(async () => {
-    const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[]; folders?: string[] }>(
+    const list = await requestJson<{ entries?: IndexEntry[]; stores?: StoreInfo[]; writableFolders?: string[]; folders?: string[]; folderSettings?: FolderSettingsMap }>(
       fetchImpl,
       '/api/pages/index',
     )
@@ -308,7 +312,8 @@ export function useInstance({ fetchImpl, onLink, openPage, askRef, composeRef, b
     setStores(Array.isArray(body?.stores) ? body.stores : [])
     setWritableFolders(Array.isArray(body?.writableFolders) ? body.writableFolders : [])
     setFolders(Array.isArray(body?.folders) ? body.folders : [])
+          setFolderSettings(body?.folderSettings && typeof body.folderSettings === 'object' ? body.folderSettings : {})
   }, [fetchImpl])
 
-  return { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, writableFolders, folders, refreshIndex, skin, skinScheme, loaded, ready, indexed, pageChanges }
+  return { instance, failures, fatal, offline, needsLogin, refusedName, pages, stores, writableFolders, folders, folderSettings, refreshIndex, skin, skinScheme, loaded, ready, indexed, pageChanges }
 }

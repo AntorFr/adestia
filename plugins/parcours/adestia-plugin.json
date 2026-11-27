@@ -18,5 +18,6 @@
   "view": "./web/view.js",
   "styles": ["./web/parcours.css"],
   "api": "./api.mjs",
+  "dataFiles": ["*.parcours.json", "assets/*.parcours.json"],
   "skills": ["./skills/parcours-json/SKILL.md"]
 }

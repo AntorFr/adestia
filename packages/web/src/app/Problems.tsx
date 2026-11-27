@@ -6,7 +6,7 @@
 import type { LoadedPlugin } from '../plugins/loader.js'
 import { Icon } from './Icon.js'
 import { strayApp } from './owners.js'
-import type { IndexEntry } from './sections.js'
+import type { FolderSettingsMap } from './sections.js'
 import type { InstanceInfo } from './useInstance.js'
 
 /**
@@ -74,14 +74,15 @@ export function Problems({
   instance,
   failures,
   loaded,
-  pages,
+  folderSettings = {},
   t,
   locale,
 }: {
   readonly instance: InstanceInfo
   readonly failures: readonly { id: string; reason: string }[]
   readonly loaded: readonly LoadedPlugin[]
-  readonly pages: readonly IndexEntry[]
+  /** The `.folder.md` of each folder: where an `app:` is declared (AD-40). */
+  readonly folderSettings?: FolderSettingsMap
   readonly t: (key: string) => string
   /** The instance's language, for the date; absent, the browser's. */
   readonly locale?: string
@@ -105,7 +106,7 @@ export function Problems({
     // level, or naming a plugin this instance does not run. Reported HERE
     // rather than left to be noticed: a declaration that does nothing is an
     // hour spent wondering why the folder opens on the wrong screen.
-    ...strayApp(loaded, pages).map((stray) => ({
+    ...strayApp(loaded, folderSettings).map((stray) => ({
       id: stray.path,
       reason: saidStray(t, stray.reason),
       severity: 'degraded' as const,

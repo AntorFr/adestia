@@ -28,10 +28,13 @@ const entry = (path: string, fields: Record<string, unknown> = {}) => ({
 })
 
 const CORPUS = [
-  entry('diy/INDEX.md', { title: 'DIY', ico: '🪚', couleur: 'ambre' }),
+  entry('diy/INDEX.md'),
   entry('diy/etabli.md'),
   entry('diy/scie.md'),
 ]
+
+/** The livery of a folder is its `.folder.md` (AD-40), carried by the index as `folderSettings`. */
+const SETTINGS = { diy: { title: 'DIY', ico: '🪚', couleur: 'ambre', revision: 'r' } }
 
 function noop() {}
 
@@ -39,6 +42,7 @@ const props = {
   skin: {},
   plugins: [plugin('todo')],
   entries: CORPUS,
+  folderSettings: SETTINGS,
   openPlugin: noop,
   openSection: noop,
   openPage: noop,
@@ -86,8 +90,27 @@ describe('the landing canvas', () => {
     const { container } = render(<Home {...props} />)
     expect(container.querySelector('.adestia-pages')).toBeNull()
     expect(screen.getByText('DIY')).toBeTruthy()
-    // The index page is not one of them: it IS the section.
-    expect(screen.getByText('2 pages')).toBeTruthy()
+    // `INDEX.md` is a card like the others: 3 pages, not 2.
+    expect(screen.getByText('3 pages')).toBeTruthy()
+  })
+
+  it('dresses a folder’s tile from its .folder.md, not from the INDEX.md page', () => {
+    // AD-40. The INDEX.md here claims another title, icon and colour: it is a
+    // page like another and dresses nothing.
+    const entries = [
+      entry('diy/INDEX.md', { title: 'Autre titre', ico: '🔥', couleur: 'rouge' }),
+      entry('diy/etabli.md'),
+    ]
+    const { container } = render(<Home {...props} entries={entries} />)
+    const tile = [...container.querySelectorAll('.adestia-tile')].find((node) =>
+      node.textContent?.includes('DIY'),
+    )
+    expect(tile).toBeTruthy()
+    expect(tile?.textContent).toContain('🪚')
+    expect(tile?.textContent).not.toContain('🔥')
+    expect(container.textContent).not.toContain('Autre titre')
+    expect(tile?.outerHTML).toContain('ambre')
+    expect(tile?.outerHTML).not.toContain('rouge')
   })
 
   it('greets by the hour, in the skin’s own words', () => {
@@ -333,9 +356,10 @@ describe('arranging the mosaics', () => {
     const map = withStorage()
     home({
       entries: [
-        { path: 'diy/INDEX.md', title: 'DIY', fields: {} },
+        { path: 'diy/INDEX.md', title: 'Index', fields: {} },
         { path: 'diy/rabot.md', title: 'Rabot', fields: {} },
       ],
+      folderSettings: { diy: { title: 'DIY', revision: 'r' } },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Arrange' }))
     fireEvent.click(screen.getByRole('button', { name: 'Move earlier — DIY' }))

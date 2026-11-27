@@ -58,4 +58,30 @@
 .adestia-crumbs__sep { color: var(--text-faint); }
 .adestia-crumbs b { color: var(--text); font-weight: 600; }
 
+.adestia-folder-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+}
+.adestia-folder-row__name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.adestia-folder-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+}
+.adestia-folder-link:hover { color: var(--text); }
+.adestia-folder-link .adestia-icon { width: 14px; height: 14px; }
 .adestia-canvas__driver { font-size: var(--text-sm); color: var(--text-faint); }

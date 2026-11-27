@@ -96,12 +96,18 @@ describe('tests d\'écran hors écran — inventaire (docs/tests-ecran)', () => 
     // born after the inventory (epic/adestia-pages, feature adestia-coller-tableau), listed in docs/tests-ecran/README.md and still to classify)
     expect(horsInventaire).toEqual([
       'bench/tests/bench-once.test.mjs',
+      'bench/tests/folders-migration-ensemble.test.mjs',
       'bench/tests/niveaux-besoin.test.mjs',
       'bench/tests/niveaux-ensemble.test.mjs',
+      'packages/server/test/besoin-dossiers-pieces-jointes-ecran-ensemble.test.ts',
       'packages/web/test/besoin-coller-tableau-browser.test.ts',
       'packages/web/test/besoin-creer-dossier-browser.test.ts',
       'packages/web/test/besoin-creer-dossier-complement-browser.test.ts',
       'packages/web/test/besoin-decouverte-plugins-browser.test.ts',
+      'packages/web/test/besoin-dossiers-reglages-browser.test.ts',
+      'packages/web/test/besoin-dossiers-reglages-ecran-bords-browser.test.ts',
+      'packages/web/test/besoin-dossiers-reglages-ecran-browser.test.ts',
+      'packages/web/test/besoin-dossiers-reglages-ecran-complement-browser.test.ts',
       'packages/web/test/besoin-pages-structure-browser.test.ts',
       'packages/web/test/besoin-popover-bandeau-tardif-browser.test.ts',
       'packages/web/test/besoin-renommer-browser.test.ts',

@@ -1,0 +1,5 @@
+---
+title: Pièces masquées
+---
+
+Texte.
