@@ -2273,8 +2273,7 @@ pods' manifests, which this repository does not own); reaping in node (a `waitpi
 without a native addon); `--subreaper` flags (tini is already PID 1, nothing to adopt in between).
 
 **Proof.** (1) A test reads the `Dockerfile` as `image-web-navigateur.test.ts` does: `tini` installed,
-entrypoint starts with it and still ends with the server script. (2) A test with a real process tree, no Docker: it runs a small tree under `tini` as the parent of orphans (the image's own binary; the test fails, not skips, if `tini` is absent from the environment) and checks that no `Z` entry remains in `/proc` once the orphans die. (3) The SIGTERM test of the server is unchanged and stays
-green. Hors: Chrome's memory, pod limits, image size, AD-web-6's "not measured" wording.
+entrypoint starts with it and still ends with the server script. (2) A test with real processes, no Docker: it runs `tini -s -- <node script>` (`-s` makes tini adopt the orphans of the tree it runs, which is only the harness' way of standing in for PID 1; the entrypoint itself carries no flag). The script spawns children, kills them with their parent already gone, and the test checks that no `Z` entry remains in `/proc`; the same test sends `SIGTERM` to tini and checks the script's handler ran and the exit code is the script's own (the graceful stop holds under tini). The test fails, not skips, if `tini` is absent from the environment. What is false before the work is (1): the Dockerfile has no init. (2) proves that the chosen init does the reaping and forwards the signal, which no existing test covered. Hors: Chrome's memory, pod limits, image size, AD-web-6's "not measured" wording.
 
 ### AD-web-6 — `--no-sandbox` only if measured necessary, and then written down
 
