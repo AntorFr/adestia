@@ -81,8 +81,12 @@ WORKDIR /app
 # since moved to a repository of its own and is now fetched through that very
 # mechanism) — the reason changed, the need did not. Coding CLIs an operator
 # adds on top want it too.
+#
+# `tini` is the container's PID 1 (AD-zombies-1): node does not wait() on the
+# children it adopts, so every killed Chrome whose parent was already gone
+# stayed a zombie until restart. The init reaps them and forwards SIGTERM.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates git \
+ && apt-get install -y --no-install-recommends ca-certificates git tini \
  && rm -rf /var/lib/apt/lists/*
 
 # The transcriber, for the `listening-post` plugin — the one thing that turns
@@ -206,4 +210,4 @@ EXPOSE 8730
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
   CMD node -e "fetch('http://127.0.0.1:8730/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-ENTRYPOINT ["node", "packages/server/bin/adestia.js"]
+ENTRYPOINT ["tini", "--", "node", "packages/server/bin/adestia.js"]

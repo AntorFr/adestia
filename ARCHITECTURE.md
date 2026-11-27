@@ -2275,6 +2275,26 @@ does not guess. Concurrency: each turn has its own relay and its own in-memory b
 concurrent turns (`maxConcurrentTurns`) already bounds how many Chromes exist, and the sizing note in the
 `Dockerfile` gains one figure (measured, task 2).
 
+### AD-zombies-1 — The container's PID 1 is an init that reaps orphans
+
+**Problem.** The image's PID 1 is `node packages/server/bin/adestia.js`, and node does not `wait()` on
+adopted children. AD-web-5's relay kills Chrome's process group, but the killed `chrome-headless-shell`
+processes whose parent already died are re-parented to PID 1 and stay zombies (state `Z`, ppid 1): 3 to 4
+table entries per web read, against a per-pod limit of 38 166, reset only by a restart.
+
+**Decision.** The `Dockerfile` installs Debian's `tini` (same `apt-get` layer as `git`, no pinned version)
+and the entrypoint becomes `["tini", "--", "node", "packages/server/bin/adestia.js"]`. tini forwards
+`SIGTERM`/`SIGINT` to the server, which keeps its own graceful shutdown and restart loop unchanged, exits
+with the server's exit code, and reaps every orphan. No change in the relay or the driver (AD-web-5 stays
+as is: it prevents live Chromes, the init collects the dead ones).
+
+**Rejected.** `docker run --init` / compose `init: true` (depends on every operator's runtime and on the
+pods' manifests, which this repository does not own); reaping in node (a `waitpid` loop is not available
+without a native addon); `--subreaper` flags (tini is already PID 1, nothing to adopt in between).
+
+**Proof.** (1) A test reads the `Dockerfile` as `image-web-navigateur.test.ts` does: `tini` installed,
+entrypoint starts with it and still ends with the server script. (2) A test with real processes, no Docker: it runs `tini -s -- <node script>` (`-s` makes tini adopt the orphans of the tree it runs, which is only the harness' way of standing in for PID 1; the entrypoint itself carries no flag). The script spawns children, kills them with their parent already gone, and the test checks that no `Z` entry remains in `/proc`; the same test sends `SIGTERM` to tini and checks the script's handler ran and the exit code is the script's own (the graceful stop holds under tini). The test fails, not skips, if `tini` is absent from the environment. What is false before the work is (1): the Dockerfile has no init. (2) proves that the chosen init does the reaping and forwards the signal, which no existing test covered. Hors: Chrome's memory, pod limits, image size, AD-web-6's "not measured" wording.
+
 ### AD-web-6 — `--no-sandbox` only if measured necessary, and then written down
 
 **Decision.** The relay does not pass `--no-sandbox` by default. Task 2 starts the image's browser as the
