@@ -24,7 +24,6 @@ export function CanvasHeader({
   fetchImpl,
   locale,
   t,
-  folderLink,
 }: {
   readonly mobile: boolean
   /** Back to the chat, on a phone where the two screens are folded. */
@@ -38,8 +37,6 @@ export function CanvasHeader({
   readonly fetchImpl: typeof fetch
   readonly locale: string
   readonly t: (key: string) => string
-  /** The replacement page's folder: the shell's **Folder** link back to E-3 (B-40). */
-  readonly folderLink?: { readonly href: string; readonly name: string }
 }) {
   return (
     <header className="adestia-canvas__header">
@@ -89,11 +86,6 @@ export function CanvasHeader({
           )
         })}
       </nav>
-      {folderLink && (
-        <a className="adestia-folder-link" href={folderLink.href} title={folderLink.name}>
-          {t('Folder')}
-        </a>
-      )}
       <span className="adestia-canvas__driver">
         {/* The version only becomes knowable once a session has announced
             itself, so before the first turn there is nothing to show.

@@ -131,6 +131,20 @@ describe('the shell', () => {
     expect(container.querySelectorAll('a[href$="?classic"]').length).toBe(1)
   })
 
+  it('le lien Folder est une rangée du corps, avec icône et nom du dossier, jamais dans l’en-tête', async () => {
+    location.hash = '#/section/resume'
+    const { container } = render(<App fetchImpl={apiFetch(SET)} />)
+    await waitFor(() => expect(link(container)).toBeTruthy())
+    const a = link(container) as HTMLElement
+    const row = a.closest('.adestia-folder-row')
+    expect(row).toBeTruthy()
+    expect(row?.closest('.adestia-canvas__body')).toBeTruthy()
+    expect(a.closest('.adestia-canvas__header')).toBeNull()
+    expect(a.querySelector('svg')).toBeTruthy()
+    expect(row?.querySelector('.adestia-folder-row__name')?.textContent).toBe('Resume')
+    expect(a.getAttribute('title')).toBe('Resume')
+  })
+
   it('?classic ouvre la vue classique et y reste', async () => {
     location.hash = '#/section/resume?classic'
     const { container } = render(<App fetchImpl={apiFetch(SET)} />)
@@ -174,6 +188,9 @@ describe('the corner link of a plugin screen', () => {
       const a = container.querySelector('a')
       expect(a?.getAttribute('href')).toBe('#/section/resume?classic')
       expect(a?.textContent).toBe(label)
+      expect(a?.querySelector('svg')).toBeTruthy()
+      expect(container.querySelector('.adestia-folder-row__name')?.textContent).toBe('Résumé')
+      expect(container.querySelectorAll('a').length).toBe(1)
       unmount()
     }
   })

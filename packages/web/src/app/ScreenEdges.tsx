@@ -1,3 +1,5 @@
+import { Icon } from './Icon.js'
+
 /**
  * The two edge handles of the folded shell, drawn outside the swipe track.
  */
@@ -51,10 +53,14 @@ export function ScreenEdges({
 }
 
 /**
- * The **Folder** link on the screen of a plugin that owns the folder (B-39).
+ * The **Folder** link, one component for both places it appears (B-39, B-40):
+ * on the replacement page of a folder and on the screen of a plugin that owns
+ * it.
  *
- * Drawn by the shell, in the corner, never by the plugin: the way back to the
- * classic view cannot depend on a plugin remembering to offer it.
+ * Drawn by the shell, never by the plugin or the page: the way back to the
+ * classic view cannot depend on anyone remembering to offer it. It sits in its
+ * own row at the top of the canvas body, the folder's name on the left and the
+ * link, with its icon, on the right (docs/maquettes/dossier-reglages.html).
  */
 export function FolderCorner({
   href,
@@ -66,8 +72,12 @@ export function FolderCorner({
   readonly t: (key: string) => string
 }) {
   return (
-    <a className="adestia-folder-corner" href={href} title={name}>
-      {t('Folder')}
-    </a>
+    <div className="adestia-folder-row">
+      <span className="adestia-folder-row__name">{name}</span>
+      <a className="adestia-folder-link" href={href} title={name}>
+        <Icon name="folder-open" />
+        {t('Folder')}
+      </a>
+    </div>
   )
 }
