@@ -1212,3 +1212,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
 ## v0.99.1
 
 - **The "server not responding" banner browser test no longer fails under load** — the B-19 test that checks the banner appears on a 502 while the probe fails now lets the page run the handlers triggered by the drained answers before waiting for the banner, and names what answered since the route was armed if it still fails. Tests only: nothing changes for users.
+
+## v0.99.2
+
+- **No more zombie Chrome processes in the pod after a web read** — the image now runs `tini` as PID 1 in front of the server, so Chrome processes that are killed after their parent has died are reaped instead of piling up as zombies. Nothing changes in the interface.
