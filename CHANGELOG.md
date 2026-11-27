@@ -1221,7 +1221,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
 
 - **No more zombie Chrome processes in the pod after a web read** — the image now runs `tini` as PID 1 in front of the server, so Chrome processes that are killed after their parent has died are reaped instead of piling up as zombies. Nothing changes in the interface.
 
-## v0.100.0-adestia-dossiers.1
+## v0.100.0
 
 - **A folder is dressed by its own `.folder.md`, and no page stands for the folder any more** —
   the server reads and writes a `.folder.md` file in each folder and serves its settings in the
@@ -1237,8 +1237,13 @@ branch and that `test:plugins` is replayed after a red vitest run.
 - Tests, `scripts/ecrans.json` and the docs (README, architecture, screens, status) follow; the
   tests that encoded index pages as folders were rewritten.
 
-## Unreleased (adestia-dossiers, after `v0.100.0-adestia-dossiers.1`)
-
+- **A folder's attachments are shown** — the folder view lists the files in the folder and its
+  `assets/` (PDFs, photos…) as an Attachments block of twelve rows then "Show all n", hidden when
+  empty or when the folder sets `attachments: false`. Plugins declare the data files they own
+  through a `dataFiles` manifest key.
+- **A folder's settings sheet** — from a folder's header, a sheet sets a display name, icon and
+  colour, hides attachments and chooses a replacement page. The folder then opens on that page,
+  with a "Folder" link back to the classic view, where "Folder settings" clears the choice.
 - **An instance in the old folder format is brought to the new one by its own agent** — the
   skill `folders-migration` tells it to copy `title`, `ico`, `couleur` and `app` from every
   `INDEX.md` and homonymous `x/x.md` into the folder's `.folder.md` through `folder_settings`,
