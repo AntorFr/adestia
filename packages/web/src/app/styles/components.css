@@ -583,6 +583,9 @@ button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outli
 }
 .adestia-icon-picker__none { width: 16px; height: 16px; border-radius: var(--radius-sm); }
 
+/* --hue is set per option by HuePicker (inline); « none » keeps this default. */
+.adestia-hue-picker__item { --hue: transparent; }
+
 .adestia-hue-picker__swatch {
   width: 18px;
   height: 18px;
