@@ -30,7 +30,33 @@ async function appear(page, selector, options, describe) {
 }
 
 /**
- * Take one picture. `env`: `{ outDir, locale, conversations }`.
+ * The shell draws before its skin has arrived: the instance answers, the shell mounts, and only then
+ * does the skin's stylesheet load and its module (brand, crest) resolve. A capture taken in that gap is
+ * the default skin in a skin's folder, and a busy pod widens the gap. So, for a sweep with --skin, wait
+ * until the stylesheet is applied and the module's words have replaced the default brand.
+ */
+async function skinWorn(page, skin) {
+  await appear(page, `html[data-skin="${skin}"]`, { state: 'attached' }, 'the skin attribute never appeared')
+  try {
+    await page.waitForFunction(
+      () => [...document.querySelectorAll('link[data-skin="true"]')].every((link) => link.sheet !== null),
+      undefined,
+      { timeout: APPEAR_MS },
+    )
+  } catch (error) {
+    const failure = new Error(`the skin ${skin} stylesheet never loaded after ${Math.round(APPEAR_MS / 1000)} s`)
+    failure.appearTimeout = true
+    failure.cause = error
+    throw failure
+  }
+  // A skin with a module says its own brand; one that keeps "Adestia" simply costs this short wait.
+  await page
+    .waitForFunction(() => (document.querySelector('.adestia-brandname')?.textContent ?? '') !== 'Adestia', undefined, { timeout: 5_000 })
+    .catch(() => undefined)
+}
+
+/**
+ * Take one picture. `env`: `{ outDir, locale, skin, conversations }`.
  * Returns the file written.
  */
 export async function capture(browser, base, screen, theme, size, env) {
@@ -65,7 +91,10 @@ export async function capture(browser, base, screen, theme, size, env) {
     await screen.before?.(page, { base })
     await page.goto(`${base}/#${screen.route ?? '/'}`, { waitUntil: 'domcontentloaded' })
     if (screen.reload) await page.reload({ waitUntil: 'domcontentloaded' })
-    if (screen.shell !== 'none') await appear(page, '.adestia-chat', {}, 'the chat shell never appeared')
+    if (screen.shell !== 'none') {
+      await appear(page, '.adestia-chat', {}, 'the chat shell never appeared')
+      if (env.skin) await skinWorn(page, env.skin)
+    }
 
     if (screen.offline) await goOffline(page, context)
 
