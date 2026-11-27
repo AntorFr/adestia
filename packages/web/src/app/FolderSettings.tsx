@@ -46,7 +46,7 @@ export function FolderSettings(props: FolderSettingsProps) {
   const { t } = props
   return (
     <>
-      <Button icon="settings" className="adestia-btn--fold" aria-label={t('Folder settings')} title={t('Folder settings')} onClick={() => setOpen(true)}>
+      <Button icon="sliders-horizontal" className="adestia-btn--fold" aria-label={t('Folder settings')} title={t('Folder settings')} onClick={() => setOpen(true)}>
         <span className="adestia-btn__word">{t('Folder settings')}</span>
       </Button>
       {open ? <FolderSettingsSheet {...props} onClose={() => setOpen(false)} /> : null}

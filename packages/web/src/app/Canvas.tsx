@@ -249,7 +249,6 @@ export function Canvas(props: CanvasProps) {
                 t={t}
               />
             ) : null}
-            {create('plus')}
             {offer ? (
                 <NewFromTemplate
                   folder={section}
@@ -262,6 +261,7 @@ export function Canvas(props: CanvasProps) {
                   t={t}
                 />
             ) : null}
+            {create('plus')}
             {renamable ? <RenameFolder section={section} fetchImpl={props.fetchImpl} onRenamed={renamed} t={t} /> : null}
           </>
         ) }
