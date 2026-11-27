@@ -1521,7 +1521,7 @@ already exist, except the kind chip above. Design-system verdict (`gardien-desig
 
 **The sheet** (bottom sheet on a phone, as the other sheets). Fields, top to bottom, with their exact labels (`fr` between brackets):
 - **Name shown** [Nom affiché]: a text field preset to the current display name; empty = the folder's own name. Help: « Empty shows the folder's own name. » [« Vide : le nom du dossier. »]
-- **Icon** [Icône]: a new radiogroup with a first choice **None** [Aucune] and the six folder pictograms of the mockup (`FOLDER_ICONS` of `IconPicker.tsx`: `sliders-horizontal`, `file-text`, `image`, `list`, `plus`, `pen-line`), not the whole icon set of the shell; a single Tab stop, arrows choose.
+- **Icon** [Icône]: a new radiogroup with a first choice **None** [Aucune] and the six folder pictograms of the mockup (`FOLDER_ICONS` of `IconPicker.tsx`: `sliders-horizontal`, `file-text`, `image`, `list`, `plus`, `pen-line`), not the whole icon set of the shell; a single Tab stop, arrows choose. The stored name is drawn as that pictogram on the folder tile (E-3 header, home card), never as its raw text.
 - **Colour** [Couleur]: a new radiogroup of the twelve `--adestia-hue-*` tokens plus **None** [Aucune], each swatch named by its hue (accessible name, never a hex).
 - **Show attachments** [Afficher les pièces jointes]: a switch, on by default.
 - **Replacement page** [Page de remplacement]: a choice among the folder's own pages and **None — the classic view** [Aucune — la vue classique]. Help: « Opening the folder shows this page. The classic view stays one link away. » [« Ouvrir le dossier montre cette page. La vue classique reste à un lien. »]
