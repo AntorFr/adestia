@@ -8,7 +8,7 @@
  * in `.folder.md`) is read at its door, `GET /api/pages/index` (`folderSettings`) and `PUT /api/folders/settings`.
  *
  * Plan (need -> case -> proof):
- *   P-23 1-2 chaudiere: Folder settings, name « Chaudière », icon paperclip, colour Green, attachments off, page
+ *   P-23 1-2 chaudiere: Folder settings, name « Chaudière », icon image, colour Green, attachments off, page
  *            « Résumé chaudière », Save -> the door reads the five keys; the sheet closes
  *   P-23 3   reopening chaudiere shows the page with the link Folder -> `#/section/chaudiere?classic`; the classic
  *            view has no Attachments block any more (it had one before) and no Folder link
@@ -81,7 +81,7 @@ describe.skipIf(!playwright)('E-39, E-3, E-4: a folder is set up from the interf
     expect(await page.getByRole('link', { name: 'Folder', exact: true }).count()).toBe(0)
     await openSheet(page)
     await page.getByRole('textbox', { name: 'Name shown' }).fill('Chaudière')
-    await page.getByRole('radiogroup', { name: 'Icon' }).getByRole('radio', { name: 'paperclip', exact: true }).click()
+    await page.getByRole('radiogroup', { name: 'Icon' }).getByRole('radio', { name: 'image', exact: true }).click()
     await page.getByRole('radiogroup', { name: 'Colour' }).getByRole('radio', { name: 'Green', exact: true }).click()
     await page.getByRole('switch', { name: 'Show attachments' }).click()
     await page.getByLabel('Replacement page').selectOption({ label: 'Résumé chaudière' })
@@ -90,7 +90,7 @@ describe.skipIf(!playwright)('E-39, E-3, E-4: a folder is set up from the interf
     expect(answer.status()).toBe(200)
     await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: T(10_000) })
     const saved = await settingsOf('chaudiere')
-    expect(saved).toMatchObject({ title: 'Chaudière', ico: 'paperclip', couleur: 'vert', attachments: false, page: 'resume.md' })
+    expect(saved).toMatchObject({ title: 'Chaudière', ico: 'image', couleur: 'vert', attachments: false, page: 'resume.md' })
 
     // reopening the folder (a fresh load of its address)
     await page.goto(`${instance.url}/#/`, { waitUntil: 'domcontentloaded' })

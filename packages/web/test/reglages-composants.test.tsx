@@ -12,8 +12,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ICON_NAMES, type IconName } from '../src/app/icons.js'
-import { HUE_NAMES, HuePicker, IconPicker, SettingRow, type HueName } from '../src/app/ui/index.js'
+import { type IconName } from '../src/app/icons.js'
+import { FOLDER_ICONS, HUE_NAMES, HuePicker, IconPicker, SettingRow, type HueName } from '../src/app/ui/index.js'
 
 afterEach(cleanup)
 
@@ -115,31 +115,39 @@ describe('HuePicker', () => {
 })
 
 describe('IconPicker', () => {
-  it('offers « none » then every ICON_NAMES entry, named by the icon', () => {
+  it('offers exactly seven options: « none » then the six folder pictograms, named by the icon', () => {
     render(<IconHost />)
     const radios = screen.getByRole('radiogroup', { name: 'Icône' }).querySelectorAll('[role=radio]')
-    expect(radios).toHaveLength(ICON_NAMES.length + 1)
+    expect(radios).toHaveLength(7)
+    expect(FOLDER_ICONS).toHaveLength(6)
     expect(radios[0]!.getAttribute('aria-label')).toBe('Aucune')
     expect(radios[0]!.querySelector('svg')).toBeNull()
-    expect(Array.from(radios).slice(1).map((r) => r.getAttribute('aria-label'))).toEqual([...ICON_NAMES])
+    expect(Array.from(radios).slice(1).map((r) => r.getAttribute('aria-label'))).toEqual([...FOLDER_ICONS])
+    expect([...FOLDER_ICONS]).toEqual(['sliders-horizontal', 'file-text', 'image', 'list', 'plus', 'pen-line'])
   })
 
-  it('has one Tab stop on the checked option and arrows choose, with null for « none »', () => {
+  it('has one Tab stop on the checked option (the first when nothing is chosen) and arrows choose, with null for « none »', () => {
+    const none = render(<IconHost />)
+    expect(tabStops(screen.getByRole('radiogroup'))).toHaveLength(1)
+    expect(tabStops(screen.getByRole('radiogroup'))[0]!.getAttribute('aria-label')).toBe('Aucune')
+    none.unmount()
     const onChange = vi.fn()
-    render(<IconHost start={ICON_NAMES[2]!} onChange={onChange} />)
+    render(<IconHost start={FOLDER_ICONS[2]} onChange={onChange} />)
     const group = screen.getByRole('radiogroup')
     const stops = tabStops(group)
     expect(stops).toHaveLength(1)
-    expect(stops[0]!.getAttribute('aria-label')).toBe(ICON_NAMES[2])
+    expect(stops[0]!.getAttribute('aria-label')).toBe(FOLDER_ICONS[2])
     expect(screen.getAllByRole('radio', { checked: true })).toHaveLength(1)
     fireEvent.keyDown(stops[0]!, { key: 'ArrowRight' })
-    expect(onChange).toHaveBeenLastCalledWith(ICON_NAMES[3])
-    expect(document.activeElement?.getAttribute('aria-label')).toBe(ICON_NAMES[3])
-    fireEvent.keyDown(screen.getByRole('radio', { name: ICON_NAMES[3]! }), { key: 'Home' })
+    expect(onChange).toHaveBeenLastCalledWith(FOLDER_ICONS[3])
+    expect(document.activeElement?.getAttribute('aria-label')).toBe(FOLDER_ICONS[3])
+    fireEvent.keyDown(screen.getByRole('radio', { name: FOLDER_ICONS[3] }), { key: 'Home' })
     expect(onChange).toHaveBeenLastCalledWith(null)
     expect(screen.getByRole('radio', { name: 'Aucune' }).getAttribute('aria-checked')).toBe('true')
     fireEvent.keyDown(screen.getByRole('radio', { name: 'Aucune' }), { key: 'ArrowLeft' })
-    expect(onChange).toHaveBeenLastCalledWith(ICON_NAMES[ICON_NAMES.length - 1])
+    expect(onChange).toHaveBeenLastCalledWith(FOLDER_ICONS[5])
+    fireEvent.keyDown(screen.getByRole('radio', { name: FOLDER_ICONS[5] }), { key: 'ArrowRight' })
+    expect(onChange).toHaveBeenLastCalledWith(null)
   })
 
   it('a disabled picker chooses nothing', () => {
