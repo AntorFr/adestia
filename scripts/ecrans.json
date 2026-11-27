@@ -69,7 +69,7 @@
     "packages/web/test/besoin-creer-dossier-browser.test.ts": ["E-2", "E-3"],
     "packages/web/test/besoin-creer-dossier-complement-browser.test.ts": ["E-2", "E-3"],
     "packages/web/test/besoin-dossiers-reglages-browser.test.ts": ["E-2", "E-3"],
-    "packages/web/test/besoin-dossiers-reglages-ecran-browser.test.ts": ["E-3", "E-4"],
+    "packages/web/test/besoin-dossiers-reglages-ecran-browser.test.ts": ["E-3", "E-4", "E-39"],
     "packages/web/test/besoin-decouverte-plugins-browser.test.ts": ["E-2", "E-3", "E-36"],
     "packages/web/test/besoin-renommer-browser.test.ts": ["E-3"],
     "packages/server/test/besoin-dossiers-pieces-jointes-ecran-ensemble.test.ts": ["E-3"],
