@@ -105,6 +105,7 @@ describe('tests d\'écran hors écran — inventaire (docs/tests-ecran)', () => 
       'packages/web/test/besoin-creer-dossier-complement-browser.test.ts',
       'packages/web/test/besoin-decouverte-plugins-browser.test.ts',
       'packages/web/test/besoin-dossiers-reglages-browser.test.ts',
+      'packages/web/test/besoin-dossiers-reglages-ecran-bords-browser.test.ts',
       'packages/web/test/besoin-dossiers-reglages-ecran-browser.test.ts',
       'packages/web/test/besoin-dossiers-reglages-ecran-complement-browser.test.ts',
       'packages/web/test/besoin-pages-structure-browser.test.ts',

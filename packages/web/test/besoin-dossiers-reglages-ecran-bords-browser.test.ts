@@ -127,8 +127,7 @@ describe.skipIf(!playwright)('E-39, E-3, E-4: folder settings, the edges of the 
 
   it('P-23 failure: the right to write withdrawn while the sheet is open says so, disables Save and writes nothing', async () => {
     // red if the server writes anyway, or the sheet shows another line, or Save stays enabled
-    const markdown = ((await (await fetch(`${instance.url}/api/pages/retrait/chemin.md`)).json()) as { markdown: string }).markdown
-    const dir = markdown.split('\n').map((line) => line.trim()).find((line) => line.startsWith('/') && line.endsWith('/pages/retrait'))!
+    const dir = (await (await fetch(`${instance.url}/api/files/retrait/chemin.txt`)).text()).trim()
     expect(dir).toBeTruthy()
     const { context, page } = await visit('/section/retrait')
     await page.getByText('Fiche du retrait', { exact: true }).first().waitFor({ timeout: T(30_000) })
