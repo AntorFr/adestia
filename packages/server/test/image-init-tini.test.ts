@@ -28,7 +28,7 @@ describe('Dockerfile — init (AD-zombies-1)', () => {
     // red if the entrypoint is the bare node command, tini is not first, or the server is not last
     const m = code.match(/^ENTRYPOINT (\[.*\])\s*$/m)
     expect(m).not.toBeNull()
-    const argv = JSON.parse(m![1]) as string[]
+    const argv = JSON.parse(m![1] ?? '[]') as string[]
     expect(argv[0]).toBe('tini')
     expect(argv.at(-1)).toBe('packages/server/bin/adestia.js')
     expect(argv).toEqual(['tini', '--', 'node', 'packages/server/bin/adestia.js'])
@@ -46,7 +46,7 @@ const states = (): Map<number, { state: string; ppid: number }> => {
     try {
       const stat = readFileSync(`/proc/${d}/stat`, 'utf8')
       const rest = stat.slice(stat.lastIndexOf(')') + 2).split(' ')
-      out.set(Number(d), { state: rest[0], ppid: Number(rest[1]) })
+      out.set(Number(d), { state: rest[0] ?? '', ppid: Number(rest[1]) })
     } catch {
       /* gone */
     }
@@ -101,7 +101,7 @@ describe('real processes under tini -s (AD-zombies-1)', () => {
     )
     try {
       await until(() => /PIDS [\d,]+\n/.test(out))
-      const pids = out.match(/PIDS ([\d,]+)/)![1].split(',').map(Number)
+      const pids = (out.match(/PIDS ([\d,]+)/)?.[1] ?? '').split(',').map(Number)
       expect(pids).toHaveLength(2)
       // the parent is gone: the orphans live, adopted by tini (ppid = tini)
       await until(() => pids.every((p) => states().get(p)?.ppid === tini.pid))
