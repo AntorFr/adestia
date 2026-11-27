@@ -161,6 +161,35 @@ describe('SettingRow', () => {
     expect(container.querySelector('.adestia-setting-row__control input')).toBeTruthy()
   })
 
+  it('renders its help under the label and the control points at it', () => {
+    const { container } = render(
+      <SettingRow label="Pièces jointes" help="Affiche les fichiers du dossier">
+        {({ labelId, helpId }) => <input type="checkbox" role="switch" aria-labelledby={labelId} aria-describedby={helpId} />}
+      </SettingRow>,
+    )
+    const help = container.querySelector('.adestia-setting-row__help')!
+    expect(help.textContent).toBe('Affiche les fichiers du dossier')
+    const sw = screen.getByRole('switch', { name: 'Pièces jointes' })
+    expect(sw.getAttribute('aria-describedby')).toBe(help.id)
+    expect(help.id).not.toBe('')
+    expect(container.querySelector('.adestia-setting-row__text')!.children[1]).toBe(help)
+  })
+
+  it('without help, draws no help node and gives the control no helpId', () => {
+    let seen: string | undefined = 'unset'
+    const { container } = render(
+      <SettingRow label="Sans aide">{({ helpId }) => { seen = helpId; return <i /> }}</SettingRow>,
+    )
+    expect(seen).toBeUndefined()
+    expect(container.querySelector('.adestia-setting-row__help')).toBeNull()
+  })
+
+  it('two rows with help get distinct help ids', () => {
+    const ids: Array<string | undefined> = []
+    render(<><SettingRow label="a" help="x">{({ helpId }) => { ids.push(helpId); return <i /> }}</SettingRow><SettingRow label="b" help="y">{({ helpId }) => { ids.push(helpId); return <i /> }}</SettingRow></>)
+    expect(new Set(ids).size).toBe(2)
+  })
+
   it('two rows get distinct ids', () => {
     const ids: string[] = []
     render(<><SettingRow label="a">{({ labelId }) => { ids.push(labelId); return <i /> }}</SettingRow><SettingRow label="b">{({ labelId }) => { ids.push(labelId); return <i /> }}</SettingRow></>)
