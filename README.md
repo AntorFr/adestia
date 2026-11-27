@@ -62,6 +62,8 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/browsers node packages/server/bin/adestia.js   # w
 Not yet measured, since pods have no Docker: the image's extra size and whether Chrome's sandbox starts as the
 `node` user. Play a real turn on the published image with `bench/web-reel.sh <image>` (see `bench/README.md`).
 
+The image runs the server under `tini` as PID 1 (AD-zombies-1), which reaps the Chromes the relay killed once their parent is gone; run `node` directly as a container's PID 1 (or `docker run --entrypoint node`) and each web read leaves zombie entries until restart. To look for them in a running container: run `docker exec <container> ps -eo pid,ppid,stat,comm` and read any line whose state starts with `Z` (before the init: `ppid 1`, `chrome-headless-shell`, 3 to 4 per web read). Outside a container, nothing to do.
+
 To look at the app without an agent or Docker (a scripted engine, seeded data):
 
 ```sh
@@ -286,6 +288,8 @@ Node 22 or later (`engines` in `package.json`). After `npm ci`, check that
 `node_modules/micromark-extension-directive` exists: a missing grammar shows as
 escaped `\:::` in the content tests, and looks like a serialiser bug
 (`CLAUDE.md`).
+
+`npm test` needs `tini` on the PATH (`apt-get install tini`): `image-init-tini.test.ts` fails, rather than skips, without it.
 
 ```sh
 npm ci

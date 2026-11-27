@@ -1216,3 +1216,7 @@ branch and that `test:plugins` is replayed after a red vitest run.
 ## v0.99.2
 
 - **A flaky browser test is retired** — the B-19 test that checked the "server not responding" banner while every /api/ call and the health probe fail (and that it leaves by itself once the probe answers) failed under load without any product fault. The probe loop stays covered by server-reach and hors-ligne-hors-ecran. Tests only: nothing changes for users.
+
+## v0.99.3
+
+- **No more zombie Chrome processes in the pod after a web read** — the image now runs `tini` as PID 1 in front of the server, so Chrome processes that are killed after their parent has died are reaped instead of piling up as zombies. Nothing changes in the interface.
