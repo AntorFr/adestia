@@ -178,7 +178,7 @@ try {
 // ── one capture (bench/lib/capture.mjs) ─────────────────────────────────────
 const THEMES = ['light', 'dark']
 const capture = (browser, base, screen, theme, size) =>
-  captureWithRetry(browser, base, screen, theme, size, { outDir, locale: options.locale, conversations: CONVERSATIONS })
+  captureWithRetry(browser, base, screen, theme, size, { outDir, locale: options.locale, skin: options.skin, conversations: CONVERSATIONS })
 
 // ── the sweep ───────────────────────────────────────────────────────────────
 await mkdir(outDir, { recursive: true })
