@@ -62,6 +62,8 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/browsers node packages/server/bin/adestia.js   # w
 Not yet measured, since pods have no Docker: the image's extra size and whether Chrome's sandbox starts as the
 `node` user. Play a real turn on the published image with `bench/web-reel.sh <image>` (see `bench/README.md`).
 
+The image runs the server under `tini` as PID 1 (AD-zombies-1), which reaps the Chromes the relay killed once their parent is gone; run `node` directly as a container's PID 1 (or `docker run --entrypoint node`) and each web read leaves zombie entries until restart. Outside a container, nothing to do.
+
 To look at the app without an agent or Docker (a scripted engine, seeded data):
 
 ```sh
