@@ -10,10 +10,10 @@ import { useState } from 'react'
 
 import type { FolderSettings as Settings, FolderSettingsEntry } from '@antorfr/adestia-schemas'
 
-import { ICON_NAMES, type IconName } from './icons.js'
+import { type IconName } from './icons.js'
 import { jsonInit, requestJson } from './request.js'
 import { type IndexEntry } from './sections.js'
-import { Button, Field, HUE_NAMES, HuePicker, IconPicker, SettingRow, Sheet, type HueName } from './ui/index.js'
+import { Button, Field, FOLDER_ICONS, HUE_NAMES, HuePicker, IconPicker, SettingRow, Sheet, type HueName } from './ui/index.js'
 
 /** The hue names the sheet says aloud (never a hex value). */
 const HUE_LABELS: Record<HueName, string> = {
@@ -22,7 +22,7 @@ const HUE_LABELS: Record<HueName, string> = {
 }
 
 const iconOf = (value: string | undefined): IconName | null =>
-  (ICON_NAMES as readonly string[]).includes(value ?? '') ? (value as IconName) : null
+  (FOLDER_ICONS as readonly string[]).includes(value ?? '') ? (value as IconName) : null
 const hueOf = (value: string | undefined): HueName | null =>
   (HUE_NAMES as readonly string[]).includes(value ?? '') ? (value as HueName) : null
 

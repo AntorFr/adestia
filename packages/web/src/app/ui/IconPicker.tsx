@@ -1,6 +1,9 @@
 import { Icon } from '../Icon.js'
-import { ICON_NAMES, type IconName } from '../icons.js'
+import { type IconName } from '../icons.js'
 import { useRadioGroup } from './radiogroup.js'
+
+/** The six folder pictograms of the mockup dossier-reglages.html (set, text, img, list, plus, pen), by their name in the shell's set. */
+export const FOLDER_ICONS = ['sliders-horizontal', 'file-text', 'image', 'list', 'plus', 'pen-line'] as const satisfies readonly IconName[]
 
 export interface IconPickerProps {
   /** The icon chosen; `null` is « none ». */
@@ -13,9 +16,9 @@ export interface IconPickerProps {
   readonly disabled?: boolean
 }
 
-/** `.adestia-icon-picker` (docs/charte.md § 4): a radiogroup grid of `ICON_NAMES` plus « none ». */
+/** `.adestia-icon-picker` (docs/charte.md § 4): a radiogroup of « none » plus the six `FOLDER_ICONS`. */
 export function IconPicker({ value, onChange, label, noneLabel, disabled }: IconPickerProps) {
-  const choices: (IconName | null)[] = [null, ...ICON_NAMES]
+  const choices: (IconName | null)[] = [null, ...FOLDER_ICONS]
   const checkedIndex = choices.findIndex((one) => one === value)
   const { group, tabIndexOf, onKeyDown } = useRadioGroup(choices.length, checkedIndex, (at) => onChange(choices[at]!))
   return (

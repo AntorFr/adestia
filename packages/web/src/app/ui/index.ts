@@ -10,5 +10,5 @@ export { Segmented, type SegmentedProps, type SegmentedChoice } from './Segmente
 export { NameSheet, type NameSheetProps, type NameRefusal } from './NameSheet.js'
 export { Notice, type NoticeProps } from './Notice.js'
 export { SettingRow, type SettingRowProps } from './SettingRow.js'
-export { IconPicker, type IconPickerProps } from './IconPicker.js'
+export { FOLDER_ICONS, IconPicker, type IconPickerProps } from './IconPicker.js'
 export { HuePicker, HUE_NAMES, type HuePickerProps, type HueName } from './HuePicker.js'
