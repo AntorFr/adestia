@@ -23,6 +23,7 @@ import { MissingPage } from './MissingPage.js'
 import { Preferences, prefsTitle, type PrefsPage } from './Preferences.js'
 import { NewFromTemplate } from './NewFromTemplate.js'
 import { CreateEntry } from './CreateEntry.js'
+import { FolderSettings } from './FolderSettings.js'
 import { canRename, RenameFolder, RenameNotice } from './RenameFolder.js'
 import { creationsFor, pluginCreations } from './creations.js'
 import { Section } from './Section.js'
@@ -57,6 +58,8 @@ export interface CanvasProps {
   readonly folders?: readonly string[]
   /** The `.folder.md` of each folder (AD-40): title, icon, colour and owner of a folder. */
   readonly folderSettings?: FolderSettingsMap
+  /** The server does not answer: a sheet that writes keeps its entries and waits. */
+  readonly offline?: boolean
   /** Re-reads the index now (after a creation). */
   readonly refreshIndex?: () => Promise<void>
   readonly openApp: string | undefined
@@ -211,6 +214,7 @@ export function Canvas(props: CanvasProps) {
       await props.refreshIndex?.()
       openSection(path)
     }
+    const settable = props.indexed !== false && (props.writableFolders ?? []).includes(section)
     const offer =
       props.indexed !== false && (props.writableFolders ?? []).includes(section) && sources.length > 0
     return (
@@ -230,10 +234,21 @@ export function Canvas(props: CanvasProps) {
         {...(props.ready === undefined ? {} : { ready: props.ready && props.indexed !== false })}
         t={t}
         notice={<RenameNotice section={section} pages={pages} fetchImpl={props.fetchImpl} t={t} />}
-        {...(creatable || offer || renamable
+        {...(creatable || offer || renamable || settable
           ? { headerAction: (
           <>
-            {create('plus')}
+            {settable ? (
+              <FolderSettings
+                section={section}
+                {...(props.folderSettings?.[section] ? { entry: props.folderSettings[section]! } : {})}
+                pages={pages}
+                {...(props.folderSettings?.[section]?.app ? { appName: props.folderSettings[section]!.app! } : {})}
+                offline={props.offline === true}
+                fetchImpl={props.fetchImpl}
+                {...(props.refreshIndex ? { refreshIndex: props.refreshIndex } : {})}
+                t={t}
+              />
+            ) : null}
             {offer ? (
                 <NewFromTemplate
                   folder={section}
@@ -246,6 +261,7 @@ export function Canvas(props: CanvasProps) {
                   t={t}
                 />
             ) : null}
+            {create('plus')}
             {renamable ? <RenameFolder section={section} fetchImpl={props.fetchImpl} onRenamed={renamed} t={t} /> : null}
           </>
         ) }

@@ -49,8 +49,8 @@ export function NewFromTemplate(props: NewFromTemplateProps) {
   return (
     <>
       {/* Closing the sheet hands focus back to this button: the sheet's own trap remembers it. */}
-      <Button icon="plus" className="adestia-chead__action" onClick={() => setOpen(true)}>
-        {t('New from template')}
+      <Button icon="plus" className="adestia-chead__action adestia-btn--fold" aria-label={t('New from template')} title={t('New from template')} onClick={() => setOpen(true)}>
+        <span className="adestia-btn__word">{t('New from template')}</span>
       </Button>
       {open && <TemplateSheet {...props} onClose={() => setOpen(false)} />}
     </>

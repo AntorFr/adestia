@@ -520,5 +520,81 @@ button.adestia-chip:focus-visible { outline: 2px solid var(--accent-text); outli
 }
 .adestia-nameprompt__context { margin: 0 0 var(--space-2); font-size: var(--text-sm); color: var(--text-muted); overflow-wrap: anywhere; }
 @media (max-width: 820px) {
-  .adestia-btn--rename .adestia-btn__word { display: none; }
+  .adestia-btn--fold .adestia-btn__word { display: none; }
 }
+
+/* Setting row: label and help left, the control right (E-39) ---------------- */
+
+.adestia-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 44px;
+}
+
+.adestia-setting-row__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.adestia-setting-row__label { font-size: var(--text-sm); font-weight: 500; color: var(--text); }
+.adestia-setting-row__help { font-size: var(--text-xs); color: var(--text-muted); overflow-wrap: anywhere; }
+.adestia-setting-row__control { flex: none; display: flex; align-items: center; }
+
+/* Icon picker and hue picker: radiogroups, one Tab stop, arrows choose (E-39) */
+
+.adestia-icon-picker,
+.adestia-hue-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.adestia-icon-picker__item,
+.adestia-hue-picker__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.adestia-icon-picker__item:hover,
+.adestia-hue-picker__item:hover { background: var(--surface-soft); color: var(--text); border-color: var(--border-strong); }
+
+.adestia-icon-picker__item[aria-checked='true'],
+.adestia-hue-picker__item[aria-checked='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  color: var(--accent-text);
+}
+
+.adestia-icon-picker__item:disabled,
+.adestia-hue-picker__item:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* « None »: an empty dashed frame, never an icon of the set. */
+.adestia-icon-picker__none,
+.adestia-hue-picker__item--none .adestia-hue-picker__swatch {
+  background: transparent;
+  border: 1px dashed var(--text-muted);
+}
+.adestia-icon-picker__none { width: 16px; height: 16px; border-radius: var(--radius-sm); }
+
+/* --hue is set per option by HuePicker (inline); « none » keeps this default. */
+.adestia-hue-picker__item { --hue: transparent; }
+
+.adestia-hue-picker__swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-round);
+  background: var(--hue);
+}
+
+/* Folder settings sheet (E-39) ------------------------------------------------ */
+.adestia-folder-settings__form { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.adestia-folder-settings__form .adestia-select { max-width: 100%; text-overflow: ellipsis; }
+.adestia-folder-settings__app { margin: 0; font-size: var(--text-sm); color: var(--text-muted); overflow-wrap: anywhere; }
+.adestia-folder-settings__error { margin: 0; font-size: var(--text-sm); color: var(--danger-text, var(--text)); }
